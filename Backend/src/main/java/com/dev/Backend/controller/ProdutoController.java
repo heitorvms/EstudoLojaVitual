@@ -13,34 +13,35 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.dev.Backend.entity.Estado;
-import com.dev.Backend.service.EstadoService;
+import com.dev.Backend.entity.Produto;
+import com.dev.Backend.service.ProdutoService;
 
 @RestController
-@RequestMapping("/api/estado")
-public class EstadoController {
+@RequestMapping("/api/produto")
+public class ProdutoController {
 
     @Autowired
-    private EstadoService estadoService;
+    private ProdutoService produtoService;
 
     @GetMapping("/")
-    public List<Estado> buscarTodos() {
-        return estadoService.buscarTodos();
+    public List<Produto> buscarTodos() {
+        return produtoService.buscarTodos();
     }
 
     @PostMapping("/")
-    public Estado inserir(@RequestBody Estado estado) {
-        return estadoService.inserir(estado);
+    public Produto inserir(@RequestBody Produto produto) {
+        return produtoService.inserir(produto);
     }
 
     @PutMapping("/")
-    public Estado alterar(@RequestBody Estado estado) {
-        return estadoService.alterar(estado);
+    public Produto alterar(@RequestBody Produto produto) {
+        return produtoService.alterar(produto);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@PathVariable("id") Long id) {
-        estadoService.excluir(id);
+        produtoService.excluir(id);
         return ResponseEntity.ok().build();
     }
+
 }

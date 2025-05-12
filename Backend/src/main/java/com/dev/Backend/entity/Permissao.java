@@ -23,7 +23,7 @@ public class Permissao {
     private String nome;
 
     @Temporal(TemporalType.TIMESTAMP)
-    private Date dataCriaca;
+    private Date dataCriacao;
     @Temporal(TemporalType.TIMESTAMP)
     private Date dataAtualizacao;
 }

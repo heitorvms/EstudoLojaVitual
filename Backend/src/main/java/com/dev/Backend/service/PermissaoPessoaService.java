@@ -30,7 +30,7 @@ public class PermissaoPessoaService {
             PermissaoPessoa permissaoPessoa = new PermissaoPessoa();
             permissaoPessoa.setPessoa(pessoa);
             permissaoPessoa.setPermissao(listaPermissao.get(0));
-            permissaoPessoa.setDataCriaca(new Date());
+            permissaoPessoa.setDataCriacao(new Date());
             permissaoPessoaRepository.saveAndFlush(permissaoPessoa);
         }
     }

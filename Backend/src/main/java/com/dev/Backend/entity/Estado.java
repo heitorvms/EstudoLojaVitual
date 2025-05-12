@@ -23,7 +23,7 @@ public class Estado {
     private String nome;
     private String sigla;
     @Temporal(TemporalType.TIMESTAMP)
-    private Date dataCriaca;
+    private Date dataCriacao;
     @Temporal(TemporalType.TIMESTAMP)
     private Date dataAtualizacao;
 

@@ -20,7 +20,7 @@ public class MarcaService {
     }
 
     public Marca inserir(Marca marca) {
-        marca.setDataCriaca(new Date());
+        marca.setDataCriacao(new Date());
         Marca marcaNovo = marcaReposotory.saveAndFlush(marca);
         return marcaNovo;
     }

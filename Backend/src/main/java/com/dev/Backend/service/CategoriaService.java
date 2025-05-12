@@ -20,7 +20,7 @@ public class CategoriaService {
     }
 
     public Categoria inserir(Categoria categoria) {
-        categoria.setDataCriaca(new Date());
+        categoria.setDataCriacao(new Date());
         Categoria categoriaNovo = categoriaReposotory.saveAndFlush(categoria);
         return categoriaNovo;
     }

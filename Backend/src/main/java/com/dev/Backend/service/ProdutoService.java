@@ -20,7 +20,7 @@ public class ProdutoService {
     }
 
     public Produto inserir(Produto produto) {
-        produto.setDataCriaca(new Date());
+        produto.setDataCriacao(new Date());
         Produto produtoNovo = produtoReposotory.saveAndFlush(produto);
         return produtoNovo;
     }

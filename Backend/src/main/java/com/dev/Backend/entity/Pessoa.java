@@ -1,10 +1,15 @@
 package com.dev.Backend.entity;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -21,7 +26,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "pessoa")
 @Data
-public class Pessoa {
+public class Pessoa implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -31,18 +36,21 @@ public class Pessoa {
     @JoinColumn(name = "idCidade")
     private Cidade cidade;
 
-    @OneToMany(mappedBy = "pessoa", orphanRemoval = true, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @OneToMany(mappedBy = "pessoa", orphanRemoval = true, cascade = { CascadeType.PERSIST, CascadeType.MERGE }, fetch = FetchType.EAGER)
     @Setter(value = AccessLevel.NONE)
     private List<PermissaoPessoa> permissaoPessoas;
 
     private String nome;
     private String cpf;
     private String email;
+    private String codigoRecuperacaoSenha;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date dataEnviaCodigo;
     private String senha;
     private String endereco;
     private String cep;
     @Temporal(TemporalType.TIMESTAMP)
-    private Date dataCriaca;
+    private Date dataCriacao;
     @Temporal(TemporalType.TIMESTAMP)
     private Date dataAtualizacao;
 
@@ -51,5 +59,40 @@ public class Pessoa {
             p.setPessoa(this);
         }
         this.permissaoPessoas = pp;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return permissaoPessoas;
+    }
+
+    @Override
+    public String getPassword() { 
+        return senha;
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {       
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
     }
 }

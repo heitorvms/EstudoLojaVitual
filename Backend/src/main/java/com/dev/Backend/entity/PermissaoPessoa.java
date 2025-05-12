@@ -2,6 +2,8 @@ package com.dev.Backend.entity;
 
 import java.util.Date;
 
+import org.springframework.security.core.GrantedAuthority;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Entity;
@@ -18,7 +20,7 @@ import lombok.Data;
 @Entity
 @Table(name = "permissao_pessoa")
 @Data
-public class PermissaoPessoa {
+public class PermissaoPessoa implements GrantedAuthority{
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -34,8 +36,13 @@ public class PermissaoPessoa {
     private Permissao permissao;
 
     @Temporal(TemporalType.TIMESTAMP)
-    private Date dataCriaca;
+    private Date dataCriacao;
     @Temporal(TemporalType.TIMESTAMP)
     private Date dataAtualizacao;
+
+    @Override
+    public String getAuthority() {
+        return permissao.getNome();
+    }
 
 }

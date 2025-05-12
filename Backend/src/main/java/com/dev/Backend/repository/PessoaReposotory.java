@@ -6,4 +6,7 @@ import com.dev.Backend.entity.Pessoa;
 
 public interface PessoaReposotory extends JpaRepository<Pessoa, Long> {
 
+    Pessoa findByEmail(String email);
+
+    Pessoa findByEmailAndCodigoRecuperacaoSenha(String email, String codigoRecuperacaoSenha);
 }

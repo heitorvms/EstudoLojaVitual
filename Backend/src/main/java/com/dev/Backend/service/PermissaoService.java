@@ -20,7 +20,7 @@ public class PermissaoService {
     }
 
     public Permissao inserir(Permissao permissao) {
-        permissao.setDataCriaca(new Date());
+        permissao.setDataCriacao(new Date());
         Permissao permissaoNovo = permissaoReposotory.saveAndFlush(permissao);
         return permissaoNovo;
     }

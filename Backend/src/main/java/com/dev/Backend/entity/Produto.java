@@ -36,7 +36,7 @@ public class Produto {
     private Double valorVenda;
 
     @Temporal(TemporalType.TIMESTAMP)
-    private Date dataCriaca;
+    private Date dataCriacao;
     @Temporal(TemporalType.TIMESTAMP)
     private Date dataAtualizacao;
 

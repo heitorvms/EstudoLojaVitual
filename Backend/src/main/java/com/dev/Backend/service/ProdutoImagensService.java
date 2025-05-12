@@ -50,7 +50,7 @@ public class ProdutoImagensService {
         }
 
         produtoImagens.setProduto(produto);
-        produtoImagens.setDataCriaca(new Date());
+        produtoImagens.setDataCriacao(new Date());
         produtoImagens = produtoImagensReposotory.saveAndFlush(produtoImagens);
         return produtoImagens;
     }

@@ -1,0 +1,3 @@
+// Biblioteca jsPDF para exportação de PDF
+// https://github.com/parallax/jsPDF
+// Instale com: npm install jspdf

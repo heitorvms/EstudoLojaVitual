@@ -8,7 +8,16 @@ export class UserService extends BaseService {
   constructor() {
     super('pessoa');
   }
-  
+
+  async postCliente(data) {
+     try {
+      const response = await this.axiosInstance.post(`/cliente`, data);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getCurrentUser() {
     try {
       const response = await this.axiosInstance.get('/me');

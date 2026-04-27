@@ -10,6 +10,7 @@ import CriarCotacao from "./pages/CriarCotacao";
 import MateriaisDisponiveis from "./pages/MateriaisDisponiveis";
 import Distribuidoras from "./pages/Distribuidora";
 import GerenciamentoPerfilUsuario from "./pages/GerenciamentoPerfilUsuario";
+import PermissaoUsuarios from "./pages/PermissaoUsuarios";
 import VisualizarCotacao from "./pages/VisualizarCotacao";
 import RoleRoute from "./components/RoleRoute";
 
@@ -46,6 +47,10 @@ export default function AppRoutes({ toggleSidebar }) {
       break;
     case "/distribuidora":
       title = "Distribuidora";
+      break;
+    case "/permissao-usuarios":
+      title = "Permissões de Usuário";
+      break;
     case "/gerenciamento-usuarios":
       title = "Gerenciamento de Usuários";
       break;
@@ -88,6 +93,8 @@ export default function AppRoutes({ toggleSidebar }) {
 
         {/* Gerenciamento de usuários: only Gerente and Admin */}
         <Route path="/gerenciamento-usuarios" element={<RoleRoute allowedRoles={["Gerente","Admin"]} element={<GerenciamentoPerfilUsuario />} />} />
+
+        <Route path="/permissao-usuarios" element={<RoleRoute allowedRoles={["Gerente","Admin"]} element={<PermissaoUsuarios />} />} />
       </Routes>
     </>
   );

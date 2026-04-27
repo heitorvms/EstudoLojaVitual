@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FaHome, FaCity, FaMap, FaSignOutAlt, FaBars, FaUserCircle, FaShoppingCart, FaBox, FaWarehouse } from 'react-icons/fa';
+import { FaHome, FaCity, FaMap, FaSignOutAlt, FaBars, FaUserCircle, FaShoppingCart, FaBox, FaWarehouse, FaKey } from 'react-icons/fa';
 import { SidebarContainer, MenuItem, IconMenu } from './styled';
 import { LoginService } from '../../services/LoginService';
 import { UserService } from '../../services/UserService';
@@ -23,6 +23,7 @@ function Sidebar({ isOpen, setIsOpen }) {
     else if (path === '/materiais-disponiveis') setActiveItem('MateriaisDisponiveis');
     else if (path === '/distribuidora') setActiveItem('Distribuidora');
     else if (path === '/gerenciamento-usuarios') setActiveItem('GerenciamentoUsuarios');
+    else if (path === '/permissao-usuarios') setActiveItem('PermissaoUsuarios');
   }, [location]);
 
   useEffect(() => {
@@ -121,6 +122,15 @@ function Sidebar({ isOpen, setIsOpen }) {
                     {isOpen && <span>Gerenciar Usuários</span>}
                   </Link>
                 </MenuItem>
+                <MenuItem active={activeItem === 'PermissaoUsuarios'} isOpen={isOpen}>
+                  <Link
+                    to="/permissao-usuarios"
+                    onClick={() => { setActiveItem('PermissaoUsuarios'); if (isOpen) setIsOpen(false); }}
+                  >
+                    <FaKey />
+                    {isOpen && <span>Permissões de Usuário</span>}
+                  </Link>
+                </MenuItem>
               </>
             )}
 
@@ -182,6 +192,11 @@ function Sidebar({ isOpen, setIsOpen }) {
             <MenuItem iconOnly active={activeItem === 'GerenciamentoUsuarios'}>
               <Link to="/gerenciamento-usuarios" onClick={() => setActiveItem('GerenciamentoUsuarios')}>
                 <FaUsersCog />
+              </Link>
+            </MenuItem>
+            <MenuItem iconOnly active={activeItem === 'PermissaoUsuarios'}>
+              <Link to="/permissao-usuarios" onClick={() => setActiveItem('PermissaoUsuarios')}>
+                <FaKey />
               </Link>
             </MenuItem>
           <MenuItem iconOnly>

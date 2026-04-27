@@ -2,9 +2,11 @@ package com.dev.Backend.service;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.dev.Backend.dto.PessoaClienteRequestDTO;
@@ -16,6 +18,9 @@ import com.dev.Backend.repository.PessoaClienteReposotory;
 public class PessoaClienteService {
 
     @Autowired
+        private PasswordEncoder passwordEncoder;
+
+    @Autowired
     private PessoaClienteReposotory pessoaReposotory;
 
     @Autowired
@@ -24,9 +29,25 @@ public class PessoaClienteService {
     @Autowired
     private EmailService emailService;
 
+    public List<Pessoa> buscarTodos() {
+        return pessoaReposotory.findAll();
+    }
+
+    public Pessoa buscarPorEmail(String email) {
+        return pessoaReposotory.findByEmail(email);
+    }
+
     public Pessoa registrar(PessoaClienteRequestDTO pessoaClienteRequestDTO) {
         Pessoa pessoa = new PessoaClienteRequestDTO().converter(pessoaClienteRequestDTO);
+
+        if (pessoaReposotory.findByEmail(pessoa.getEmail()) != null) {
+                    throw new RuntimeException("Email já cadastrado");
+            }
+        
         pessoa.setDataCriacao(new Date());
+        pessoa.setSenha(passwordEncoder.encode(pessoa.getSenha()));
+        pessoa.setDataAtualizacao(new Date());
+
         Pessoa objetoNovo = pessoaReposotory.saveAndFlush(pessoa);
         permissaoPessoaService.vincularPessoaPermissaoCliente(objetoNovo);
         //emailService.enviarEmailTexto(objetoNovo.getEmail(), "Cadastro HSA Serralheria", "O registro na loja foi realizado com sucesso. Em breve você receberá a senha de acesso por e-mail!!");
@@ -34,6 +55,7 @@ public class PessoaClienteService {
         proprMap.put("nome", objetoNovo.getNome());
         proprMap.put("mensagem", "O registro na loja foi realizado com sucesso. Em breve você receberá a senha de acesso por e-mail!!");
         emailService.enviarEmailTemplate(objetoNovo.getEmail(), "Cadastro na loja", proprMap);
+
         return objetoNovo;
 
     }

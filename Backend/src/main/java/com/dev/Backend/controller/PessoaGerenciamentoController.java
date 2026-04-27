@@ -17,9 +17,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.dev.Backend.dto.PessoaClienteRequestDTO;
 import com.dev.Backend.dto.UsuarioPermissaoDTO;
 import com.dev.Backend.entity.Pessoa;
 import com.dev.Backend.security.JwtUtil;
+import com.dev.Backend.service.PessoaClienteService;
 import com.dev.Backend.service.PessoaGerenciamentoService;
 import com.dev.Backend.service.PessoaService;
 
@@ -30,6 +32,9 @@ public class PessoaGerenciamentoController {
 
     @Autowired
     private PessoaService pessoaService;
+
+    @Autowired
+    private PessoaClienteService pessoaClienteService;
 
     @Autowired
     private PessoaGerenciamentoService pessoaGerenciamentoService;
@@ -65,9 +70,9 @@ public class PessoaGerenciamentoController {
     }
 
     @PostMapping("/cadastrar")
-    public ResponseEntity<String> cadastrar(@RequestBody Pessoa pessoa) {
+    public ResponseEntity<String> cadastrar(@RequestBody PessoaClienteRequestDTO pessoa) {
         try {
-            pessoaService.inserir(pessoa, "Funcionário");
+            pessoaClienteService.registrar(pessoa);
             return ResponseEntity.ok("Conta criada com sucesso!");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Erro ao criar conta: " + e.getMessage());

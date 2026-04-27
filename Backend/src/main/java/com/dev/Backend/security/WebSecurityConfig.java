@@ -58,7 +58,7 @@ public class WebSecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/cotacoes").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/cotacoes/**").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/api/cotacoes/**").authenticated()
-                .requestMatchers("/api/distribuidoras/**").authenticated()
+                .requestMatchers("/api/distribuidoras/**").permitAll()
                 .requestMatchers("/api/pessoa/me").authenticated()
                 .requestMatchers("/api/pessoa/**").hasAnyAuthority("gerente") //apenas gerentes
                 .anyRequest().authenticated())

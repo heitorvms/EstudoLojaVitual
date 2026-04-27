@@ -12,5 +12,5 @@ import java.util.List;
 public interface DistribuidoraRepository extends JpaRepository<Distribuidora, Long> {
     Distribuidora findByNome(String nome);
     List<Distribuidora> findByNomeContainingIgnoreCase(String nome);
-    Page<Distribuidora> findByNomeContainingIgnoreCase(String nome, Pageable pageable);
+    Page<Distribuidora> findTop5ByNomeContainingIgnoreCase(String nome, Pageable pageable);
 }

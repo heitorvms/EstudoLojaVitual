@@ -51,12 +51,12 @@ public class DistribuidoraService {
     }
 
     public Page<Distribuidora> findSugestoesByNome(String query, Pageable pageable) {
-        return repository.findByNomeContainingIgnoreCase(query.trim(), pageable);
+        return repository.findTop5ByNomeContainingIgnoreCase(query.trim(), pageable);
     }
 
     public Page<Distribuidora> findAll(String query, Pageable pageable) {
         if (query != null && !query.trim().isEmpty()) {
-            return repository.findByNomeContainingIgnoreCase(query.trim(), pageable);
+            return repository.findTop5ByNomeContainingIgnoreCase(query.trim(), pageable);
         }
         return repository.findAll(pageable);
     }

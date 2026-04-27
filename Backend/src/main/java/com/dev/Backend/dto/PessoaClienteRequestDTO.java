@@ -15,6 +15,7 @@ public class PessoaClienteRequestDTO {
     private String endereco;
     private String cep;
     private Cidade cidade;
+    private String senha;
 
     public Pessoa converter(PessoaClienteRequestDTO clienteRequestDTO){
         Pessoa pessoa = new Pessoa();

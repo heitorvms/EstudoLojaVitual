@@ -84,6 +84,50 @@ export const SidebarContainer = styled.div`
       color: #ccc;
       margin: 0;
     }
+
+    .settings-link {
+      margin-left: auto;
+      color: #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      border-radius: 4px;
+      transition: color 0.2s ease, background 0.2s ease;
+      text-decoration: none;
+
+      &:hover {
+        color: #f5bb00;
+        background: rgba(255, 255, 255, 0.08);
+      }
+    }
+  }
+
+  .sidebar-footer-collapsed {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding-top: 12px;
+    border-top: 1px solid #2A2A3E;
+
+    .settings-link-collapsed {
+      color: #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 5px;
+      transition: color 0.2s ease, background 0.2s ease;
+      text-decoration: none;
+
+      &:hover {
+        color: #f5bb00;
+        background: #3A3A4E;
+      }
+    }
   }
 `;
 
@@ -145,6 +189,23 @@ export const IconMenu = styled.div`
   z-index: 999;
   padding: 20px 10px;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+
+  .icon-menu-top {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .icon-menu-bottom {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    padding-top: 12px;
+    border-top: 1px solid #2A2A3E;
+  }
 
   .toggle-button {
     background: none;

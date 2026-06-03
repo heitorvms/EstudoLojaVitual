@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import javax.sql.DataSource;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.util.*;
 
@@ -98,18 +99,44 @@ public class RelatorioService {
         if (opt.isEmpty()) return;
 
         CotacaoServico cot = opt.get();
-        // Cliente no cabeçalho
-        if (!params.containsKey("cliente_nome") || params.get("cliente_nome") == null) {
-            params.put("cliente_nome", cot.getClienteNome());
-        }
+        params.put("numero_cotacao", cot.getId() != null ? String.valueOf(cot.getId()) : "-");
+        params.put("cotacao_nome", valorOu(cot.getNome(), "-"));
+        params.put("cliente_nome", valorOu(cot.getClienteNome(), "-"));
+        params.put("telefone", valorOu(cot.getTelefone(), "-"));
+        params.put("endereco_cliente", valorOu(cot.getEndereco(), "-"));
+        params.put("quantidade_produto", valorOu(cot.getQuantidadeProduto(), "-"));
 
-        // Distribuidora aprovada (pode ser única ou lista, conforme tipo de análise)
-        if (params.get("distribuidora_nome") == null) {
-            String escolhida = extrairDistribuidoraAprovada(cot.getAnaliseEscolhaJson());
-            if (escolhida != null && !escolhida.isBlank()) {
-                params.put("distribuidora_nome", escolhida);
+        String distribuidoras = extrairDistribuidoraAprovada(cot.getAnaliseEscolhaJson());
+        if (distribuidoras != null && !distribuidoras.isBlank()) {
+            params.put("distribuidora_nome", distribuidoras);
+            if (!distribuidoras.contains(",")) {
+                params.put("distribuidora_filtro", distribuidoras);
             }
         }
+
+        params.put("total_materiais", toDouble(cot.getTotalCustoMateriais()));
+        params.put("percentual_insumos", toDouble(cot.getPercentualInsumos()));
+        params.put("valor_insumos", toDouble(cot.getValorInsumos()));
+        params.put("valor_frete", toDouble(cot.getValorFrete()));
+        params.put("subtotal_custo", calcularSubtotalCusto(cot));
+        params.put("percentual_lucro", toDouble(cot.getPercentualLucro()));
+        params.put("valor_lucro", toDouble(cot.getValorLucro()));
+        params.put("valor_total_orcamento", toDouble(cot.getValorTotalOrcamento()));
+    }
+
+    private double calcularSubtotalCusto(CotacaoServico cot) {
+        if (cot.getTotalCustoMateriais() != null && cot.getValorInsumos() != null && cot.getValorFrete() != null) {
+            return cot.getTotalCustoMateriais().add(cot.getValorInsumos()).add(cot.getValorFrete()).doubleValue();
+        }
+        return toDouble(cot.getTotalCustoMateriais()) + toDouble(cot.getValorInsumos()) + toDouble(cot.getValorFrete());
+    }
+
+    private double toDouble(BigDecimal value) {
+        return value != null ? value.doubleValue() : 0.0;
+    }
+
+    private String valorOu(String value, String fallback) {
+        return value != null && !value.isBlank() ? value : fallback;
     }
 
     private String extrairDistribuidoraAprovada(String analiseEscolhaJson) {

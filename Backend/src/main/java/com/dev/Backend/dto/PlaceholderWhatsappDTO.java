@@ -1,0 +1,14 @@
+package com.dev.Backend.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class PlaceholderWhatsappDTO {
+    private String chave;
+    private String descricao;
+    private String exemplo;
+}

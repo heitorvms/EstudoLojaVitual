@@ -1,0 +1,7 @@
+# Copie para application-local.properties (não versionado pelo Git)
+spring.datasource.username=postgres
+spring.datasource.password=SUA_SENHA_AQUI
+
+# E-mail (opcional)
+# spring.mail.username=seu-email@gmail.com
+# spring.mail.password=senha-de-app

@@ -23,13 +23,13 @@ import com.dev.Backend.service.PessoaService;
 
 @RestController
 @RequestMapping("/api/pessoa")
+@CrossOrigin(origins = { "http://localhost:3000", "http://127.0.0.1:3000" })
 public class PessoaController {
 
     @Autowired
     private PessoaService pessoaService;
 
     @GetMapping("/me")
-    @CrossOrigin("http://localhost:3000/")
     public ResponseEntity<UsuarioDTO> getUsuarioAtual() {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -40,8 +40,13 @@ public class PessoaController {
             return ResponseEntity.notFound().build();
         }
 
-        PermissaoPessoa permissaoPessoa = pessoa.getPermissaoPessoas().get(0);
-        String cargo = permissaoPessoa.getPermissao().getNome();
+        String cargo = "";
+        if (pessoa.getPermissaoPessoas() != null && !pessoa.getPermissaoPessoas().isEmpty()) {
+            PermissaoPessoa pp = pessoa.getPermissaoPessoas().get(0);
+            if (pp.getPermissao() != null && pp.getPermissao().getNome() != null) {
+                cargo = pp.getPermissao().getNome();
+            }
+        }
 
         UsuarioDTO usuarioDTO = new UsuarioDTO();
         usuarioDTO.setNome(pessoa.getNome());
@@ -51,25 +56,21 @@ public class PessoaController {
     }
 
     @GetMapping("/")
-    @CrossOrigin("http://localhost:3000/")
     public List<Pessoa> buscarTodos() {
         return pessoaService.buscarTodos();
     }
 
     @PostMapping("/")
-    @CrossOrigin("http://localhost:3000/")
     public Pessoa inserir(@RequestBody Pessoa pessoa, @RequestBody PermissaoPessoa permissao) {
         return pessoaService.inserir(pessoa, "Cliente");
     }
 
     @PutMapping("/")
-    @CrossOrigin("http://localhost:3000/")
     public Pessoa alterar(@RequestBody Pessoa pessoa) {
         return pessoaService.alterar(pessoa);
     }
 
     @DeleteMapping("/{id}")
-    @CrossOrigin("http://localhost:3000/")
     public ResponseEntity<Void> excluir(@PathVariable("id") Long id) {
         pessoaService.excluir(id);
         return ResponseEntity.ok().build();

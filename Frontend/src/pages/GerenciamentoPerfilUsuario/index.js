@@ -6,7 +6,7 @@ import { PermissaoService } from '../../services/PermissaoService';
 import { ContainerPage, TitlePage, DataTableStyled, DropdownStyled, LoadingMessage } from './styled';
 import { Column } from 'primereact/column';
 
-const AdminUsuarios = () => {
+const AdminUsuarios = ({ embedded = false }) => {
   const [usuarios, setUsuarios] = useState([]);
   const [permissoes, setPermissoes] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -65,29 +65,34 @@ const AdminUsuarios = () => {
     }
   };
 
+  const content = isLoading ? (
+    <LoadingMessage>Carregando...</LoadingMessage>
+  ) : (
+    <DataTableStyled value={usuarios} responsiveLayout="scroll">
+      <Column field="nome" header="Nome" />
+      <Column field="email" header="Email" />
+      <Column
+        header="Permissão"
+        body={(rowData) => (
+          <DropdownStyled
+            value={rowData.permissoes?.[0] || ''}
+            options={permissoes.map((p) => p.nome)}
+            onChange={(e) => alterarPerfil(rowData.id, e.value)}
+            placeholder="Selecione"
+          />
+        )}
+      />
+    </DataTableStyled>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
   return (
     <ContainerPage>
       <TitlePage>Gerenciamento de Usuários</TitlePage>
-      {isLoading ? (
-        <LoadingMessage>Carregando...</LoadingMessage>
-      ) : (
-        <DataTableStyled value={usuarios} responsiveLayout="scroll">
-          <Column field="nome" header="Nome" />
-          <Column field="email" header="Email" />
-          <Column
-            header="Perfil"
-            body={(rowData) => (
-              <DropdownStyled
-                value={rowData.permissoes?.[0] || ''}
-                options={permissoes.map((p) => p.nome)}
-                onChange={(e) => alterarPerfil(rowData.id, e.value)}
-                placeholder="Selecione"
-              />
-            )}
-          />
-          <Column header="Ações" body={() => <span /> } />
-        </DataTableStyled>
-      )}
+      {content}
     </ContainerPage>
   );
 };

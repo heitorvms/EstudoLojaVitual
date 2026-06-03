@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import Header from "./components/Header";
 import Home from "./pages/Home";
 import Estado from "./pages/Estado";
@@ -9,9 +9,9 @@ import Cotacoes from "./pages/Cotacao";
 import CriarCotacao from "./pages/CriarCotacao";
 import MateriaisDisponiveis from "./pages/MateriaisDisponiveis";
 import Distribuidoras from "./pages/Distribuidora";
-import GerenciamentoPerfilUsuario from "./pages/GerenciamentoPerfilUsuario";
-import PermissaoUsuarios from "./pages/PermissaoUsuarios";
+import Configuracoes from "./pages/Configuracoes";
 import VisualizarCotacao from "./pages/VisualizarCotacao";
+import SimulacaoProducao from "./pages/SimulacaoProducao";
 import RoleRoute from "./components/RoleRoute";
 
 export default function AppRoutes({ toggleSidebar }) {
@@ -48,11 +48,11 @@ export default function AppRoutes({ toggleSidebar }) {
     case "/distribuidora":
       title = "Distribuidora";
       break;
-    case "/permissao-usuarios":
-      title = "Permissões de Usuário";
+    case "/configuracoes":
+      title = "Configurações";
       break;
-    case "/gerenciamento-usuarios":
-      title = "Gerenciamento de Usuários";
+    case "/simulacao-producao":
+      title = "Simulação de Produção";
       break;
     default:
       title = "";
@@ -91,10 +91,12 @@ export default function AppRoutes({ toggleSidebar }) {
         {/* Distribuidora: only Gerente and Admin */}
         <Route path="/distribuidora" element={<RoleRoute allowedRoles={["Gerente","Admin"]} element={<Distribuidoras />} />} />
 
-        {/* Gerenciamento de usuários: only Gerente and Admin */}
-        <Route path="/gerenciamento-usuarios" element={<RoleRoute allowedRoles={["Gerente","Admin"]} element={<GerenciamentoPerfilUsuario />} />} />
+        <Route path="/configuracoes" element={<RoleRoute allowedRoles={["Gerente","Admin"]} element={<Configuracoes />} />} />
+        <Route path="/gerenciamento-usuarios" element={<Navigate to="/configuracoes" replace />} />
+        <Route path="/permissao-usuarios" element={<Navigate to="/configuracoes" replace />} />
 
-        <Route path="/permissao-usuarios" element={<RoleRoute allowedRoles={["Gerente","Admin"]} element={<PermissaoUsuarios />} />} />
+        {/* Simulação de Produção: Funcionario, Gerente e Admin */}
+        <Route path="/simulacao-producao" element={<RoleRoute allowedRoles={["Funcionario","Gerente","Admin"]} element={<SimulacaoProducao />} />} />
       </Routes>
     </>
   );

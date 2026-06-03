@@ -304,15 +304,44 @@ export const SubTitle = styled.h3`
   font-size: 1.5rem;
 `;
 
-export const FormRow = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+export const MateriaisSectionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
+
+  ${SubTitle} {
+    margin-bottom: 0;
+  }
+`;
+
+export const FormRow = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: start;
+
+  @media (max-width: 992px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const FormRowSplit = styled(FormRow)`
+  grid-template-columns: 2fr 1fr;
+
+  @media (max-width: 992px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 export const FormGroup = styled.div`
-  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
 `;
 
 export const ButtonContainer = styled.div`
@@ -380,9 +409,123 @@ export const DataTableStyled = styled(DataTable)`
   }
 
   .p-datatable-tbody > tr > td {
-    padding: 1rem;
+    padding: 0.75rem 1rem;
     border: none;
     border-bottom: 1px solid #dee2e6;
+    vertical-align: middle;
+  }
+`;
+
+export const ListaMateriaisHeader = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 20px 0 12px;
+  width: 100%;
+`;
+
+export const ListaMateriaisTitle = styled.h3`
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1A1A2E;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+`;
+
+export const ComposicaoCustosGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+  width: 100%;
+  margin-top: 1rem;
+
+  @media (max-width: 992px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const ComposicaoCustosField = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  .p-inputnumber,
+  .p-inputnumber-input {
+    width: 100%;
+  }
+`;
+
+export const ComposicaoResumoCard = styled.div`
+  margin-top: 1.25rem;
+  padding: 16px 20px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  display: grid;
+  gap: 10px;
+  font-size: 14px;
+`;
+
+export const ComposicaoResumoLinha = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+`;
+
+export const ComposicaoResumoTotal = styled(ComposicaoResumoLinha)`
+  padding-top: 10px;
+  border-top: 1px solid #dee2e6;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1A1A2E;
+`;
+
+export const PrecoStatusLegenda = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-self: center;
+  gap: 14px;
+  font-size: 0.7rem;
+  color: #6c757d;
+`;
+
+export const LegendaItem = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  &::before {
+    content: "";
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    border: 1px solid #ced4da;
+    background: ${(props) => props.$cor};
+    flex-shrink: 0;
+  }
+`;
+
+export const TableInputStyled = styled(InputText)`
+  width: 100%;
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #ced4da;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+
+  &:hover {
+    border-color: #1A1A2E;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #1A1A2E;
+    box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.1);
   }
 `;
 
@@ -432,8 +575,7 @@ export const ButtonStyled = styled(Button)`
 
 export const InputTextStyled = styled(InputText)`
   width: 100%;
-  margin-top: 5px;
-  margin-bottom: 10px;
+  margin: 0;
   padding: 0.75rem 1rem;
   border-radius: 8px;
   border: 1px solid #ced4da;
@@ -514,43 +656,227 @@ export const RemoveMaterialButton = styled(Button)`
 export const DistribuidoresContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
+  margin-top: 4px;
 `;
 
 export const DistribuidorItem = styled.div`
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  background-color: #e9ecef;
-  padding: 8px 12px;
-  border-radius: 20px;
-  margin: 4px;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  gap: 8px;
+  background: linear-gradient(135deg, #1A1A2E 0%, #2d2d4a 100%);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(26, 26, 46, 0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 
   &:hover {
-    background-color: #dee2e6;
     transform: translateY(-1px);
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(26, 26, 46, 0.28);
   }
 
   span {
-    margin-right: 8px;
-    font-weight: 500;
-    color: #1A1A2E;
+    line-height: 1.2;
   }
+
+  .p-button {
+    width: 1.65rem !important;
+    height: 1.65rem !important;
+    padding: 0 !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    border: none !important;
+    color: #fff !important;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.28) !important;
+    }
+  }
+`;
+
+export const DistribuidoraPickerBox = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 18px 20px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(26, 26, 46, 0.06);
+  margin-bottom: 16px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+`;
+
+export const DistribuidoraPickerField = styled.div`
+  flex: 1;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+
+  &.picker-field-compact {
+    flex: 0 0 140px;
+    min-width: 120px;
+  }
+
+  label {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #1A1A2E;
+    margin-bottom: 8px;
+    display: block;
+    line-height: 1.25;
+    min-height: 1.125rem;
+  }
+
+  .p-dropdown,
+  .p-inputtext,
+  .p-inputnumber {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  &.picker-field-consumo {
+    flex: 0 0 200px;
+    min-width: 160px;
+  }
+
+  .p-inputnumber {
+    margin: 0;
+
+    .p-inputnumber-input {
+      margin: 0;
+      padding: 0.7rem 0.9rem;
+      font-size: 0.95rem;
+      border-radius: 8px;
+      border: 1px solid #ced4da;
+      background: #fafbfc;
+      min-height: 44px;
+      width: 100%;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+      &:hover {
+        border-color: #1A1A2E;
+      }
+
+      &:focus {
+        border-color: #1A1A2E;
+        box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.1);
+      }
+    }
+  }
+
+  .p-inputtext {
+    margin: 0;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.95rem;
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    background: #fafbfc;
+    min-height: 44px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+      border-color: #1A1A2E;
+    }
+
+    &:focus {
+      border-color: #1A1A2E;
+      box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.1);
+    }
+  }
+
+  .p-dropdown {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    background: #fafbfc;
+    min-height: 44px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &:not(.p-disabled):hover {
+      border-color: #1A1A2E;
+    }
+
+    &.p-focus {
+      border-color: #1A1A2E;
+      box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.1);
+    }
+
+    .p-dropdown-label {
+      padding: 0.7rem 0.9rem;
+      font-size: 0.95rem;
+      color: #1A1A2E;
+    }
+
+    .p-dropdown-label.p-placeholder {
+      color: #6c757d;
+    }
+
+    .p-dropdown-trigger {
+      width: 2.75rem;
+      color: #1A1A2E;
+    }
+  }
+
+  .p-dropdown-panel {
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 8px 24px rgba(26, 26, 46, 0.12);
+
+    .p-dropdown-filter {
+      padding: 0.55rem 0.75rem;
+    }
+
+    .p-dropdown-items .p-dropdown-item {
+      padding: 0.65rem 0.9rem;
+
+      &.p-highlight {
+        background: #1A1A2E;
+      }
+    }
+  }
+`;
+
+export const DistribuidoraAddButton = styled(ButtonStyled)`
+  margin: 0 !important;
+  align-self: flex-end;
+  min-height: 44px;
+  height: 44px;
+  padding-left: 1.25rem !important;
+  padding-right: 1.25rem !important;
+  border-radius: 8px !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: center;
+    align-self: stretch;
+  }
+`;
+
+export const DistribuidorasSelecionadasLabel = styled.p`
+  margin: 0 0 10px 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #495057;
 `;
 
 export const Label = styled.label`
   font-weight: 500;
   color: #495057;
-  margin-bottom: 0.5rem;
   display: block;
 `;
 
 export const ErrorMessage = styled.small`
   color: #dc3545;
   font-size: 0.875rem;
-  margin-top: 0.25rem;
   display: block;
 `;
 

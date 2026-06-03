@@ -3,6 +3,7 @@ package com.dev.Backend.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -19,6 +20,7 @@ public class CotacaoServico {
     private String nome;
     private String clienteNome;
     private String telefone;
+    private String endereco;
     private String quantidadeProduto;
     private Double precoUnitario;
 
@@ -44,4 +46,25 @@ public class CotacaoServico {
 
     @Column(columnDefinition = "TEXT")
     private String analiseEscolhaJson;
+
+    @Column(name = "percentual_insumos", precision = 6, scale = 2)
+    private BigDecimal percentualInsumos;
+
+    @Column(name = "valor_frete", precision = 14, scale = 2)
+    private BigDecimal valorFrete;
+
+    @Column(name = "total_custo_materiais", precision = 14, scale = 2)
+    private BigDecimal totalCustoMateriais;
+
+    @Column(name = "valor_insumos", precision = 14, scale = 2)
+    private BigDecimal valorInsumos;
+
+    @Column(name = "percentual_lucro", precision = 6, scale = 2)
+    private BigDecimal percentualLucro;
+
+    @Column(name = "valor_lucro", precision = 14, scale = 2)
+    private BigDecimal valorLucro;
+
+    @Column(name = "valor_total_orcamento", precision = 14, scale = 2)
+    private BigDecimal valorTotalOrcamento;
 }

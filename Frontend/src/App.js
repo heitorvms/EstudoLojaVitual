@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Footer from "./components/Footer";
 import AppRoutes from "./Routes";
 import Login from "./pages/Login";
@@ -14,11 +14,17 @@ function App() {
   const toggleSidebar = () => {
     setIsSidebarOpen(prev => !prev);
   };
-  
 
-  const Pagina = () => {
-    return (
-      <BrowserRouter>
+  const autenticado = loginService.autenticado();
+
+  return (
+    <BrowserRouter>
+      {!autenticado ? (
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      ) : (
         <div className="page-container">
           <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
           <div
@@ -34,14 +40,8 @@ function App() {
             <Footer />
           </div>
         </div>
-      </BrowserRouter>
-    );
-  };
-
-  return (
-    <div>
-      {loginService.autenticado() ? <Pagina /> : <Login />}
-    </div>
+      )}
+    </BrowserRouter>
   );
 }
 

@@ -6,7 +6,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.dev.Backend.entity.Pessoa;
 import com.dev.Backend.repository.PessoaReposotory;
 
 @Service
@@ -17,11 +16,8 @@ public class PessoaDetailService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Pessoa pessoa = pessoaReposotory.findByEmail(username);
-        if (pessoa == null) {
-            throw new UsernameNotFoundException("Pessoa não encontrada pelo email: " + username);
-        }
-        return pessoa;
+        return pessoaReposotory.findFirstByEmailOrderByIdAsc(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Pessoa não encontrada pelo email: " + username));
     }
     
 }

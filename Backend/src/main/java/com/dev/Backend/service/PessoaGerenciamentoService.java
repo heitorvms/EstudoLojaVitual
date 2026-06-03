@@ -24,7 +24,8 @@ public class PessoaGerenciamentoService {
     PasswordEncoder passwordEncoder;
 
     public String solicitarCodigo(String email) {
-        Pessoa pessoa = pessoaReposotory.findByEmail(email);
+        Pessoa pessoa = pessoaReposotory.findFirstByEmailOrderByIdAsc(email)
+                .orElseThrow(() -> new RuntimeException("Email não encontrado"));
         pessoa.setCodigoRecuperacaoSenha(getCodigoRecuperacaoSenha(pessoa.getId()));
         pessoa.setDataEnviaCodigo(new Date());
         pessoaReposotory.saveAndFlush(pessoa);

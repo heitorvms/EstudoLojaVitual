@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FaHome, FaCity, FaMap, FaSignOutAlt, FaBars, FaUserCircle, FaShoppingCart, FaBox, FaWarehouse, FaKey } from 'react-icons/fa';
+import { FaHome, FaCity, FaMap, FaSignOutAlt, FaBars, FaUserCircle, FaShoppingCart, FaBox, FaWarehouse, FaCalculator, FaCog } from 'react-icons/fa';
 import { SidebarContainer, MenuItem, IconMenu } from './styled';
 import { LoginService } from '../../services/LoginService';
 import { UserService } from '../../services/UserService';
-import { FaUsersCog } from 'react-icons/fa';
 
 function Sidebar({ isOpen, setIsOpen }) {
   const [isVisible, setIsVisible] = useState(isOpen);
@@ -22,8 +21,9 @@ function Sidebar({ isOpen, setIsOpen }) {
     else if (path === '/cotacoes') setActiveItem('Cotacoes');
     else if (path === '/materiais-disponiveis') setActiveItem('MateriaisDisponiveis');
     else if (path === '/distribuidora') setActiveItem('Distribuidora');
-    else if (path === '/gerenciamento-usuarios') setActiveItem('GerenciamentoUsuarios');
-    else if (path === '/permissao-usuarios') setActiveItem('PermissaoUsuarios');
+    else if (path === '/configuracoes') setActiveItem('Configuracoes');
+    else if (path.startsWith('/configuracoes')) setActiveItem('Configuracoes');
+    else if (path === '/simulacao-producao') setActiveItem('SimulacaoProducao');
   }, [location]);
 
   useEffect(() => {
@@ -51,6 +51,8 @@ function Sidebar({ isOpen, setIsOpen }) {
     }
   }, [isOpen]);
 
+  const podeConfigurar = userData.cargo === 'Admin' || userData.cargo === 'Gerente';
+
   return (
     <>
       {isVisible && (
@@ -77,6 +79,12 @@ function Sidebar({ isOpen, setIsOpen }) {
                   <Link to="/cotacoes" onClick={() => { setActiveItem('Cotacoes'); if (isOpen) setIsOpen(false); }}>
                     <FaShoppingCart />
                     {isOpen && <span>Cotações</span>}
+                  </Link>
+                </MenuItem>
+                <MenuItem active={activeItem === 'SimulacaoProducao'} isOpen={isOpen}>
+                  <Link to="/simulacao-producao" onClick={() => { setActiveItem('SimulacaoProducao'); if (isOpen) setIsOpen(false); }}>
+                    <FaCalculator />
+                    {isOpen && <span>Simulação de Produção</span>}
                   </Link>
                 </MenuItem>
               </>
@@ -113,22 +121,13 @@ function Sidebar({ isOpen, setIsOpen }) {
                     {isOpen && <span>Distribuidora</span>}
                   </Link>
                 </MenuItem>
-                <MenuItem active={activeItem === 'GerenciamentoUsuarios'} isOpen={isOpen}>
+                <MenuItem active={activeItem === 'SimulacaoProducao'} isOpen={isOpen}>
                   <Link
-                    to="/gerenciamento-usuarios"
-                    onClick={() => { setActiveItem('GerenciamentoUsuarios'); if (isOpen) setIsOpen(false); }}
+                    to="/simulacao-producao"
+                    onClick={() => { setActiveItem('SimulacaoProducao'); if (isOpen) setIsOpen(false); }}
                   >
-                    <FaUsersCog />
-                    {isOpen && <span>Gerenciar Usuários</span>}
-                  </Link>
-                </MenuItem>
-                <MenuItem active={activeItem === 'PermissaoUsuarios'} isOpen={isOpen}>
-                  <Link
-                    to="/permissao-usuarios"
-                    onClick={() => { setActiveItem('PermissaoUsuarios'); if (isOpen) setIsOpen(false); }}
-                  >
-                    <FaKey />
-                    {isOpen && <span>Permissões de Usuário</span>}
+                    <FaCalculator />
+                    {isOpen && <span>Simulação de Produção</span>}
                   </Link>
                 </MenuItem>
               </>
@@ -149,6 +148,32 @@ function Sidebar({ isOpen, setIsOpen }) {
                 <p className="user-name">{userData.nome}</p>
                 <p className="user-cargo">{userData.cargo}</p>
               </div>
+              {podeConfigurar && (
+                <Link
+                  to="/configuracoes"
+                  className="settings-link"
+                  title="Configurações"
+                  onClick={() => {
+                    setActiveItem('Configuracoes');
+                    setIsOpen(false);
+                  }}
+                >
+                  <FaCog size={18} />
+                </Link>
+              )}
+            </div>
+          )}
+
+          {!isOpen && podeConfigurar && (
+            <div className="sidebar-footer-collapsed">
+              <Link
+                to="/configuracoes"
+                className="settings-link-collapsed"
+                title="Configurações"
+                onClick={() => setActiveItem('Configuracoes')}
+              >
+                <FaCog size={18} />
+              </Link>
             </div>
           )}
         </SidebarContainer>
@@ -156,54 +181,60 @@ function Sidebar({ isOpen, setIsOpen }) {
 
       {!isVisible && (
         <IconMenu>
-          <button onClick={toggleSidebar} className="toggle-button">
-            <FaBars />
-          </button>
-          <MenuItem iconOnly active={activeItem === 'Home'}>
-            <Link to="/" onClick={() => setActiveItem('Home')}>
-              <FaHome />
-            </Link>
-          </MenuItem>
-          <MenuItem iconOnly active={activeItem === 'Estado'}>
-            <Link to="/estado" onClick={() => setActiveItem('Estado')}>
-              <FaMap />
-            </Link>
-          </MenuItem>
-          <MenuItem iconOnly active={activeItem === 'Cidade'}>
-            <Link to="/cidade" onClick={() => setActiveItem('Cidade')}>
-              <FaCity />
-            </Link>
-          </MenuItem>
-          <MenuItem iconOnly active={activeItem === 'Cotacoes'}>
-            <Link to="/cotacoes" onClick={() => setActiveItem('Cotacoes')}>
-              <FaShoppingCart />
-            </Link>
-          </MenuItem>
-          <MenuItem iconOnly active={activeItem === 'MateriaisDisponiveis'}>
-            <Link to="/materiais-disponiveis" onClick={() => setActiveItem('MateriaisDisponiveis')}>
-              <FaBox />
-            </Link>
-          </MenuItem>
-          <MenuItem iconOnly active={activeItem === 'Distribuidora'}>
-            <Link to="/distribuidora" onClick={() => setActiveItem('Distribuidora')}>
-              <FaWarehouse />
-            </Link>
-          </MenuItem>
-            <MenuItem iconOnly active={activeItem === 'GerenciamentoUsuarios'}>
-              <Link to="/gerenciamento-usuarios" onClick={() => setActiveItem('GerenciamentoUsuarios')}>
-                <FaUsersCog />
-              </Link>
-            </MenuItem>
-            <MenuItem iconOnly active={activeItem === 'PermissaoUsuarios'}>
-              <Link to="/permissao-usuarios" onClick={() => setActiveItem('PermissaoUsuarios')}>
-                <FaKey />
-              </Link>
-            </MenuItem>
-          <MenuItem iconOnly>
-            <button onClick={() => loginService.sair()}>
-              <FaSignOutAlt />
+          <div className="icon-menu-top">
+            <button onClick={toggleSidebar} className="toggle-button">
+              <FaBars />
             </button>
-          </MenuItem>
+            <MenuItem iconOnly active={activeItem === 'Home'}>
+              <Link to="/" onClick={() => setActiveItem('Home')}>
+                <FaHome />
+              </Link>
+            </MenuItem>
+            <MenuItem iconOnly active={activeItem === 'Estado'}>
+              <Link to="/estado" onClick={() => setActiveItem('Estado')}>
+                <FaMap />
+              </Link>
+            </MenuItem>
+            <MenuItem iconOnly active={activeItem === 'Cidade'}>
+              <Link to="/cidade" onClick={() => setActiveItem('Cidade')}>
+                <FaCity />
+              </Link>
+            </MenuItem>
+            <MenuItem iconOnly active={activeItem === 'Cotacoes'}>
+              <Link to="/cotacoes" onClick={() => setActiveItem('Cotacoes')}>
+                <FaShoppingCart />
+              </Link>
+            </MenuItem>
+            <MenuItem iconOnly active={activeItem === 'MateriaisDisponiveis'}>
+              <Link to="/materiais-disponiveis" onClick={() => setActiveItem('MateriaisDisponiveis')}>
+                <FaBox />
+              </Link>
+            </MenuItem>
+            <MenuItem iconOnly active={activeItem === 'Distribuidora'}>
+              <Link to="/distribuidora" onClick={() => setActiveItem('Distribuidora')}>
+                <FaWarehouse />
+              </Link>
+            </MenuItem>
+            <MenuItem iconOnly active={activeItem === 'SimulacaoProducao'}>
+              <Link to="/simulacao-producao" onClick={() => setActiveItem('SimulacaoProducao')}>
+                <FaCalculator />
+              </Link>
+            </MenuItem>
+          </div>
+          <div className="icon-menu-bottom">
+            {podeConfigurar && (
+              <MenuItem iconOnly active={activeItem === 'Configuracoes'}>
+                <Link to="/configuracoes" onClick={() => setActiveItem('Configuracoes')}>
+                  <FaCog />
+                </Link>
+              </MenuItem>
+            )}
+            <MenuItem iconOnly>
+              <button onClick={() => loginService.sair()}>
+                <FaSignOutAlt />
+              </button>
+            </MenuItem>
+          </div>
         </IconMenu>
       )}
     </>

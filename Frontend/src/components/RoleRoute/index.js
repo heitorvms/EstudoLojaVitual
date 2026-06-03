@@ -38,6 +38,9 @@ export default function RoleRoute({ allowedRoles = [], element = null }) {
   }
 
   const role = user.cargo || '';
+  if (!role) {
+    return <Navigate to="/login" replace />;
+  }
   // If allowedRoles contains 'ALL' treat as open to authenticated users
   const allowed = allowedRoles.includes('ALL') || allowedRoles.includes(role);
 

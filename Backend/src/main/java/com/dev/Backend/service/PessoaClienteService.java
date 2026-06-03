@@ -34,13 +34,13 @@ public class PessoaClienteService {
     }
 
     public Pessoa buscarPorEmail(String email) {
-        return pessoaReposotory.findByEmail(email);
+        return pessoaReposotory.findFirstByEmailOrderByIdAsc(email).orElse(null);
     }
 
     public Pessoa registrar(PessoaClienteRequestDTO pessoaClienteRequestDTO) {
         Pessoa pessoa = new PessoaClienteRequestDTO().converter(pessoaClienteRequestDTO);
 
-        if (pessoaReposotory.findByEmail(pessoa.getEmail()) != null) {
+        if (pessoaReposotory.findFirstByEmailOrderByIdAsc(pessoa.getEmail()).isPresent()) {
                     throw new RuntimeException("Email já cadastrado");
             }
         

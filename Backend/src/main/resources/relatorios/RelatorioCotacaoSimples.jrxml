@@ -2,8 +2,22 @@
 <jasperReport name="RelatorioCotacaoSimples" language="java" pageWidth="595" pageHeight="842" columnWidth="515" leftMargin="40" rightMargin="40" topMargin="40" bottomMargin="40" uuid="7c5d1c35-74b2-4d2a-9b19-1f5a70b644c2">
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<parameter name="id_cotacao" class="java.lang.Long"/>
+	<parameter name="numero_cotacao" class="java.lang.String"/>
+	<parameter name="cotacao_nome" class="java.lang.String"/>
 	<parameter name="distribuidora_nome" class="java.lang.String"/>
+	<parameter name="distribuidora_filtro" class="java.lang.String"/>
 	<parameter name="cliente_nome" class="java.lang.String"/>
+	<parameter name="telefone" class="java.lang.String"/>
+	<parameter name="endereco_cliente" class="java.lang.String"/>
+	<parameter name="quantidade_produto" class="java.lang.String"/>
+	<parameter name="total_materiais" class="java.lang.Double"/>
+	<parameter name="percentual_insumos" class="java.lang.Double"/>
+	<parameter name="valor_insumos" class="java.lang.Double"/>
+	<parameter name="valor_frete" class="java.lang.Double"/>
+	<parameter name="subtotal_custo" class="java.lang.Double"/>
+	<parameter name="percentual_lucro" class="java.lang.Double"/>
+	<parameter name="valor_lucro" class="java.lang.Double"/>
+	<parameter name="valor_total_orcamento" class="java.lang.Double"/>
 	<query language="SQL"><![CDATA[SELECT
   md.descricao AS material_nome,
   m.quantidade AS quantidade,
@@ -14,7 +28,7 @@ JOIN material_disponivel md ON md.id = m.id_material_disponivel
 JOIN preco_material_cotacao pmc ON pmc.id_material = m.id AND pmc.id_cotacao = m.id_cotacao
 JOIN distribuidora d ON d.id = pmc.id_distribuidora
 WHERE m.id_cotacao = $P{id_cotacao}
-  AND ($P{distribuidora_nome} IS NULL OR d.nome = $P{distribuidora_nome})
+  AND ($P{distribuidora_filtro} IS NULL OR d.nome = $P{distribuidora_filtro})
 ORDER BY md.descricao]]></query>
 	<field name="material_nome" class="java.lang.String"/>
 	<field name="quantidade" class="java.lang.Integer"/>
@@ -23,22 +37,51 @@ ORDER BY md.descricao]]></query>
 	<variable name="TOTAL_GERAL" calculation="Sum" class="java.lang.Double">
 		<expression><![CDATA[$F{preco_total}]]></expression>
 	</variable>
-	<title height="188">
-		<element kind="staticText" uuid="e0e8334c-2154-4b73-9cbb-6f7a5f7c7272" x="0" y="100" width="515" height="24" fontSize="16.0" bold="true" hTextAlign="Center">
+	<title height="228">
+		<element kind="staticText" uuid="e0e8334c-2154-4b73-9cbb-6f7a5f7c7272" x="0" y="88" width="515" height="22" fontSize="15.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
 			<text><![CDATA[Relatório de Cotação]]></text>
 		</element>
-		<element kind="textField" uuid="dd12c1a6-278d-47a0-9d7d-765c4bd8d1e3" x="0" y="140" width="350" height="18" fontSize="11.0">
-			<expression><![CDATA["Cliente: " + ($P{cliente_nome} == null ? "-" : $P{cliente_nome})]]></expression>
+		<element kind="staticText" uuid="f1a1b1c1-0001-4001-8001-000000000001" x="0" y="116" width="80" height="16" fontSize="9.0" bold="true">
+			<text><![CDATA[Cotação:]]></text>
 		</element>
-		<element kind="textField" uuid="3d0cc89b-0d7a-4b1e-9e77-3f5b6a314e4d" x="0" y="170" width="305" height="18" fontSize="11.0">
-			<expression><![CDATA[" Distribuidora aprovada: " + ($P{distribuidora_nome} == null ? "-" : $P{distribuidora_nome})]]></expression>
-			<box>
-				<pen lineWidth="0.5" lineStyle="Solid"/>
-				<topPen lineWidth="0.5" lineStyle="Solid" lineColor="#000000"/>
-				<leftPen lineWidth="0.5" lineStyle="Solid" lineColor="#000000"/>
-				<bottomPen lineWidth="0.5" lineStyle="Solid" lineColor="#000000"/>
-				<rightPen lineWidth="0.5" lineStyle="Solid" lineColor="#000000"/>
-			</box>
+		<element kind="textField" uuid="a1c0aca0-0001-4001-8001-000000000001" x="80" y="116" width="250" height="16" fontSize="10.0">
+			<expression><![CDATA[$P{cotacao_nome} == null ? "-" : $P{cotacao_nome}]]></expression>
+		</element>
+		<element kind="staticText" uuid="f1a1b1c1-0002-4001-8001-000000000002" x="340" y="116" width="30" height="16" fontSize="9.0" bold="true">
+			<text><![CDATA[Nº:]]></text>
+		</element>
+		<element kind="textField" uuid="f1a1b1c1-0003-4001-8001-000000000003" x="370" y="116" width="145" height="16" fontSize="10.0">
+			<expression><![CDATA[$P{numero_cotacao} == null ? "-" : $P{numero_cotacao}]]></expression>
+		</element>
+		<element kind="staticText" uuid="f1a1b1c1-0004-4001-8001-000000000004" x="0" y="136" width="80" height="16" fontSize="9.0" bold="true">
+			<text><![CDATA[Cliente:]]></text>
+		</element>
+		<element kind="textField" uuid="dd12c1a6-278d-47a0-9d7d-765c4bd8d1e3" x="80" y="136" width="250" height="16" fontSize="10.0">
+			<expression><![CDATA[$P{cliente_nome} == null ? "-" : $P{cliente_nome}]]></expression>
+		</element>
+		<element kind="staticText" uuid="f1a1b1c1-0005-4001-8001-000000000005" x="340" y="136" width="60" height="16" fontSize="9.0" bold="true">
+			<text><![CDATA[Telefone:]]></text>
+		</element>
+		<element kind="textField" uuid="a1c0aca0-0002-4001-8001-000000000002" x="400" y="136" width="115" height="16" fontSize="10.0">
+			<expression><![CDATA[$P{telefone} == null ? "-" : $P{telefone}]]></expression>
+		</element>
+		<element kind="staticText" uuid="f1a1b1c1-0006-4001-8001-000000000006" x="0" y="156" width="80" height="16" fontSize="9.0" bold="true">
+			<text><![CDATA[Endereço:]]></text>
+		</element>
+		<element kind="textField" uuid="a1c0aca0-0003-4001-8001-000000000003" x="80" y="156" width="435" height="16" fontSize="9.0">
+			<expression><![CDATA[$P{endereco_cliente} == null ? "-" : $P{endereco_cliente}]]></expression>
+		</element>
+		<element kind="staticText" uuid="f1a1b1c1-0007-4001-8001-000000000007" x="0" y="176" width="110" height="16" fontSize="9.0" bold="true">
+			<text><![CDATA[Qtd. produto:]]></text>
+		</element>
+		<element kind="textField" uuid="a1c0aca0-0004-4001-8001-000000000004" x="110" y="176" width="120" height="16" fontSize="10.0">
+			<expression><![CDATA[$P{quantidade_produto} == null ? "-" : $P{quantidade_produto}]]></expression>
+		</element>
+		<element kind="staticText" uuid="f1a1b1c1-0008-4001-8001-000000000008" x="0" y="196" width="150" height="16" fontSize="9.0" bold="true">
+			<text><![CDATA[Fornecedor(es) escolhido(s):]]></text>
+		</element>
+		<element kind="textField" uuid="3d0cc89b-0d7a-4b1e-9e77-3f5b6a314e4d" x="150" y="196" width="365" height="16" fontSize="10.0">
+			<expression><![CDATA[$P{distribuidora_nome} == null ? "-" : $P{distribuidora_nome}]]></expression>
 		</element>
 		<element kind="rectangle" uuid="1b13f1f8-7f0c-43b5-84ff-c61f2bc621d9" x="0" y="0" width="514" height="82" radius="8">
 			<pen lineWidth="2.0" lineStyle="Solid"/>
@@ -58,9 +101,6 @@ ORDER BY md.descricao]]></query>
 		<element kind="staticText" uuid="a6f0e6a2-855d-46f2-8437-b065ca70564b" x="0" y="63" width="513" height="16" hTextAlign="Center" vTextAlign="Middle">
 			<text><![CDATA[Endereço:  Rua Madalena Lourenco Bruno, 846 em Araçatuba - SP]]></text>
 			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-		</element>
-		<element kind="image" uuid="14d2c3d6-6a2f-440d-8697-2c5eb41ff7e7" x="9" y="0" width="83" height="81">
-			<expression><![CDATA["C:/Users/lionh/Downloads/ChatGPT Image 22 de out. de 2025, 18_43_49.png"]]></expression>
 		</element>
 	</title>
 	<columnHeader height="20">
@@ -149,21 +189,43 @@ ORDER BY md.descricao]]></query>
 			</element>
 		</band>
 	</detail>
-	<summary height="19">
-		<element kind="rectangle" uuid="e20a0917-3f06-4803-800d-26f0fae900b5" mode="Opaque" x="305" y="0" width="210" height="18" backcolor="#D1D1D1">
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
+	<summary height="112">
+		<element kind="staticText" uuid="d4a00001-0001-4001-8001-000000000001" x="280" y="0" width="130" height="16" fontSize="9.0" bold="true" hTextAlign="Right" vTextAlign="Middle">
+			<text><![CDATA[Total materiais:]]></text>
 		</element>
-		<element kind="staticText" uuid="a6d1f7a0-41d2-4b73-9f1a-0b62c82bde03" x="305" y="0" width="105" height="18" bold="true" hTextAlign="Right" vTextAlign="Middle">
-			<text><![CDATA[Total Geral:]]></text>
-			<box>
-				<topPen lineWidth="0.0"/>
-			</box>
+		<element kind="textField" uuid="d4a00001-0002-4001-8001-000000000002" x="410" y="0" width="105" height="16" pattern="R$ #,##0.00" fontSize="9.0" hTextAlign="Right" vTextAlign="Middle">
+			<expression><![CDATA[$P{total_materiais} != null && $P{total_materiais} > 0 ? $P{total_materiais} : $V{TOTAL_GERAL}]]></expression>
 		</element>
-		<element kind="textField" uuid="cbbf01ef-4c18-4f5c-9f1e-3c51a8b8474a" x="410" y="0" width="105" height="18" pattern="R$ #,##0.00" bold="true" hTextAlign="Right" vTextAlign="Middle">
-			<expression><![CDATA[$V{TOTAL_GERAL}]]></expression>
-			<box>
-				<topPen lineWidth="0.25"/>
-			</box>
+		<element kind="textField" uuid="d4a00001-0003-4001-8001-000000000003" x="280" y="18" width="130" height="16" fontSize="9.0" bold="true" hTextAlign="Right" vTextAlign="Middle">
+			<expression><![CDATA["Insumos (" + ($P{percentual_insumos} == null ? "0" : new java.text.DecimalFormat("#,##0.##").format($P{percentual_insumos})) + "%):"]]></expression>
+		</element>
+		<element kind="textField" uuid="d4a00001-0004-4001-8001-000000000004" x="410" y="18" width="105" height="16" pattern="R$ #,##0.00" fontSize="9.0" hTextAlign="Right" vTextAlign="Middle">
+			<expression><![CDATA[$P{valor_insumos}]]></expression>
+		</element>
+		<element kind="staticText" uuid="d4a00001-0005-4001-8001-000000000005" x="280" y="36" width="130" height="16" fontSize="9.0" bold="true" hTextAlign="Right" vTextAlign="Middle">
+			<text><![CDATA[Frete:]]></text>
+		</element>
+		<element kind="textField" uuid="d4a00001-0006-4001-8001-000000000006" x="410" y="36" width="105" height="16" pattern="R$ #,##0.00" fontSize="9.0" hTextAlign="Right" vTextAlign="Middle">
+			<expression><![CDATA[$P{valor_frete}]]></expression>
+		</element>
+		<element kind="staticText" uuid="d4a00001-0007-4001-8001-000000000007" x="280" y="58" width="130" height="16" fontSize="9.0" bold="true" hTextAlign="Right" vTextAlign="Middle">
+			<text><![CDATA[Subtotal de custos:]]></text>
+		</element>
+		<element kind="textField" uuid="d4a00001-0008-4001-8001-000000000008" x="410" y="58" width="105" height="16" pattern="R$ #,##0.00" fontSize="9.0" bold="true" hTextAlign="Right" vTextAlign="Middle">
+			<expression><![CDATA[$P{subtotal_custo}]]></expression>
+		</element>
+		<element kind="textField" uuid="d4a00001-0009-4001-8001-000000000009" x="280" y="76" width="130" height="16" fontSize="9.0" bold="true" hTextAlign="Right" vTextAlign="Middle">
+			<expression><![CDATA["Lucro (" + ($P{percentual_lucro} == null ? "0" : new java.text.DecimalFormat("#,##0.##").format($P{percentual_lucro})) + "%):"]]></expression>
+		</element>
+		<element kind="textField" uuid="d4a00001-0010-4001-8001-000000000010" x="410" y="76" width="105" height="16" pattern="R$ #,##0.00" fontSize="9.0" hTextAlign="Right" vTextAlign="Middle">
+			<expression><![CDATA[$P{valor_lucro}]]></expression>
+		</element>
+		<element kind="rectangle" uuid="e20a0917-3f06-4803-800d-26f0fae900b5" mode="Opaque" x="280" y="94" width="235" height="18" backcolor="#D1D1D1"/>
+		<element kind="staticText" uuid="a6d1f7a0-41d2-4b73-9f1a-0b62c82bde03" x="280" y="94" width="130" height="18" fontSize="10.0" bold="true" hTextAlign="Right" vTextAlign="Middle">
+			<text><![CDATA[Total do orçamento:]]></text>
+		</element>
+		<element kind="textField" uuid="cbbf01ef-4c18-4f5c-9f1e-3c51a8b8474a" x="410" y="94" width="105" height="18" pattern="R$ #,##0.00" fontSize="10.0" bold="true" hTextAlign="Right" vTextAlign="Middle">
+			<expression><![CDATA[$P{valor_total_orcamento} != null && $P{valor_total_orcamento} > 0 ? $P{valor_total_orcamento} : $P{subtotal_custo}]]></expression>
 		</element>
 	</summary>
 </jasperReport>

@@ -66,19 +66,10 @@ export class CotacaoService extends BaseService {
 
   async postRequest(cotacao) {
     try {
-      console.log("URL da requisição:", this.url);
-      console.log("Dados enviados:", JSON.stringify(cotacao, null, 2));
-      console.log("Token atual:", localStorage.getItem("token") || sessionStorage.getItem("token"));
-      console.log("Headers da requisição:", this.axiosInstance.defaults.headers);
       const response = await this.axiosInstance.post(this.url, cotacao);
-      console.log("Resposta recebida:", response.data);
       return response.data;
     } catch (error) {
-      console.error("Erro ao salvar cotação:");
-      console.error("Status:", error.response?.status);
-      console.error("Dados do erro:", error.response?.data);
-      console.error("Mensagem:", error.message);
-      console.error("Headers da resposta:", error.response?.headers);
+      console.error("Erro ao salvar cotação:", error.response?.data || error.message);
       throw error;
     }
   }

@@ -76,7 +76,13 @@ const VisualizarCotacao = () => {
   };
 
   const analisarMaterial = (mat) => {
-    const analiseMat = analise?.analiseMateriais?.find((a) => a.materialId === mat?.id || a.nome === mat?.materialDisponivel?.descricao);
+    const materialId = mat?.materialDisponivel?.id;
+    const analiseMat = analise?.analiseMateriais?.find(
+      (a) =>
+        a.materialId === materialId ||
+        a.materialId === mat?.id ||
+        a.nome === mat?.materialDisponivel?.descricao
+    );
     let precios = [];
     if (analiseMat?.diferencas?.length) {
       precios = analiseMat.diferencas.map((d) => ({ distribuidora: d.distribuidora, preco: d.preco }));
@@ -114,6 +120,7 @@ const VisualizarCotacao = () => {
         <SectionTitle>{cotacao.nome}</SectionTitle>
         <p><strong>Cliente:</strong> {cotacao.clienteNome}</p>
         <p><strong>Telefone:</strong> {formatPhoneNumber(cotacao.telefone)}</p>
+        {cotacao.endereco && <p><strong>Endereço:</strong> {cotacao.endereco}</p>}
         <p><strong>Quantidade do Produto:</strong> {cotacao.quantidadeProduto}</p>
         {cotacao.dataCriacao && (
           <MetaInfo><strong>Criado em:</strong> {new Date(cotacao.dataCriacao).toLocaleString()}</MetaInfo>
@@ -130,6 +137,47 @@ const VisualizarCotacao = () => {
           ))}
         </DataTable>
       </SectionCard>
+
+      {(cotacao.totalCustoMateriais != null ||
+        cotacao.valorInsumos != null ||
+        (cotacao.valorFrete != null && Number(cotacao.valorFrete) > 0) ||
+        cotacao.valorLucro != null) && (
+        <SectionCard>
+          <SectionTitle>Composição de Custos</SectionTitle>
+          <p>
+            <strong>Materiais:</strong> {formatCurrency(cotacao.totalCustoMateriais)}
+          </p>
+          <p>
+            <strong>Insumos ({Number(cotacao.percentualInsumos ?? 0).toFixed(0)}%):</strong>{" "}
+            {formatCurrency(cotacao.valorInsumos)}
+          </p>
+          <p>
+            <strong>Frete:</strong> {formatCurrency(cotacao.valorFrete)}
+          </p>
+          <p>
+            <strong>Subtotal de custos:</strong>{" "}
+            {formatCurrency(
+              Number(cotacao.totalCustoMateriais || 0) +
+                Number(cotacao.valorInsumos || 0) +
+                Number(cotacao.valorFrete || 0)
+            )}
+          </p>
+          <p>
+            <strong>Lucro ({Number(cotacao.percentualLucro ?? 10).toFixed(0)}%):</strong>{" "}
+            {formatCurrency(cotacao.valorLucro)}
+          </p>
+          <p>
+            <strong>Total do orçamento:</strong>{" "}
+            {formatCurrency(
+              cotacao.valorTotalOrcamento ??
+                Number(cotacao.totalCustoMateriais || 0) +
+                  Number(cotacao.valorInsumos || 0) +
+                  Number(cotacao.valorFrete || 0) +
+                  Number(cotacao.valorLucro || 0)
+            )}
+          </p>
+        </SectionCard>
+      )}
 
       {analise && (
         <SectionCard>

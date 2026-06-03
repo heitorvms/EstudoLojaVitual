@@ -1,0 +1,178 @@
+# =============================================================================
+# HSA Serralheria — .gitignore (monorepo Backend + Frontend)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Segredos e ambiente (NUNCA commitar)
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.env
+.envrc
+
+**/application-local.properties
+**/application-local.yml
+**/application-secret.properties
+**/application-secret.yml
+**/secrets.properties
+**/secrets.yml
+
+credentials.json
+credentials.xml
+serviceAccount*.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa
+id_rsa.*
+*.crt
+*.cer
+
+# -----------------------------------------------------------------------------
+# Java / Spring Boot (Backend)
+# -----------------------------------------------------------------------------
+Backend/target/
+Backend/build/
+Backend/out/
+Backend/bin/
+
+*.class
+*.log
+*.ctxt
+*.jar
+!Backend/.mvn/wrapper/maven-wrapper.jar
+!Backend/**/maven-wrapper.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+Backend/.apt_generated
+Backend/.classpath
+Backend/.factorypath
+Backend/.project
+Backend/.settings/
+Backend/.springBeans
+Backend/.sts4-cache
+
+Backend/HELP.md
+
+# Arquivos gerados localmente (manter .jrxml e .jasper versionados em src se necessário)
+Backend/target/classes/
+
+# Uploads e temporários do backend
+Backend/uploads/
+Backend/temp/
+Backend/tmp/
+**/uploads/**
+**/import-temp/**
+
+# -----------------------------------------------------------------------------
+# Node / React (Frontend)
+# -----------------------------------------------------------------------------
+Frontend/node_modules/
+Frontend/build/
+Frontend/dist/
+Frontend/.pnp
+Frontend/.pnp.js
+Frontend/coverage/
+Frontend/.eslintcache
+Frontend/.cache/
+Frontend/npm-debug.log*
+Frontend/yarn-debug.log*
+Frontend/yarn-error.log*
+Frontend/pnpm-debug.log*
+Frontend/lerna-debug.log*
+
+# -----------------------------------------------------------------------------
+# IDEs e editores
+# -----------------------------------------------------------------------------
+.idea/
+*.iml
+*.ipr
+*.iws
+*.iws
+
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+.cursor/
+*.code-workspace
+
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# -----------------------------------------------------------------------------
+# Sistema operacional
+# -----------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# OneDrive / sync
+~$*
+*.lnk
+
+# -----------------------------------------------------------------------------
+# Logs e diagnóstico
+# -----------------------------------------------------------------------------
+logs/
+*.log
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# -----------------------------------------------------------------------------
+# Testes e cobertura
+# -----------------------------------------------------------------------------
+**/test-output/
+**/surefire-reports/
+**/failsafe-reports/
+**/jacoco.exec
+**/.jacoco/
+.nyc_output/
+coverage/
+*.lcov
+
+# -----------------------------------------------------------------------------
+# Pacotes e artefatos diversos
+# -----------------------------------------------------------------------------
+*.7z
+*.dmg
+*.gz
+*.iso
+*.rar
+*.tar
+*.zip
+*.bak
+*.backup
+*.swp
+*.swo
+*~
+
+# -----------------------------------------------------------------------------
+# Docker / deploy local (se usar no futuro)
+# -----------------------------------------------------------------------------
+docker-compose.override.yml
+.docker/
+
+# -----------------------------------------------------------------------------
+# Jasper — cache de compilação em temp (manter src/main/resources/relatorios/*.jasper se versionado)
+# -----------------------------------------------------------------------------
+**/jasperreports-compile-*/

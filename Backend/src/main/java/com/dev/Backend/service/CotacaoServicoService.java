@@ -56,10 +56,18 @@ public class CotacaoServicoService {
         cotacao.setNome(inputDTO.getNome());
         cotacao.setClienteNome(inputDTO.getClienteNome());
         cotacao.setTelefone(inputDTO.getTelefone());
+        cotacao.setEndereco(inputDTO.getEndereco());
         cotacao.setQuantidadeProduto(inputDTO.getQuantidadeProduto().toString());
     cotacao.setDataCriacao(new Date());
     cotacao.setDataAtualizacao(new Date());
     cotacao.setAnaliseEscolhaJson(inputDTO.getAnaliseEscolhaJson());
+    cotacao.setPercentualInsumos(inputDTO.getPercentualInsumos());
+    cotacao.setValorFrete(inputDTO.getValorFrete());
+    cotacao.setValorInsumos(inputDTO.getValorInsumos());
+    cotacao.setTotalCustoMateriais(inputDTO.getTotalCustoMateriais());
+    cotacao.setPercentualLucro(inputDTO.getPercentualLucro());
+    cotacao.setValorLucro(inputDTO.getValorLucro());
+    cotacao.setValorTotalOrcamento(inputDTO.getValorTotalOrcamento());
 
         for (MaterialInputDTO matInput : inputDTO.getMateriais()) {
             Material material = new Material();
@@ -135,6 +143,7 @@ public class CotacaoServicoService {
         dto.setNome(cotacao.getNome());
         dto.setClienteNome(cotacao.getClienteNome());
         dto.setTelefone(cotacao.getTelefone());
+        dto.setEndereco(cotacao.getEndereco());
         dto.setQuantidadeProduto(cotacao.getQuantidadeProduto());
 
         List<MaterialDTO> materiaisDTO = cotacao.getMateriais().stream()
@@ -148,6 +157,13 @@ public class CotacaoServicoService {
         dto.setDistribuidoras(distribuidorasDTO);
 
     dto.setAnaliseEscolhaJson(cotacao.getAnaliseEscolhaJson());
+    dto.setPercentualInsumos(cotacao.getPercentualInsumos());
+    dto.setValorFrete(cotacao.getValorFrete());
+    dto.setValorInsumos(cotacao.getValorInsumos());
+    dto.setTotalCustoMateriais(cotacao.getTotalCustoMateriais());
+    dto.setPercentualLucro(cotacao.getPercentualLucro());
+    dto.setValorLucro(cotacao.getValorLucro());
+    dto.setValorTotalOrcamento(cotacao.getValorTotalOrcamento());
             // Map timestamps for UI filters/sorting
             dto.setDataCriacao(cotacao.getDataCriacao());
             dto.setDataAtualizacao(cotacao.getDataAtualizacao());

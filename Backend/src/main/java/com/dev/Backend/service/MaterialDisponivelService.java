@@ -19,6 +19,13 @@ public class MaterialDisponivelService {
         return repository.findTop5ByDescricaoContainingIgnoreCase(query);
     }
 
+    public List<MaterialDisponivel> findOpcoes(String query) {
+        if (query == null || query.isBlank()) {
+            return repository.findFirst10ByOrderByDescricaoAsc();
+        }
+        return repository.findTop20ByDescricaoContainingIgnoreCaseOrderByDescricaoAsc(query.trim());
+    }
+
     public List<MaterialDisponivel> findAll(String query) {
         if (query != null && !query.isEmpty()) {
             return repository.findTop5ByDescricaoContainingIgnoreCase(query);
@@ -36,6 +43,16 @@ public class MaterialDisponivelService {
         return repository.save(material);
     }
 
+    public List<MaterialDisponivel> saveAll(List<MaterialDisponivel> materiais) {
+        Date agora = new Date();
+        for (MaterialDisponivel m : materiais) {
+            m.setId(null);
+            m.setDataCriacao(agora);
+            m.setDataAtualizacao(agora);
+        }
+        return repository.saveAll(materiais);
+    }
+
     public Optional<MaterialDisponivel> findById(Long id) {
         return repository.findById(id);
     }
@@ -45,13 +62,13 @@ public class MaterialDisponivelService {
     }
 
     public MaterialDisponivel update(Long id, MaterialDisponivel material) {
-        Optional<MaterialDisponivel> existing = repository.findById(id);
-        if (existing.isPresent()) {
-            MaterialDisponivel updated = existing.get();
-            updated.setDescricao(material.getDescricao());
-            updated.setDataAtualizacao(new Date());
-            return repository.save(updated);
-        }
-        throw new RuntimeException("Material não encontrado");
+        MaterialDisponivel updated = repository.findById(id)
+            .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(
+                "Material não encontrado: id=" + id));
+
+        updated.setDescricao(material.getDescricao());
+        updated.setTamanho(material.getTamanho());
+        updated.setDataAtualizacao(new Date());
+        return repository.save(updated);
     }
 }

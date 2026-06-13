@@ -1,6 +1,10 @@
 import styled from 'styled-components';
 
-export const SidebarContainer = styled.div`
+const sidebarTransientProps = ['active', 'isOpen', 'iconOnly'];
+
+export const SidebarContainer = styled.div.withConfig({
+  shouldForwardProp: (prop) => !sidebarTransientProps.includes(prop),
+})`
   position: fixed;
   top: 0;
   left: 0;
@@ -131,7 +135,9 @@ export const SidebarContainer = styled.div`
   }
 `;
 
-export const MenuItem = styled.li`
+export const MenuItem = styled.li.withConfig({
+  shouldForwardProp: (prop) => !sidebarTransientProps.includes(prop),
+})`
   position: relative;
   display: flex;
   align-items: center;

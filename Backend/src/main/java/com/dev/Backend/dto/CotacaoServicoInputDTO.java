@@ -5,6 +5,7 @@ import java.util.List;
 
 public class CotacaoServicoInputDTO {
     private String nome;
+    private Long clienteId;
     private String clienteNome;
     private String telefone;
     private String endereco;
@@ -29,6 +30,8 @@ public class CotacaoServicoInputDTO {
 
     public String getNome() { return nome; }
     public void setNome(String nome) { this.nome = nome; }
+    public Long getClienteId() { return clienteId; }
+    public void setClienteId(Long clienteId) { this.clienteId = clienteId; }
     public String getClienteNome() { return clienteNome; }
     public void setClienteNome(String clienteNome) { this.clienteNome = clienteNome; }
     public String getTelefone() { return telefone; }

@@ -136,4 +136,24 @@ export class CotacaoService extends BaseService {
       throw error;
     }
   }
+
+  async enviarWhatsappOrcamento(id) {
+    const response = await this.axiosInstance.post(`/${id}/whatsapp/orcamento`);
+    return response.data;
+  }
+
+  async enviarWhatsappCobranca(id) {
+    const response = await this.axiosInstance.post(`/${id}/whatsapp/cobranca`);
+    return response.data;
+  }
+
+  async listarWhatsappLogs(id) {
+    const response = await this.axiosInstance.get(`/${id}/whatsapp/logs`);
+    return response.data;
+  }
+
+  async atualizarDadosCobranca(id, dados) {
+    const response = await this.axiosInstance.patch(`/${id}/dados-cobranca`, dados);
+    return response.data;
+  }
 }

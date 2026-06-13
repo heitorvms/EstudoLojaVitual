@@ -1,19 +1,16 @@
--- Habilita similaridade trigram do Postgres (idempotente).
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
-
--- Índice GIN trigram em material_disponivel.descricao para fuzzy match performático.
-CREATE INDEX IF NOT EXISTS idx_material_desc_trgm
-    ON material_disponivel
-    USING gin (descricao gin_trgm_ops);
-
--- Limpeza Fase 8: preço agora vive em material_preco (por distribuidora).
-ALTER TABLE material_disponivel DROP COLUMN IF EXISTS preco_unitario;
-
-ALTER TABLE cotacao_servico ADD COLUMN IF NOT EXISTS endereco VARCHAR(255);
-
 ALTER TABLE configuracao_whatsapp ADD COLUMN IF NOT EXISTS url_wppconnect VARCHAR(255) DEFAULT 'http://localhost:21465';
 ALTER TABLE configuracao_whatsapp ADD COLUMN IF NOT EXISTS token_wppconnect TEXT;
 ALTER TABLE configuracao_whatsapp ADD COLUMN IF NOT EXISTS nome_sessao VARCHAR(100) DEFAULT 'hsa-serralheria';
+
+INSERT INTO configuracao_whatsapp (id, mensagem_orcamento, mensagem_cobranca, url_wppconnect, nome_sessao)
+VALUES (
+    1,
+    'Olá {nome_cliente}! Segue o orçamento "{nome_orcamento}" (nº {numero_orcamento}). Valor total: {valor_total}. Data: {data_emissao}. HSA Serralheria',
+    'Olá {nome_cliente}, referente ao orçamento "{nome_orcamento}" (nº {numero_orcamento}), pendência de {valor_pendente}, vencimento {data_vencimento}. HSA Serralheria',
+    'http://localhost:21465',
+    'hsa-serralheria'
+)
+ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS whatsapp_envio_log (
     id BIGSERIAL PRIMARY KEY,
@@ -27,6 +24,3 @@ CREATE TABLE IF NOT EXISTS whatsapp_envio_log (
 
 CREATE INDEX IF NOT EXISTS idx_whatsapp_envio_log_cotacao ON whatsapp_envio_log(cotacao_id);
 CREATE INDEX IF NOT EXISTS idx_whatsapp_envio_log_data_envio ON whatsapp_envio_log(data_envio);
-
-ALTER TABLE cotacao_servico ADD COLUMN IF NOT EXISTS valor_pendente NUMERIC(15, 2);
-ALTER TABLE cotacao_servico ADD COLUMN IF NOT EXISTS data_vencimento DATE;

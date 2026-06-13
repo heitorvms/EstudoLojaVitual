@@ -7,6 +7,7 @@ import java.util.List;
 public class CotacaoServicoDTO {
     private Long id;
     private String nome;
+    private Long clienteId;
     private String clienteNome;
     private String telefone;
     private String endereco;
@@ -27,6 +28,8 @@ public class CotacaoServicoDTO {
 
     private Date dataCriacao;
     private Date dataAtualizacao;
+    private BigDecimal valorPendente;
+    private Date dataVencimento;
 
     public String getAnaliseEscolhaJson() { return analiseEscolhaJson; }
     public void setAnaliseEscolhaJson(String analiseEscolhaJson) { this.analiseEscolhaJson = analiseEscolhaJson; }
@@ -40,6 +43,8 @@ public class CotacaoServicoDTO {
     public void setId(Long id) { this.id = id; }
     public String getNome() { return nome; }
     public void setNome(String nome) { this.nome = nome; }
+    public Long getClienteId() { return clienteId; }
+    public void setClienteId(Long clienteId) { this.clienteId = clienteId; }
     public String getClienteNome() { return clienteNome; }
     public void setClienteNome(String clienteNome) { this.clienteNome = clienteNome; }
     public String getTelefone() { return telefone; }
@@ -66,4 +71,8 @@ public class CotacaoServicoDTO {
     public void setValorLucro(BigDecimal valorLucro) { this.valorLucro = valorLucro; }
     public BigDecimal getValorTotalOrcamento() { return valorTotalOrcamento; }
     public void setValorTotalOrcamento(BigDecimal valorTotalOrcamento) { this.valorTotalOrcamento = valorTotalOrcamento; }
+    public BigDecimal getValorPendente() { return valorPendente; }
+    public void setValorPendente(BigDecimal valorPendente) { this.valorPendente = valorPendente; }
+    public Date getDataVencimento() { return dataVencimento; }
+    public void setDataVencimento(Date dataVencimento) { this.dataVencimento = dataVencimento; }
 }

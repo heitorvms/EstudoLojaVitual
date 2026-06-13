@@ -38,6 +38,7 @@ import debounce from "lodash/debounce";
   const [lastSearchedTerm, setLastSearchedTerm] = useState("");
   const [showCardLoading, setShowCardLoading] = useState(false);
   const [loadingRelatorio, setLoadingRelatorio] = useState(false);
+  const [enviandoWhatsapp, setEnviandoWhatsapp] = useState(false);
 
 
   const toast = useRef(null);
@@ -312,6 +313,24 @@ import debounce from "lodash/debounce";
     });
   };
 
+  const handleEnviarWhatsapp = async (cotacaoId) => {
+    setEnviandoWhatsapp(true);
+    try {
+      const res = await cotacaoService.enviarWhatsappOrcamento(cotacaoId);
+      toast.current?.show({
+        severity: "success",
+        summary: "Sucesso",
+        detail: res.mensagem || "Orçamento enviado via WhatsApp.",
+        life: 4000,
+      });
+    } catch (err) {
+      const msg = err.response?.data?.message || "Falha ao enviar orçamento pelo WhatsApp.";
+      toast.current?.show({ severity: "error", summary: "Erro", detail: msg, life: 5000 });
+    } finally {
+      setEnviandoWhatsapp(false);
+    }
+  };
+
   const handleGerarRelatorio = async (cotacaoId) => {
     setLoadingRelatorio(true);
 
@@ -399,6 +418,17 @@ import debounce from "lodash/debounce";
                 }}
                 label={loadingRelatorio ? "Gerando..." : "Gerar Relatório PDF"}
                 disabled={loadingRelatorio}
+                style={{ marginTop: "10px", marginLeft: 8 }}
+              />
+              <ButtonStyled
+                icon="pi pi-whatsapp"
+                className="p-button-success"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEnviarWhatsapp(expandedCotacao.id);
+                }}
+                label={enviandoWhatsapp ? "Enviando..." : "Enviar WhatsApp"}
+                disabled={enviandoWhatsapp}
                 style={{ marginTop: "10px", marginLeft: 8 }}
               />
             </div>

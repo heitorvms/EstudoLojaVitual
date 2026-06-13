@@ -1,5 +1,6 @@
 package com.dev.Backend.controller;
 
+import com.dev.Backend.dto.AtualizarDadosCobrancaDTO;
 import com.dev.Backend.dto.CotacaoServicoDTO;
 import com.dev.Backend.dto.CotacaoServicoInputDTO;
 import com.dev.Backend.dto.DistribuidoraCotacaoDTO;
@@ -59,6 +60,13 @@ public class CotacaoServicoController {
         CotacaoServico novaCotacao = cotacaoServicoService.criarCotacao(inputDTO);
         CotacaoServicoDTO dto = cotacaoServicoService.toDTO(novaCotacao);
         return ResponseEntity.ok(dto);
+    }
+
+    @PatchMapping("/{id}/dados-cobranca")
+    public ResponseEntity<CotacaoServicoDTO> atualizarDadosCobranca(
+            @PathVariable Long id,
+            @RequestBody AtualizarDadosCobrancaDTO dto) {
+        return ResponseEntity.ok(cotacaoServicoService.atualizarDadosCobranca(id, dto));
     }
 
     @DeleteMapping("/{id}")

@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { InputTextarea } from 'primereact/inputtextarea';
+import { InputText } from 'primereact/inputtext';
+import { Password } from 'primereact/password';
 import { Toast } from 'primereact/toast';
 import { ConfiguracaoWhatsappService } from '../../../services/ConfiguracaoWhatsappService';
+import WhatsappConexao from '../../../components/WhatsappConexao';
 import {
   Section,
   MessageBlock,
@@ -15,7 +18,6 @@ import {
   PlaceholderLegend,
   DetailsToggle,
   SaveButton,
-  FutureBadge,
 } from './styled';
 
 const inserirNoCursor = (ref, valorAtual, setValor, texto) => {
@@ -89,6 +91,9 @@ const ConfiguracaoWhatsappTab = () => {
   const [mensagemCobranca, setMensagemCobranca] = useState('');
   const [placeholdersOrcamento, setPlaceholdersOrcamento] = useState([]);
   const [placeholdersCobranca, setPlaceholdersCobranca] = useState([]);
+  const [urlWppconnect, setUrlWppconnect] = useState('http://localhost:21465');
+  const [tokenWppconnect, setTokenWppconnect] = useState('');
+  const [nomeSessao, setNomeSessao] = useState('hsa-serralheria');
 
   useEffect(() => {
     const carregar = async () => {
@@ -99,6 +104,9 @@ const ConfiguracaoWhatsappTab = () => {
         setMensagemCobranca(data.mensagemCobranca || '');
         setPlaceholdersOrcamento(data.placeholdersOrcamento || []);
         setPlaceholdersCobranca(data.placeholdersCobranca || []);
+        setUrlWppconnect(data.urlWppconnect || 'http://localhost:21465');
+        setTokenWppconnect(data.tokenWppconnect || '');
+        setNomeSessao(data.nomeSessao || 'hsa-serralheria');
       } catch (error) {
         toast.current?.show({
           severity: 'error',
@@ -116,7 +124,13 @@ const ConfiguracaoWhatsappTab = () => {
   const salvar = async () => {
     setSaving(true);
     try {
-      const data = await service.salvar({ mensagemOrcamento, mensagemCobranca });
+      const data = await service.salvar({
+        mensagemOrcamento,
+        mensagemCobranca,
+        urlWppconnect,
+        tokenWppconnect,
+        nomeSessao,
+      });
       setMensagemOrcamento(data.mensagemOrcamento);
       setMensagemCobranca(data.mensagemCobranca);
       toast.current?.show({
@@ -143,17 +157,43 @@ const ConfiguracaoWhatsappTab = () => {
 
   return (
     <Section>
+      <WhatsappConexao />
       <BlockHint>
         Configure os textos que serão usados no envio automático via WhatsApp.
         Use as variáveis abaixo no formato <code>{'{nome_cliente}'}</code> — elas serão
         substituídas pelos dados reais no momento do envio.
-        <FutureBadge>Envio automático em breve</FutureBadge>
       </BlockHint>
+
+      <MessageBlock>
+        <BlockTitle>Conexão WPPConnect</BlockTitle>
+        <BlockHint>URL, sessão e token gerados no Swagger do WPPConnect.</BlockHint>
+        <div style={{ display: 'grid', gap: '12px', marginBottom: '12px' }}>
+          <div>
+            <BlockHint>URL do servidor</BlockHint>
+            <InputText value={urlWppconnect} onChange={(e) => setUrlWppconnect(e.target.value)} style={{ width: '100%' }} />
+          </div>
+          <div>
+            <BlockHint>Nome da sessão</BlockHint>
+            <InputText value={nomeSessao} onChange={(e) => setNomeSessao(e.target.value)} style={{ width: '100%' }} />
+          </div>
+          <div>
+            <BlockHint>Token (Bearer)</BlockHint>
+            <Password
+              value={tokenWppconnect}
+              onChange={(e) => setTokenWppconnect(e.target.value)}
+              feedback={false}
+              toggleMask
+              style={{ width: '100%' }}
+              inputStyle={{ width: '100%' }}
+            />
+          </div>
+        </div>
+      </MessageBlock>
 
       <MessageBlock>
         <BlockTitle>Envio de orçamento</BlockTitle>
         <BlockHint>
-          Mensagem enviada com o PDF da cotação anexado (implementação futura).
+          Mensagem enviada com o PDF da cotação anexado via WPPConnect.
         </BlockHint>
         <PlaceholdersDisponiveis
           titulo="Variáveis disponíveis"

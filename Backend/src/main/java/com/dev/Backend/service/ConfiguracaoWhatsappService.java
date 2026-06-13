@@ -68,11 +68,40 @@ public class ConfiguracaoWhatsappService {
         return toDto(config);
     }
 
+    @Transactional(readOnly = true)
+    public ConfiguracaoWhatsapp buscarConfiguracao() {
+        return buscarOuCriarPadrao();
+    }
+
+    @Transactional
+    public void atualizarCredenciaisWpp(String url, String token, String nomeSessao) {
+        ConfiguracaoWhatsapp config = buscarOuCriarPadrao();
+        if (url != null && !url.isBlank()) {
+            config.setUrlWppconnect(url.trim());
+        }
+        if (token != null && !token.isBlank()) {
+            config.setTokenWppconnect(token.trim());
+        }
+        if (nomeSessao != null && !nomeSessao.isBlank()) {
+            config.setNomeSessao(nomeSessao.trim());
+        }
+        repository.save(config);
+    }
+
     @Transactional
     public ConfiguracaoWhatsappDTO salvar(ConfiguracaoWhatsappDTO dto) {
         ConfiguracaoWhatsapp config = buscarOuCriarPadrao();
         config.setMensagemOrcamento(normalizarMensagem(dto.getMensagemOrcamento(), MENSAGEM_ORCAMENTO_PADRAO));
         config.setMensagemCobranca(normalizarMensagem(dto.getMensagemCobranca(), MENSAGEM_COBRANCA_PADRAO));
+        if (dto.getUrlWppconnect() != null && !dto.getUrlWppconnect().isBlank()) {
+            config.setUrlWppconnect(dto.getUrlWppconnect().trim());
+        }
+        if (dto.getTokenWppconnect() != null && !dto.getTokenWppconnect().isBlank()) {
+            config.setTokenWppconnect(dto.getTokenWppconnect().trim());
+        }
+        if (dto.getNomeSessao() != null && !dto.getNomeSessao().isBlank()) {
+            config.setNomeSessao(dto.getNomeSessao().trim());
+        }
         repository.save(config);
         return toDto(config);
     }
@@ -83,6 +112,8 @@ public class ConfiguracaoWhatsappService {
             nova.setId(ConfiguracaoWhatsapp.ID_UNICO);
             nova.setMensagemOrcamento(MENSAGEM_ORCAMENTO_PADRAO);
             nova.setMensagemCobranca(MENSAGEM_COBRANCA_PADRAO);
+            nova.setUrlWppconnect("http://localhost:21465");
+            nova.setNomeSessao("hsa-serralheria");
             return repository.save(nova);
         });
     }
@@ -91,6 +122,9 @@ public class ConfiguracaoWhatsappService {
         ConfiguracaoWhatsappDTO dto = new ConfiguracaoWhatsappDTO();
         dto.setMensagemOrcamento(config.getMensagemOrcamento());
         dto.setMensagemCobranca(config.getMensagemCobranca());
+        dto.setUrlWppconnect(config.getUrlWppconnect());
+        dto.setTokenWppconnect(config.getTokenWppconnect());
+        dto.setNomeSessao(config.getNomeSessao());
         dto.setPlaceholdersOrcamento(PLACEHOLDERS_ORCAMENTO);
         dto.setPlaceholdersCobranca(PLACEHOLDERS_COBRANCA);
         return dto;

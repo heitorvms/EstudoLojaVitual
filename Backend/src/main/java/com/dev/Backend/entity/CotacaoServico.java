@@ -18,6 +18,11 @@ public class CotacaoServico {
     private Long id;
 
     private String nome;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_cliente")
+    private Pessoa cliente;
+
     private String clienteNome;
     private String telefone;
     private String endereco;
@@ -67,4 +72,11 @@ public class CotacaoServico {
 
     @Column(name = "valor_total_orcamento", precision = 14, scale = 2)
     private BigDecimal valorTotalOrcamento;
+
+    @Column(name = "valor_pendente", precision = 15, scale = 2)
+    private BigDecimal valorPendente;
+
+    @Temporal(TemporalType.DATE)
+    @Column(name = "data_vencimento")
+    private Date dataVencimento;
 }

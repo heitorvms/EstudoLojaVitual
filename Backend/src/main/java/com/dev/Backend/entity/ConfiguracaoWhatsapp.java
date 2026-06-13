@@ -21,4 +21,13 @@ public class ConfiguracaoWhatsapp {
 
     @Column(name = "mensagem_cobranca", columnDefinition = "TEXT", nullable = false)
     private String mensagemCobranca;
+
+    @Column(name = "url_wppconnect", length = 255)
+    private String urlWppconnect = "http://localhost:21465";
+
+    @Column(name = "token_wppconnect", columnDefinition = "TEXT")
+    private String tokenWppconnect;
+
+    @Column(name = "nome_sessao", length = 100)
+    private String nomeSessao = "hsa-serralheria";
 }

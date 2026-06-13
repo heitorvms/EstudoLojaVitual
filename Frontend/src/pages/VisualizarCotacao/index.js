@@ -2,20 +2,37 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Toast } from "primereact/toast";
 import { Button } from "primereact/button";
-import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
+import { Dialog } from "primereact/dialog";
+import { Dropdown } from "primereact/dropdown";
+import { InputNumber } from "primereact/inputnumber";
+import { Tag } from "primereact/tag";
+import { ProgressSpinner } from "primereact/progressspinner";
 import "primereact/resources/themes/lara-light-indigo/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 import { CotacaoService } from "../../services/CotacaoService";
+import { FinanceiroService } from "../../services/FinanceiroService";
 import {
+  VisualizarGlobalStyle,
+  PageShell,
   ContainerPage,
-  TopBar,
-  Title,
-  ButtonGroup,
-  SectionCard,
-  SectionTitle,
-  MetaInfo,
+  PageHeader,
+  HeaderText,
+  HeaderActions,
+  ButtonPrimary,
+  ButtonSecondary,
+  SummaryCard,
+  SummaryTitle,
+  SummaryMeta,
+  InfoGrid,
+  InfoItem,
+  PanelCard,
+  PanelTitle,
+  DataTableStyled,
+  CostGrid,
+  CostItem,
+  CostTotal,
   AnalysisItem,
   AnalysisItemTitle,
   BadgeRow,
@@ -24,6 +41,11 @@ import {
   BadgeValue,
   DistName,
   PriceValue,
+  ChoiceList,
+  ChoiceText,
+  DialogForm,
+  DialogWarning,
+  LoadingWrap,
 } from "./styled";
 
 const VisualizarCotacao = () => {
@@ -33,6 +55,25 @@ const VisualizarCotacao = () => {
   const [cotacao, setCotacao] = useState(null);
   const [analise, setAnalise] = useState(null);
   const cotacaoService = useMemo(() => new CotacaoService(), []);
+  const financeiroService = useMemo(() => new FinanceiroService(), []);
+  const [contasFinanceiras, setContasFinanceiras] = useState([]);
+  const [gerandoFinanceiro, setGerandoFinanceiro] = useState(false);
+  const [gerarDialog, setGerarDialog] = useState(false);
+  const [opcoesGerar, setOpcoesGerar] = useState({
+    quantidadeParcelasReceber: 1,
+    intervaloDiasParcelas: 30,
+    diasPrimeiraParcela: 30,
+    diasVencimentoPagar: 15,
+    formaPagamentoReceber: "A_VISTA",
+    formaPagamentoPagar: "A_VISTA",
+  });
+
+  const FORMAS_PAG = [
+    { label: "À vista", value: "A_VISTA" },
+    { label: "PIX", value: "PIX" },
+    { label: "Boleto", value: "BOLETO" },
+    { label: "Cartão crédito", value: "CARTAO_CREDITO" },
+  ];
 
   useEffect(() => {
     const load = async () => {
@@ -56,6 +97,38 @@ const VisualizarCotacao = () => {
     };
     load();
   }, [id, cotacaoService]);
+
+  const carregarFinanceiro = async () => {
+    try {
+      const lista = await financeiroService.listarPorCotacao(id);
+      setContasFinanceiras(lista || []);
+    } catch {
+      setContasFinanceiras([]);
+    }
+  };
+
+  useEffect(() => {
+    if (id) carregarFinanceiro();
+  }, [id]);
+
+  const confirmarGerarFinanceiro = async () => {
+    setGerandoFinanceiro(true);
+    try {
+      await financeiroService.gerar(id, contasFinanceiras.length > 0, opcoesGerar);
+      await carregarFinanceiro();
+      setGerarDialog(false);
+      toast.current?.show({ severity: "success", summary: "Contas geradas", life: 3000 });
+    } catch (e) {
+      toast.current?.show({
+        severity: "error",
+        summary: "Erro",
+        detail: e.response?.data?.message || e.message,
+        life: 4000,
+      });
+    } finally {
+      setGerandoFinanceiro(false);
+    }
+  };
 
   const distribuidoras = cotacao?.distribuidoras || [];
   const materiais = cotacao?.materiais || [];
@@ -97,91 +170,239 @@ const VisualizarCotacao = () => {
     return { cheapest, middle, mostExpensive, escolhaUsuario };
   };
 
+  const valorTotalOrcamento =
+    cotacao?.valorTotalOrcamento ??
+    (cotacao
+      ? Number(cotacao.totalCustoMateriais || 0) +
+        Number(cotacao.valorInsumos || 0) +
+        Number(cotacao.valorFrete || 0) +
+        Number(cotacao.valorLucro || 0)
+      : 0);
+
+  const statusFinanceiroSeverity = (status) => {
+    if (status === "PAGA") return "success";
+    if (status === "VENCIDA") return "danger";
+    if (status === "PARCIAL") return "warning";
+    if (status === "CANCELADA") return "secondary";
+    return "info";
+  };
+
   if (!cotacao) {
     return (
-      <ContainerPage>
-        <Toast ref={toast} />
-        <p>Carregando...</p>
-      </ContainerPage>
+      <PageShell className="visualizar-cotacao-page">
+        <VisualizarGlobalStyle />
+        <ContainerPage>
+          <Toast ref={toast} />
+          <LoadingWrap>
+            <ProgressSpinner />
+            <span>Carregando orçamento...</span>
+          </LoadingWrap>
+        </ContainerPage>
+      </PageShell>
     );
   }
 
   return (
-    <ContainerPage>
-      <Toast ref={toast} />
-      <TopBar>
-        <Title>Visualizar Cotação</Title>
-        <ButtonGroup>
-          <Button label="Voltar" icon="pi pi-arrow-left" onClick={() => navigate(-1)} />
-        </ButtonGroup>
-      </TopBar>
+    <PageShell className="visualizar-cotacao-page">
+      <VisualizarGlobalStyle />
+      <ContainerPage>
+        <Toast ref={toast} />
 
-      <SectionCard>
-        <SectionTitle>{cotacao.nome}</SectionTitle>
-        <p><strong>Cliente:</strong> {cotacao.clienteNome}</p>
-        <p><strong>Telefone:</strong> {formatPhoneNumber(cotacao.telefone)}</p>
-        {cotacao.endereco && <p><strong>Endereço:</strong> {cotacao.endereco}</p>}
-        <p><strong>Quantidade do Produto:</strong> {cotacao.quantidadeProduto}</p>
-        {cotacao.dataCriacao && (
-          <MetaInfo><strong>Criado em:</strong> {new Date(cotacao.dataCriacao).toLocaleString()}</MetaInfo>
-        )}
-      </SectionCard>
+        <PageHeader>
+          <HeaderText>
+            <h1>Visualizar Cotação</h1>
+          </HeaderText>
+          <HeaderActions>
+            <ButtonPrimary
+              label={contasFinanceiras.length ? "Regerar financeiro" : "Gerar financeiro"}
+              icon="pi pi-wallet"
+              onClick={() => setGerarDialog(true)}
+            />
+            {contasFinanceiras.length > 0 && (
+              <ButtonSecondary
+                label="Financeiro"
+                icon="pi pi-external-link"
+                onClick={() => navigate("/financeiro")}
+              />
+            )}
+            <ButtonSecondary label="Voltar" icon="pi pi-arrow-left" onClick={() => navigate(-1)} />
+          </HeaderActions>
+        </PageHeader>
 
-      <SectionCard>
-        <SectionTitle>Valores por Distribuidora</SectionTitle>
-        <DataTable value={materialsWithDistribuidoras(materiais, distribuidoras)} responsiveLayout="scroll">
+        <SummaryCard>
+          <SummaryTitle>{cotacao.nome}</SummaryTitle>
+          <SummaryMeta>
+            Cotação #{cotacao.id}
+            {cotacao.dataCriacao && ` · ${new Date(cotacao.dataCriacao).toLocaleString("pt-BR")}`}
+          </SummaryMeta>
+          <InfoGrid>
+            <InfoItem>
+              <strong>Cliente</strong>
+              <span>{cotacao.clienteNome || "-"}</span>
+            </InfoItem>
+            <InfoItem>
+              <strong>Telefone</strong>
+              <span>{formatPhoneNumber(cotacao.telefone)}</span>
+            </InfoItem>
+            <InfoItem>
+              <strong>Quantidade</strong>
+              <span>{cotacao.quantidadeProduto || "-"}</span>
+            </InfoItem>
+            {cotacao.endereco && (
+              <InfoItem>
+                <strong>Endereço</strong>
+                <span>{cotacao.endereco}</span>
+              </InfoItem>
+            )}
+            <InfoItem className="total">
+              <strong>Total</strong>
+              <span>{formatCurrency(valorTotalOrcamento)}</span>
+            </InfoItem>
+          </InfoGrid>
+        </SummaryCard>
+
+      {contasFinanceiras.length > 0 && (
+        <PanelCard>
+          <PanelTitle>Financeiro</PanelTitle>
+          <DataTableStyled value={contasFinanceiras} responsiveLayout="scroll" stripedRows>
+            <Column field="tipo" header="Tipo" body={(r) => (r.tipo === "RECEBER" ? "A receber" : "A pagar")} />
+            <Column
+              header="Parcela"
+              body={(r) => (r.totalParcelas > 1 ? `${r.numeroParcela}/${r.totalParcelas}` : "-")}
+            />
+            <Column
+              field="status"
+              header="Status"
+              body={(r) => <Tag value={r.status} severity={statusFinanceiroSeverity(r.status)} rounded />}
+            />
+            <Column field="descricao" header="Descrição" />
+            <Column field="valor" header="Valor" body={(r) => formatCurrency(r.valor)} />
+            <Column field="valorPendente" header="Pendente" body={(r) => formatCurrency(r.valorPendente)} />
+            <Column
+              field="dataVencimento"
+              header="Vencimento"
+              body={(r) => (r.dataVencimento ? new Date(r.dataVencimento).toLocaleDateString("pt-BR") : "-")}
+            />
+          </DataTableStyled>
+        </PanelCard>
+      )}
+
+      <Dialog
+        header="Gerar contas financeiras"
+        visible={gerarDialog}
+        style={{ width: 420 }}
+        onHide={() => setGerarDialog(false)}
+        footer={
+          <>
+            <Button label="Cancelar" text onClick={() => setGerarDialog(false)} />
+            <ButtonPrimary label="Gerar" loading={gerandoFinanceiro} onClick={confirmarGerarFinanceiro} />
+          </>
+        }
+      >
+        <DialogForm>
+          <div>
+            <label>Parcelas (a receber)</label>
+            <InputNumber
+              value={opcoesGerar.quantidadeParcelasReceber}
+              onValueChange={(e) => setOpcoesGerar((o) => ({ ...o, quantidadeParcelasReceber: e.value || 1 }))}
+              min={1}
+              max={24}
+            />
+          </div>
+          <div>
+            <label>Intervalo entre parcelas (dias)</label>
+            <InputNumber
+              value={opcoesGerar.intervaloDiasParcelas}
+              onValueChange={(e) => setOpcoesGerar((o) => ({ ...o, intervaloDiasParcelas: e.value || 30 }))}
+              min={1}
+            />
+          </div>
+          <div>
+            <label>1ª parcela vence em (dias)</label>
+            <InputNumber
+              value={opcoesGerar.diasPrimeiraParcela}
+              onValueChange={(e) => setOpcoesGerar((o) => ({ ...o, diasPrimeiraParcela: e.value ?? 30 }))}
+              min={0}
+            />
+          </div>
+          <div>
+            <label>Vencimento custos (dias)</label>
+            <InputNumber
+              value={opcoesGerar.diasVencimentoPagar}
+              onValueChange={(e) => setOpcoesGerar((o) => ({ ...o, diasVencimentoPagar: e.value || 15 }))}
+              min={1}
+            />
+          </div>
+          <div>
+            <label>Forma pagamento (receber)</label>
+            <Dropdown
+              value={opcoesGerar.formaPagamentoReceber}
+              options={FORMAS_PAG}
+              onChange={(e) => setOpcoesGerar((o) => ({ ...o, formaPagamentoReceber: e.value }))}
+              className="w-full"
+            />
+          </div>
+          {contasFinanceiras.length > 0 && (
+            <DialogWarning>Já existem contas: regerar só se nenhuma tiver baixa.</DialogWarning>
+          )}
+        </DialogForm>
+      </Dialog>
+
+      <PanelCard>
+        <PanelTitle>Valores por distribuidora</PanelTitle>
+        <DataTableStyled value={materialsWithDistribuidoras(materiais, distribuidoras)} responsiveLayout="scroll" stripedRows>
           <Column field="material" header="Material" />
           <Column field="quantidade" header="Quantidade" />
           {distribuidoras.map((dist) => (
             <Column key={dist.nome} header={dist.nome} body={(row) => formatCurrency(row.precos[dist.nome] || null)} />
           ))}
-        </DataTable>
-      </SectionCard>
+        </DataTableStyled>
+      </PanelCard>
 
       {(cotacao.totalCustoMateriais != null ||
         cotacao.valorInsumos != null ||
         (cotacao.valorFrete != null && Number(cotacao.valorFrete) > 0) ||
         cotacao.valorLucro != null) && (
-        <SectionCard>
-          <SectionTitle>Composição de Custos</SectionTitle>
-          <p>
-            <strong>Materiais:</strong> {formatCurrency(cotacao.totalCustoMateriais)}
-          </p>
-          <p>
-            <strong>Insumos ({Number(cotacao.percentualInsumos ?? 0).toFixed(0)}%):</strong>{" "}
-            {formatCurrency(cotacao.valorInsumos)}
-          </p>
-          <p>
-            <strong>Frete:</strong> {formatCurrency(cotacao.valorFrete)}
-          </p>
-          <p>
-            <strong>Subtotal de custos:</strong>{" "}
-            {formatCurrency(
-              Number(cotacao.totalCustoMateriais || 0) +
-                Number(cotacao.valorInsumos || 0) +
-                Number(cotacao.valorFrete || 0)
-            )}
-          </p>
-          <p>
-            <strong>Lucro ({Number(cotacao.percentualLucro ?? 10).toFixed(0)}%):</strong>{" "}
-            {formatCurrency(cotacao.valorLucro)}
-          </p>
-          <p>
-            <strong>Total do orçamento:</strong>{" "}
-            {formatCurrency(
-              cotacao.valorTotalOrcamento ??
-                Number(cotacao.totalCustoMateriais || 0) +
-                  Number(cotacao.valorInsumos || 0) +
-                  Number(cotacao.valorFrete || 0) +
-                  Number(cotacao.valorLucro || 0)
-            )}
-          </p>
-        </SectionCard>
+        <PanelCard>
+          <PanelTitle>Composição de custos</PanelTitle>
+          <CostGrid>
+            <CostItem>
+              <strong>Materiais</strong>
+              <span>{formatCurrency(cotacao.totalCustoMateriais)}</span>
+            </CostItem>
+            <CostItem>
+              <strong>Insumos ({Number(cotacao.percentualInsumos ?? 0).toFixed(0)}%)</strong>
+              <span>{formatCurrency(cotacao.valorInsumos)}</span>
+            </CostItem>
+            <CostItem>
+              <strong>Frete</strong>
+              <span>{formatCurrency(cotacao.valorFrete)}</span>
+            </CostItem>
+            <CostItem>
+              <strong>Subtotal custos</strong>
+              <span>
+                {formatCurrency(
+                  Number(cotacao.totalCustoMateriais || 0) +
+                    Number(cotacao.valorInsumos || 0) +
+                    Number(cotacao.valorFrete || 0)
+                )}
+              </span>
+            </CostItem>
+            <CostItem>
+              <strong>Lucro ({Number(cotacao.percentualLucro ?? 10).toFixed(0)}%)</strong>
+              <span>{formatCurrency(cotacao.valorLucro)}</span>
+            </CostItem>
+          </CostGrid>
+          <CostTotal>
+            <strong>Total do orçamento</strong>
+            <span>{formatCurrency(valorTotalOrcamento)}</span>
+          </CostTotal>
+        </PanelCard>
       )}
 
       {analise && (
-        <SectionCard>
-          <SectionTitle>Escolha do Usuário</SectionTitle>
+        <PanelCard>
+          <PanelTitle>Escolha do usuário</PanelTitle>
           {(() => {
             const resumo = analise?.resumoEscolha || null;
             const tipo = resumo?.tipo || analise?.tipoEscolhido || null;
@@ -192,7 +413,7 @@ const VisualizarCotacao = () => {
               const badgeStatus = status === 'maisBarato' ? 'cheapest' : status === 'maisCaro' ? 'most' : status ? 'medium' : undefined;
               return (
                 <>
-                  <p><strong>Tipo:</strong> Análise de Valor Total por Distribuidora</p>
+                  <ChoiceText><strong>Tipo:</strong> Análise de Valor Total por Distribuidora</ChoiceText>
                   <div style={{ marginTop: 8, marginBottom: 8 }}>
                     <Badge
                       label="Distribuidora selecionada"
@@ -203,15 +424,15 @@ const VisualizarCotacao = () => {
                   </div>
                   {Array.isArray(resumo?.materiais) && resumo.materiais.length > 0 && (
                     <div style={{ marginTop: 8 }}>
-                      <p><strong>Materiais:</strong></p>
-                      <ul>
+                      <ChoiceText><strong>Materiais:</strong></ChoiceText>
+                      <ChoiceList>
                         {resumo.materiais.map((m, idx) => (
                           <li key={idx}>{m.nome}: {formatCurrency(m.valor)}</li>
                         ))}
-                      </ul>
+                      </ChoiceList>
                     </div>
                   )}
-                  <p><strong>Valor Total:</strong> {formatCurrency(valorTotal)}</p>
+                  <ChoiceText><strong>Valor Total:</strong> {formatCurrency(valorTotal)}</ChoiceText>
                 </>
               );
             }
@@ -222,11 +443,11 @@ const VisualizarCotacao = () => {
               const valorTotal = resumo?.valorTotal != null ? resumo.valorTotal : mats.reduce((acc, m) => acc + (Number(m.valor) || 0), 0);
               return (
                 <>
-                  <p><strong>Tipo:</strong> Análise de Materiais por Distribuidora</p>
-                  <p><strong>Distribuidoras Selecionadas:</strong> {Array.from(new Set(mats.map(m => m.distribuidora))).filter(Boolean).join(", ") || "-"}</p>
+                  <ChoiceText><strong>Tipo:</strong> Análise de Materiais por Distribuidora</ChoiceText>
+                  <ChoiceText><strong>Distribuidoras Selecionadas:</strong> {Array.from(new Set(mats.map(m => m.distribuidora))).filter(Boolean).join(", ") || "-"}</ChoiceText>
                   <div>
-                    <p><strong>Materiais e escolhas:</strong></p>
-                    <ul>
+                    <ChoiceText><strong>Materiais e escolhas:</strong></ChoiceText>
+                    <ChoiceList>
                       {mats.map((m, idx) => {
                         const analiseMat = (analise?.analiseMateriais || []).find(a => a.nome === m.nome);
                         let status = null;
@@ -238,26 +459,26 @@ const VisualizarCotacao = () => {
                           else if (m.distribuidora === most) status = 'maisCaro';
                           else if (m.distribuidora) status = 'medio';
                         }
-                        const color = status === 'maisBarato' ? '#28a745' : status === 'medio' ? '#ff9800' : status === 'maisCaro' ? '#dc3545' : '#333';
+                        const color = status === 'maisBarato' ? '#2e7d32' : status === 'medio' ? '#e65100' : status === 'maisCaro' ? '#c62828' : '#444';
                         return (
                           <li key={idx} style={{ color }}>
                             {m.nome} - {m.distribuidora || "-"}: {formatCurrency(m.valor)}
                           </li>
                         );
                       })}
-                    </ul>
+                    </ChoiceList>
                   </div>
-                  <p><strong>Valor Total:</strong> {formatCurrency(valorTotal)}</p>
+                  <ChoiceText><strong>Valor Total:</strong> {formatCurrency(valorTotal)}</ChoiceText>
                 </>
               );
             }
-            return <p>Tipo de análise não informado. Nenhuma escolha registrada.</p>;
+            return <ChoiceText>Tipo de análise não informado. Nenhuma escolha registrada.</ChoiceText>;
           })()}
-        </SectionCard>
+        </PanelCard>
       )}
 
-      <SectionCard>
-        <SectionTitle>Análise dos Materiais</SectionTitle>
+      <PanelCard>
+        <PanelTitle>Análise dos materiais</PanelTitle>
         {materiais.map((mat) => {
           const a = analisarMaterial(mat);
           const userStatus = a?.escolhaUsuario
@@ -291,8 +512,9 @@ const VisualizarCotacao = () => {
             </AnalysisItem>
           );
         })}
-      </SectionCard>
-    </ContainerPage>
+      </PanelCard>
+      </ContainerPage>
+    </PageShell>
   );
 };
 
@@ -311,20 +533,27 @@ function materialsWithDistribuidoras(materiais, distribuidoras) {
   });
 }
 
+const badgeTheme = {
+  cheapest: { color: "#2e7d32", bg: "#f1f8f1", border: "#c8e6c9" },
+  medium: { color: "#e65100", bg: "#fff8f0", border: "#ffe0b2" },
+  most: { color: "#c62828", bg: "#fff5f5", border: "#ffcdd2" },
+  default: { color: "#1a1a2e", bg: "#fafafa", border: "#e0e0e0" },
+};
+
 const Badge = ({ label, value, formatCurrency, status }) => {
   const has = value && value.distribuidora && (value.preco != null);
-  const color = status === 'cheapest' ? '#28a745' : status === 'medium' ? '#ff9800' : status === 'most' ? '#dc3545' : undefined;
+  const theme = badgeTheme[status] || badgeTheme.default;
   return (
-    <BadgeContainer>
+    <BadgeContainer $bg={theme.bg} $border={theme.border}>
       <BadgeLabel>{label}</BadgeLabel>
       <BadgeValue>
         {has ? (
           <>
-            <DistName style={color ? { color } : undefined}>{value.distribuidora}</DistName>
-            <PriceValue style={color ? { color } : undefined}>{formatCurrency(value.preco)}</PriceValue>
+            <DistName style={{ color: theme.color }}>{value.distribuidora}</DistName>
+            <PriceValue style={{ color: theme.color }}>{formatCurrency(value.preco)}</PriceValue>
           </>
         ) : (
-          <span style={{ color: "#999" }}>N/A</span>
+          <span style={{ color: "#94a3b8" }}>N/A</span>
         )}
       </BadgeValue>
     </BadgeContainer>

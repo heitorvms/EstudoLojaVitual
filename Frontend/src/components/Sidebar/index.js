@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FaHome, FaCity, FaMap, FaSignOutAlt, FaBars, FaUserCircle, FaShoppingCart, FaBox, FaWarehouse, FaCalculator, FaCog } from 'react-icons/fa';
+import { FaHome, FaCity, FaMap, FaSignOutAlt, FaBars, FaUserCircle, FaShoppingCart, FaBox, FaWarehouse, FaCalculator, FaCog, FaMoneyBillWave } from 'react-icons/fa';
 import { SidebarContainer, MenuItem, IconMenu } from './styled';
 import { LoginService } from '../../services/LoginService';
 import { UserService } from '../../services/UserService';
@@ -24,6 +24,7 @@ function Sidebar({ isOpen, setIsOpen }) {
     else if (path === '/configuracoes') setActiveItem('Configuracoes');
     else if (path.startsWith('/configuracoes')) setActiveItem('Configuracoes');
     else if (path === '/simulacao-producao') setActiveItem('SimulacaoProducao');
+    else if (path === '/financeiro') setActiveItem('Financeiro');
   }, [location]);
 
   useEffect(() => {
@@ -130,6 +131,12 @@ function Sidebar({ isOpen, setIsOpen }) {
                     {isOpen && <span>Simulação de Produção</span>}
                   </Link>
                 </MenuItem>
+                <MenuItem active={activeItem === 'Financeiro'} isOpen={isOpen}>
+                  <Link to="/financeiro" onClick={() => { setActiveItem('Financeiro'); if (isOpen) setIsOpen(false); }}>
+                    <FaMoneyBillWave />
+                    {isOpen && <span>Financeiro</span>}
+                  </Link>
+                </MenuItem>
               </>
             )}
 
@@ -218,6 +225,11 @@ function Sidebar({ isOpen, setIsOpen }) {
             <MenuItem iconOnly active={activeItem === 'SimulacaoProducao'}>
               <Link to="/simulacao-producao" onClick={() => setActiveItem('SimulacaoProducao')}>
                 <FaCalculator />
+              </Link>
+            </MenuItem>
+            <MenuItem iconOnly active={activeItem === 'Financeiro'}>
+              <Link to="/financeiro" onClick={() => setActiveItem('Financeiro')}>
+                <FaMoneyBillWave />
               </Link>
             </MenuItem>
           </div>

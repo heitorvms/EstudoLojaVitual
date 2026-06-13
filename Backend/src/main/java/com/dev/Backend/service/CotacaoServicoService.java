@@ -5,6 +5,10 @@ import com.dev.Backend.entity.*;
 import com.dev.Backend.repository.CotacaoServicoRepository;
 import com.dev.Backend.repository.DistribuidoraRepository;
 import com.dev.Backend.repository.MaterialDisponivelRepository;
+import com.dev.Backend.repository.PessoaReposotory;
+import com.dev.Backend.exception.RegraNegocioException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +22,8 @@ import java.util.stream.Collectors;
 @Service
 public class CotacaoServicoService {
 
+    private static final Logger log = LoggerFactory.getLogger(CotacaoServicoService.class);
+
     @Autowired
     private CotacaoServicoRepository cotacaoServicoRepository;
 
@@ -29,6 +35,12 @@ public class CotacaoServicoService {
     
     @Autowired
     private CotacaoCalculationService calculationService;
+
+    @Autowired
+    private CotacaoFinanceiroService cotacaoFinanceiroService;
+
+    @Autowired
+    private PessoaReposotory pessoaReposotory;
     
     public List<DistribuidoraCotacaoDTO> calcularValoresPorDistribuidora(Long cotacaoId, Double percentualLucro) {
         CotacaoServico cotacao = cotacaoServicoRepository.findById(cotacaoId)
@@ -54,9 +66,24 @@ public class CotacaoServicoService {
     public CotacaoServico criarCotacao(CotacaoServicoInputDTO inputDTO) {
         CotacaoServico cotacao = new CotacaoServico();
         cotacao.setNome(inputDTO.getNome());
-        cotacao.setClienteNome(inputDTO.getClienteNome());
+        if (inputDTO.getClienteId() != null) {
+            Pessoa cliente = pessoaReposotory.findById(inputDTO.getClienteId())
+                    .orElseThrow(() -> new RuntimeException("Cliente não encontrado: " + inputDTO.getClienteId()));
+            cotacao.setCliente(cliente);
+            if (inputDTO.getClienteNome() == null || inputDTO.getClienteNome().isBlank()) {
+                cotacao.setClienteNome(cliente.getNome());
+            } else {
+                cotacao.setClienteNome(inputDTO.getClienteNome());
+            }
+        } else {
+            cotacao.setClienteNome(inputDTO.getClienteNome());
+        }
         cotacao.setTelefone(inputDTO.getTelefone());
-        cotacao.setEndereco(inputDTO.getEndereco());
+        if (inputDTO.getEndereco() != null && !inputDTO.getEndereco().isBlank()) {
+            cotacao.setEndereco(inputDTO.getEndereco());
+        } else if (cotacao.getCliente() != null && cotacao.getCliente().getEndereco() != null) {
+            cotacao.setEndereco(cotacao.getCliente().getEndereco());
+        }
         cotacao.setQuantidadeProduto(inputDTO.getQuantidadeProduto().toString());
     cotacao.setDataCriacao(new Date());
     cotacao.setDataAtualizacao(new Date());
@@ -126,6 +153,12 @@ public class CotacaoServicoService {
 
         cotacao = cotacaoServicoRepository.save(cotacao);
 
+        try {
+            cotacaoFinanceiroService.gerarContasDaCotacao(cotacao.getId(), false);
+        } catch (Exception ex) {
+            log.warn("Cotação #{} salva sem contas financeiras: {}", cotacao.getId(), ex.getMessage());
+        }
+
         return cotacao;
     }
 
@@ -137,10 +170,22 @@ public class CotacaoServicoService {
         return cotacaoServicoRepository.findById(id);
     }
 
+    public CotacaoServicoDTO atualizarDadosCobranca(Long id, AtualizarDadosCobrancaDTO dto) {
+        CotacaoServico cotacao = cotacaoServicoRepository.findById(id)
+                .orElseThrow(() -> new RegraNegocioException("Cotação não encontrada: " + id));
+        cotacao.setValorPendente(dto.getValorPendente());
+        cotacao.setDataVencimento(dto.getDataVencimento());
+        cotacao.setDataAtualizacao(new Date());
+        return toDTO(cotacaoServicoRepository.save(cotacao));
+    }
+
     public CotacaoServicoDTO toDTO(CotacaoServico cotacao) {
         CotacaoServicoDTO dto = new CotacaoServicoDTO();
         dto.setId(cotacao.getId());
         dto.setNome(cotacao.getNome());
+        if (cotacao.getCliente() != null) {
+            dto.setClienteId(cotacao.getCliente().getId());
+        }
         dto.setClienteNome(cotacao.getClienteNome());
         dto.setTelefone(cotacao.getTelefone());
         dto.setEndereco(cotacao.getEndereco());
@@ -164,7 +209,8 @@ public class CotacaoServicoService {
     dto.setPercentualLucro(cotacao.getPercentualLucro());
     dto.setValorLucro(cotacao.getValorLucro());
     dto.setValorTotalOrcamento(cotacao.getValorTotalOrcamento());
-            // Map timestamps for UI filters/sorting
+    dto.setValorPendente(cotacao.getValorPendente());
+    dto.setDataVencimento(cotacao.getDataVencimento());
             dto.setDataCriacao(cotacao.getDataCriacao());
             dto.setDataAtualizacao(cotacao.getDataAtualizacao());
     return dto;

@@ -12,6 +12,7 @@ import Distribuidoras from "./pages/Distribuidora";
 import Configuracoes from "./pages/Configuracoes";
 import VisualizarCotacao from "./pages/VisualizarCotacao";
 import SimulacaoProducao from "./pages/SimulacaoProducao";
+import Financeiro from "./pages/Financeiro";
 import RoleRoute from "./components/RoleRoute";
 
 export default function AppRoutes({ toggleSidebar }) {
@@ -53,6 +54,9 @@ export default function AppRoutes({ toggleSidebar }) {
       break;
     case "/simulacao-producao":
       title = "Simulação de Produção";
+      break;
+    case "/financeiro":
+      title = "Financeiro";
       break;
     default:
       title = "";
@@ -97,6 +101,8 @@ export default function AppRoutes({ toggleSidebar }) {
 
         {/* Simulação de Produção: Funcionario, Gerente e Admin */}
         <Route path="/simulacao-producao" element={<RoleRoute allowedRoles={["Funcionario","Gerente","Admin"]} element={<SimulacaoProducao />} />} />
+
+        <Route path="/financeiro" element={<RoleRoute allowedRoles={["Gerente","Admin"]} element={<Financeiro />} />} />
       </Routes>
     </>
   );

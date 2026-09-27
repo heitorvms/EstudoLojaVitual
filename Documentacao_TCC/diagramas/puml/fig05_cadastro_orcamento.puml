@@ -1,0 +1,51 @@
+@startuml
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam ArrowColor #333333
+skinparam ParticipantBackgroundColor #F4F6FA
+skinparam ParticipantBorderColor #4A5568
+skinparam ActorBorderColor #4A5568
+skinparam DatabaseBackgroundColor #F4F6FA
+skinparam SequenceLifeLineBorderColor #999999
+skinparam NoteBackgroundColor #FFFBEA
+skinparam ClassBackgroundColor #F8FAFC
+skinparam ClassBorderColor #4A5568
+skinparam ClassHeaderBackgroundColor #E2E8F0
+skinparam PackageBorderColor #4A5568
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #4A5568
+skinparam RectangleBorderColor #4A5568
+skinparam ComponentBackgroundColor #F4F6FA
+skinparam NodeBackgroundColor #F4F6FA
+
+actor Usuário
+participant "Frontend\n(CriarCotacao)" as FE
+participant "CotacaoServico\nController" as C
+participant "CotacaoServico\nService" as S
+database PostgreSQL as DB
+
+opt Origem: simulação
+  Usuário -> FE : "Gerar orçamento" na Simulação
+  FE -> FE : pré-preenche materiais,\ninsumos e frete
+end
+Usuário -> FE : informa cliente, materiais,\ndistribuidoras e preços
+Usuário -> FE : informa insumos (%), frete e lucro (%)
+FE -> FE : calcula custos, lucro\ne valor total
+Usuário -> FE : Salvar
+FE -> C : POST /api/cotacoes/
+C -> S : criarCotacao(inputDTO)
+S -> DB : insert cotacao_servico
+loop para cada material
+  S -> DB : insert material
+end
+loop para cada distribuidora / preço
+  S -> DB : insert cotacao_distribuidora\ne preco_material_cotacao
+end
+S --> C : CotacaoServico
+C --> FE : HTTP 200
+FE --> Usuário : redireciona para /cotacoes
+note over S : o financeiro não é gerado aqui;\nas contas nascem na ordem de serviço
+@enduml

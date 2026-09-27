@@ -13,6 +13,8 @@ import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 import { FinanceiroService } from "../../services/FinanceiroService";
 import { LoginService } from "../../services/LoginService";
+import { FORMAS, STATUS_LABEL, statusSeverity } from "./constantes";
+import { formatarDataIso } from "../../utils/datas";
 import {
   FinanceiroGlobalStyle,
   ContainerPage,
@@ -52,39 +54,8 @@ const STATUS_OPTS = [
   { label: "Cancelada", value: "CANCELADA" },
 ];
 
-const FORMAS = [
-  { label: "À vista", value: "A_VISTA" },
-  { label: "PIX", value: "PIX" },
-  { label: "Dinheiro", value: "DINHEIRO" },
-  { label: "Cartão crédito", value: "CARTAO_CREDITO" },
-  { label: "Cartão débito", value: "CARTAO_DEBITO" },
-  { label: "Boleto", value: "BOLETO" },
-  { label: "Transferência", value: "TRANSFERENCIA" },
-  { label: "Outro", value: "OUTRO" },
-];
-
-const STATUS_LABEL = {
-  PENDENTE: "Pendente",
-  PARCIAL: "Parcial",
-  VENCIDA: "Vencida",
-  PAGA: "Paga",
-  CANCELADA: "Cancelada",
-};
-
 const formatMoney = (v) =>
   v == null ? "-" : Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
-const formatDate = (v) => (v ? new Date(v).toLocaleDateString("pt-BR") : "-");
-
-const statusSeverity = (s) => {
-  if (s === "PAGA") return "success";
-  if (s === "PENDENTE") return "warning";
-  if (s === "PARCIAL") return "info";
-  if (s === "VENCIDA") return "danger";
-  if (s === "CANCELADA") return "secondary";
-  return null;
-};
-
 const Financeiro = () => {
   const toast = useRef(null);
   const service = useMemo(() => new FinanceiroService(), []);
@@ -479,7 +450,7 @@ const Financeiro = () => {
             />
             <Column
               header="Vencimento"
-              body={(r) => formatDate(r.dataVencimento)}
+              body={(r) => formatarDataIso(r.dataVencimento)}
               style={{ width: "105px" }}
             />
             <Column header="" body={acoesBody} style={{ width: "130px" }} />

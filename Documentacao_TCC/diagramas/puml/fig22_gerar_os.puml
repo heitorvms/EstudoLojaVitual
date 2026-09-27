@@ -1,0 +1,48 @@
+@startuml
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam ArrowColor #333333
+skinparam ParticipantBackgroundColor #F4F6FA
+skinparam ParticipantBorderColor #4A5568
+skinparam ActorBorderColor #4A5568
+skinparam DatabaseBackgroundColor #F4F6FA
+skinparam SequenceLifeLineBorderColor #999999
+skinparam NoteBackgroundColor #FFFBEA
+skinparam ClassBackgroundColor #F8FAFC
+skinparam ClassBorderColor #4A5568
+skinparam ClassHeaderBackgroundColor #E2E8F0
+skinparam PackageBorderColor #4A5568
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #4A5568
+skinparam RectangleBorderColor #4A5568
+skinparam ComponentBackgroundColor #F4F6FA
+skinparam NodeBackgroundColor #F4F6FA
+
+actor Usuário
+participant "Frontend\n(VisualizarCotacao /\nVisualizarOrdemServico)" as FE
+participant "OrdemServico\nController" as C
+participant "OrdemServico\nService" as S
+participant "CotacaoFinanceiro\nService" as F
+participant "EstoqueService" as E
+database PostgreSQL as DB
+
+Usuário -> FE : Gerar OS (na cotação)
+FE -> C : GET /api/ordens-servico/rascunho-cotacao/{cotacaoId}
+C -> S : rascunhoDeCotacao(cotacaoId)
+S -> DB : verifica se já existe OS e busca a cotação
+S --> FE : rascunho (cliente, materiais, valores)
+Usuário -> FE : define status, observações,\nmão de obra e parcelamento
+FE -> C : POST /api/ordens-servico/de-cotacao/{cotacaoId}
+C -> S : criarDeCotacao(cotacaoId, input)
+S -> DB : insert ordem_servico (+ mão de obra)
+opt status EM_PRODUCAO ou CONCLUIDO
+  S -> E : baixarBarras(material, qtd, "OS #id")
+end
+S -> F : gerarContasDaOrdem(os, opcoes)
+F -> DB : insert conta_financeira\nRECEBER: MATERIAL e MAO_DE_OBRA (parcelas)\nPAGAR: MATERIAL, INSUMOS e FRETE
+S --> FE : OrdemServicoDTO
+FE --> Usuário : tela da OS
+@enduml

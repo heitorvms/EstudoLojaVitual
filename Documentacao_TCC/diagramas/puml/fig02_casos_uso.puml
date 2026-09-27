@@ -1,0 +1,84 @@
+@startuml
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam ArrowColor #333333
+skinparam ParticipantBackgroundColor #F4F6FA
+skinparam ParticipantBorderColor #4A5568
+skinparam ActorBorderColor #4A5568
+skinparam DatabaseBackgroundColor #F4F6FA
+skinparam SequenceLifeLineBorderColor #999999
+skinparam NoteBackgroundColor #FFFBEA
+skinparam ClassBackgroundColor #F8FAFC
+skinparam ClassBorderColor #4A5568
+skinparam ClassHeaderBackgroundColor #E2E8F0
+skinparam PackageBorderColor #4A5568
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #4A5568
+skinparam RectangleBorderColor #4A5568
+skinparam ComponentBackgroundColor #F4F6FA
+skinparam NodeBackgroundColor #F4F6FA
+
+!pragma layout smetana
+left to right direction
+actor "Funcionário" as F
+actor "Gerente / Admin" as G
+actor "Cliente" as C
+actor "WPPConnect" as W
+G -|> F
+
+rectangle "Sistema HSA Serralheria" {
+  usecase "Autenticar / recuperar senha" as UC1
+  usecase "Cadastrar orçamento" as UC2
+  usecase "Gerar PDF do orçamento" as UC3
+  usecase "Simular produção" as UC4
+  usecase "Manter modelos padronizados" as UC5
+  usecase "Gerar orçamento a partir\nda simulação" as UC6
+  usecase "Gerar ordem de serviço" as UC7
+  usecase "Gerar contas da OS" as UC8
+  usecase "Alterar status da OS" as UC9
+  usecase "Baixar / devolver estoque" as UC10
+  usecase "Lançar mão de obra" as UC11
+  usecase "Enviar orçamento via WhatsApp" as UC12
+  usecase "Gerenciar contas a pagar/receber" as UC13
+  usecase "Cobrar cliente via WhatsApp" as UC14
+  usecase "Registrar / cancelar compra\nde material" as UC15
+  usecase "Consultar estoque" as UC16
+  usecase "Manter funcionários e\npagar mão de obra" as UC17
+  usecase "Manter materiais, preços\ne distribuidoras" as UC18
+  usecase "Importar planilha de preços" as UC19
+  usecase "Gerenciar usuários e permissões" as UC20
+  usecase "Configurar WhatsApp" as UC21
+  usecase "Manter estados e cidades" as UC22
+}
+
+F --> UC1
+F --> UC2
+F --> UC3
+F --> UC4
+F --> UC5
+F --> UC6
+F --> UC7
+F --> UC9
+F --> UC11
+G --> UC12
+G --> UC13
+G --> UC14
+G --> UC15
+G --> UC16
+G --> UC17
+G --> UC18
+G --> UC19
+G --> UC20
+G --> UC21
+G --> UC22
+UC7 ..> UC8 : <<include>>
+UC9 ..> UC10 : <<include>>
+UC15 ..> UC16 : <<extend>>
+UC12 --> W
+UC14 --> W
+UC12 --> C
+UC14 --> C
+@enduml

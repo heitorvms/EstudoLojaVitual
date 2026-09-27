@@ -12,5 +12,6 @@ public class SimulacaoHistoricoDTO {
     private Integer quantidade;
     private BigDecimal percentualPerda;
     private BigDecimal totalCustoEstimado;
+    private Boolean padronizado;
     private Date dataCriacao;
 }

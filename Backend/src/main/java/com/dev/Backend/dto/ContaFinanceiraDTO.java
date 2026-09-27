@@ -3,6 +3,7 @@ package com.dev.Backend.dto;
 import java.math.BigDecimal;
 import java.util.Date;
 
+import com.dev.Backend.entity.CategoriaContaFinanceira;
 import com.dev.Backend.entity.FormaPagamento;
 import com.dev.Backend.entity.StatusContaFinanceira;
 import com.dev.Backend.entity.TipoContaFinanceira;
@@ -13,6 +14,7 @@ import lombok.Data;
 public class ContaFinanceiraDTO {
     private Long id;
     private TipoContaFinanceira tipo;
+    private CategoriaContaFinanceira categoria;
     private StatusContaFinanceira status;
     private FormaPagamento formaPagamento;
     private BigDecimal valor;

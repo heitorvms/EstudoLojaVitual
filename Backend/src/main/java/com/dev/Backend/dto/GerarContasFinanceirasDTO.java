@@ -7,22 +7,14 @@ import lombok.Data;
 @Data
 public class GerarContasFinanceirasDTO {
 
-    private Integer quantidadeParcelasReceber = 1;
+    private RecebimentoDTO material = new RecebimentoDTO(1, 0);
+    private RecebimentoDTO maoDeObra = new RecebimentoDTO(1, 30);
     private Integer intervaloDiasParcelas = 30;
     private Integer diasVencimentoPagar = 15;
-    private Integer diasPrimeiraParcela = 30;
-    private FormaPagamento formaPagamentoReceber = FormaPagamento.A_VISTA;
     private FormaPagamento formaPagamentoPagar = FormaPagamento.A_VISTA;
 
     public static GerarContasFinanceirasDTO padrao() {
         return new GerarContasFinanceirasDTO();
-    }
-
-    public int parcelasReceber() {
-        if (quantidadeParcelasReceber == null || quantidadeParcelasReceber < 1) {
-            return 1;
-        }
-        return Math.min(quantidadeParcelasReceber, 24);
     }
 
     public int intervaloDias() {
@@ -33,16 +25,43 @@ public class GerarContasFinanceirasDTO {
     }
 
     public int diasPagar() {
-        if (diasVencimentoPagar == null || diasVencimentoPagar < 1) {
+        if (diasVencimentoPagar == null || diasVencimentoPagar < 0) {
             return 15;
         }
         return diasVencimentoPagar;
     }
 
-    public int diasPrimeira() {
-        if (diasPrimeiraParcela == null || diasPrimeiraParcela < 0) {
-            return 30;
+    @Data
+    public static class RecebimentoDTO {
+        private Integer parcelas;
+        private Integer diasPrimeiraParcela;
+        private FormaPagamento formaPagamento = FormaPagamento.A_VISTA;
+
+        public RecebimentoDTO() {
+            this(1, 0);
         }
-        return diasPrimeiraParcela;
+
+        public RecebimentoDTO(int parcelas, int diasPrimeiraParcela) {
+            this.parcelas = parcelas;
+            this.diasPrimeiraParcela = diasPrimeiraParcela;
+        }
+
+        public int totalParcelas() {
+            if (parcelas == null || parcelas < 1) {
+                return 1;
+            }
+            return Math.min(parcelas, 24);
+        }
+
+        public int diasPrimeira() {
+            if (diasPrimeiraParcela == null || diasPrimeiraParcela < 0) {
+                return 0;
+            }
+            return diasPrimeiraParcela;
+        }
+
+        public FormaPagamento forma() {
+            return formaPagamento != null ? formaPagamento : FormaPagamento.A_VISTA;
+        }
     }
 }

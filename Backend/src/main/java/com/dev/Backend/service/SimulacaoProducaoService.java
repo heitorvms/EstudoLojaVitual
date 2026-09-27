@@ -111,6 +111,7 @@ public class SimulacaoProducaoService {
         simulacao.setTotalCustoMateriais(calculado.getTotalCustoMateriais());
         simulacao.setValorInsumos(calculado.getValorInsumos());
         simulacao.setTotalCustoEstimado(calculado.getTotalCustoEstimado());
+        simulacao.setPadronizado(Boolean.TRUE.equals(request.getPadronizado()));
 
         Map<Long, MaterialDisponivel> materiaisPorId = carregarMateriais(request);
         simulacao.getItens().clear();
@@ -135,11 +136,16 @@ public class SimulacaoProducaoService {
     }
 
     @Transactional(readOnly = true)
-    public List<SimulacaoHistoricoDTO> listarHistorico() {
-        return simulacaoRepository.findAllByOrderByDataCriacaoDesc()
-            .stream()
-            .map(this::toHistoricoDTO)
-            .toList();
+    public List<SimulacaoHistoricoDTO> listarHistorico(Boolean padronizado) {
+        List<Simulacao> lista;
+        if (padronizado == null) {
+            lista = simulacaoRepository.findAllByOrderByDataCriacaoDesc();
+        } else if (Boolean.TRUE.equals(padronizado)) {
+            lista = simulacaoRepository.findByPadronizadoTrueOrderByDataCriacaoDesc();
+        } else {
+            lista = simulacaoRepository.findByPadronizadoFalseOrPadronizadoIsNullOrderByDataCriacaoDesc();
+        }
+        return lista.stream().map(this::toHistoricoDTO).toList();
     }
 
     @Transactional(readOnly = true)
@@ -181,6 +187,21 @@ public class SimulacaoProducaoService {
     private void validar(SimulacaoRequestDTO req) {
         if (req == null) {
             throw new IllegalArgumentException("Payload obrigatório.");
+        }
+        boolean padronizado = Boolean.TRUE.equals(req.getPadronizado());
+        if (padronizado) {
+            if (req.getQuantidade() == null) {
+                req.setQuantidade(1);
+            }
+            if (req.getPercentualPerda() == null) {
+                req.setPercentualPerda(BigDecimal.ZERO);
+            }
+            if (req.getPercentualInsumos() == null) {
+                req.setPercentualInsumos(BigDecimal.ZERO);
+            }
+            if (req.getValorFrete() == null) {
+                req.setValorFrete(BigDecimal.ZERO);
+            }
         }
         if (req.getQuantidade() == null || req.getQuantidade() < 1) {
             throw new IllegalArgumentException("quantidade deve ser maior ou igual a 1.");
@@ -227,6 +248,7 @@ public class SimulacaoProducaoService {
         dto.setQuantidade(s.getQuantidade());
         dto.setPercentualPerda(s.getPercentualPerda());
         dto.setTotalCustoEstimado(s.getTotalCustoEstimado());
+        dto.setPadronizado(Boolean.TRUE.equals(s.getPadronizado()));
         dto.setDataCriacao(s.getDataCriacao());
         return dto;
     }
@@ -243,6 +265,7 @@ public class SimulacaoProducaoService {
         dto.setValorInsumos(s.getValorInsumos());
         dto.setTotalCustoEstimado(s.getTotalCustoEstimado());
         dto.setDataCriacao(s.getDataCriacao());
+        dto.setPadronizado(Boolean.TRUE.equals(s.getPadronizado()));
 
         for (SimulacaoItem item : s.getItens()) {
             MaterialDisponivel md = item.getMaterialDisponivel();

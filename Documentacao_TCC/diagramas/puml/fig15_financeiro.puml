@@ -1,0 +1,60 @@
+@startuml
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam ArrowColor #333333
+skinparam ParticipantBackgroundColor #F4F6FA
+skinparam ParticipantBorderColor #4A5568
+skinparam ActorBorderColor #4A5568
+skinparam DatabaseBackgroundColor #F4F6FA
+skinparam SequenceLifeLineBorderColor #999999
+skinparam NoteBackgroundColor #FFFBEA
+skinparam ClassBackgroundColor #F8FAFC
+skinparam ClassBorderColor #4A5568
+skinparam ClassHeaderBackgroundColor #E2E8F0
+skinparam PackageBorderColor #4A5568
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #4A5568
+skinparam RectangleBorderColor #4A5568
+skinparam ComponentBackgroundColor #F4F6FA
+skinparam NodeBackgroundColor #F4F6FA
+
+actor "Gerente / Admin" as U
+participant "Frontend\n(Financeiro)" as FE
+participant "ContaFinanceira\nController" as C
+participant "CotacaoFinanceiro\nService" as S
+participant "WPPConnect" as W
+database PostgreSQL as DB
+
+U -> FE : acessa /financeiro
+FE -> C : GET /api/financeiro?tipo&status
+C -> S : listar(tipo, status, pageable)
+S -> DB : select conta_financeira
+S --> FE : contas (RECEBER / PAGAR, por categoria)
+FE -> C : GET /api/financeiro/resumo
+C -> S : obterResumo()
+S --> FE : totais a receber, a pagar e vencidos
+
+alt Registrar baixa
+  U -> FE : informa valor pago
+  FE -> C : PATCH /api/financeiro/contas/{id}/baixa
+  C -> S : registrarBaixa(id, dto)
+  S -> DB : update status PAGA ou PARCIAL
+else Cobrar cliente
+  U -> FE : Cobrar via WhatsApp
+  FE -> C : GET /contas/{id}/whatsapp-cobranca
+  C -> S : previewCobrancaWhatsapp(id)
+  S --> FE : mensagem montada
+  FE -> W : abre conversa com a mensagem
+  FE -> C : POST /contas/{id}/registrar-cobranca
+  C -> S : registrarCobrancaWhatsapp(id)
+  S -> DB : insert cobranca_whatsapp_historico
+else Cancelar conta
+  FE -> C : PATCH /contas/{id}/cancelar
+  C -> S : cancelar(id)
+  S -> DB : update status CANCELADA
+end
+note over S : @Scheduled atualiza diariamente\nas contas vencidas (VENCIDA)
+@enduml

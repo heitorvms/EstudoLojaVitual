@@ -313,6 +313,36 @@ import debounce from "lodash/debounce";
     });
   };
 
+  const handleComprarMaterial = (cot) => {
+    const materiais = cot?.materiais || [];
+    if (!materiais.length) {
+      toast.current?.show({
+        severity: "warn",
+        summary: "Atenção",
+        detail: "Esta cotação não tem materiais para comprar.",
+        life: 3000,
+      });
+      return;
+    }
+
+    navigate("/compras-lote/nova", {
+      state: {
+        origem: "cotacao",
+        cotacaoId: cot.id,
+        nomeTrabalho: cot.nome || `Cotação #${cot.id}`,
+        itens: materiais.map((m) => ({
+          materialDisponivelId: m.materialDisponivel?.id,
+          materialLabel: m.materialDisponivel?.descricao,
+          barras: m.quantidade != null && m.quantidade !== "" ? Number(m.quantidade) : null,
+          metros: m.metros != null ? Number(m.metros) : null,
+          quantidadeKg: m.pesoKg != null ? Number(m.pesoKg) : null,
+          valorKg: null,
+          distribuidoraNome: null,
+        })).filter((i) => i.materialDisponivelId),
+      },
+    });
+  };
+
   const handleEnviarWhatsapp = async (cotacaoId) => {
     setEnviandoWhatsapp(true);
     try {
@@ -430,6 +460,16 @@ import debounce from "lodash/debounce";
                 label={enviandoWhatsapp ? "Enviando..." : "Enviar WhatsApp"}
                 disabled={enviandoWhatsapp}
                 style={{ marginTop: "10px", marginLeft: 8 }}
+              />
+              <ButtonStyled
+                icon="pi pi-shopping-cart"
+                className="p-button-help"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleComprarMaterial(expandedCotacao);
+                }}
+                label="Comprar material"
+                style={{ marginTop: "10px", marginLeft: 8, backgroundColor: "#0d6efd", border: "none" }}
               />
             </div>
           </CardStyled>

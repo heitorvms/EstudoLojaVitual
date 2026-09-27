@@ -1,0 +1,42 @@
+@startuml
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam ArrowColor #333333
+skinparam ParticipantBackgroundColor #F4F6FA
+skinparam ParticipantBorderColor #4A5568
+skinparam ActorBorderColor #4A5568
+skinparam DatabaseBackgroundColor #F4F6FA
+skinparam SequenceLifeLineBorderColor #999999
+skinparam NoteBackgroundColor #FFFBEA
+skinparam ClassBackgroundColor #F8FAFC
+skinparam ClassBorderColor #4A5568
+skinparam ClassHeaderBackgroundColor #E2E8F0
+skinparam PackageBorderColor #4A5568
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #4A5568
+skinparam RectangleBorderColor #4A5568
+skinparam ComponentBackgroundColor #F4F6FA
+skinparam NodeBackgroundColor #F4F6FA
+
+actor "Gerente / Admin" as U
+participant "Frontend\n(FormularioCompraLote)" as FE
+participant "CompraEstoque\nController" as C
+participant "CompraLoteService" as S
+participant "EstoqueService" as E
+database PostgreSQL as DB
+
+U -> FE : informa distribuidora, nota\ne itens (kg, metros, barras, R$/kg)
+FE -> C : POST /api/compras-lote
+C -> S : criar(compra)
+S -> S : status = ATIVA; calcula totais
+loop para cada item
+  S -> E : entrarCompra(material, kg, metros, barras, ref)
+  E -> DB : update estoque_material
+  E -> DB : insert movimentacao_estoque (ENTRADA_COMPRA)
+end
+S -> DB : insert compra_lote + compra_lote_item
+S --> FE : compra criada
+@enduml

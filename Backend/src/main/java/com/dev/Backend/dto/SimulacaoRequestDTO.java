@@ -13,5 +13,6 @@ public class SimulacaoRequestDTO {
     private BigDecimal percentualPerda;
     private BigDecimal percentualInsumos;
     private BigDecimal valorFrete;
+    private Boolean padronizado = false;
     private List<ItemSimulacaoInputDTO> itens = new ArrayList<>();
 }

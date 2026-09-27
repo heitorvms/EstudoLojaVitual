@@ -82,9 +82,11 @@ export class SimulacaoProducaoService extends BaseService {
     }
   }
 
-  async listarHistorico() {
+  async listarHistorico(padronizado = false) {
     try {
-      const response = await this.axiosInstance.get("/historico");
+      const response = await this.axiosInstance.get("/historico", {
+        params: { padronizado },
+      });
       return { success: true, data: response.data || [] };
     } catch (error) {
       return {

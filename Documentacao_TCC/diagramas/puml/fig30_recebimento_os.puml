@@ -1,0 +1,42 @@
+@startuml
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam ArrowColor #333333
+skinparam ParticipantBackgroundColor #F4F6FA
+skinparam ParticipantBorderColor #4A5568
+skinparam ActorBorderColor #4A5568
+skinparam DatabaseBackgroundColor #F4F6FA
+skinparam SequenceLifeLineBorderColor #999999
+skinparam NoteBackgroundColor #FFFBEA
+skinparam ClassBackgroundColor #F8FAFC
+skinparam ClassBorderColor #4A5568
+skinparam ClassHeaderBackgroundColor #E2E8F0
+skinparam PackageBorderColor #4A5568
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #4A5568
+skinparam RectangleBorderColor #4A5568
+skinparam ComponentBackgroundColor #F4F6FA
+skinparam NodeBackgroundColor #F4F6FA
+
+actor Usuário
+participant "Frontend\n(FinanceiroOsPanel)" as FE
+participant "OrdemServico\nController" as C
+participant "OrdemServico\nService" as S
+participant "CotacaoFinanceiro\nService" as F
+database PostgreSQL as DB
+
+Usuário -> FE : marca "Material pago" ou\n"Mão de obra paga"
+FE -> C : PATCH /api/ordens-servico/{id}/pagamento?categoria&pago
+C -> S : alterarPagamento(id, categoria, pago)
+alt pago = true
+  S -> F : quitarRecebimento(idCotacao, categoria)
+  F -> DB : contas RECEBER da categoria → PAGA
+else pago = false
+  S -> F : estornarRecebimento(idCotacao, categoria)
+  F -> DB : contas → PENDENTE (reavalia vencidas)
+end
+S --> FE : OS com situação financeira
+@enduml

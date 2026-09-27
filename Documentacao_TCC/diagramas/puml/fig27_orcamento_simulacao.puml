@@ -1,0 +1,38 @@
+@startuml
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam ArrowColor #333333
+skinparam ParticipantBackgroundColor #F4F6FA
+skinparam ParticipantBorderColor #4A5568
+skinparam ActorBorderColor #4A5568
+skinparam DatabaseBackgroundColor #F4F6FA
+skinparam SequenceLifeLineBorderColor #999999
+skinparam NoteBackgroundColor #FFFBEA
+skinparam ClassBackgroundColor #F8FAFC
+skinparam ClassBorderColor #4A5568
+skinparam ClassHeaderBackgroundColor #E2E8F0
+skinparam PackageBorderColor #4A5568
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #4A5568
+skinparam RectangleBorderColor #4A5568
+skinparam ComponentBackgroundColor #F4F6FA
+skinparam NodeBackgroundColor #F4F6FA
+
+actor Usuário
+participant "Frontend\n(SimulacaoProducao)" as SIM
+participant "SimulacaoProducao\nController" as C
+participant "Frontend\n(CriarCotacao)" as CC
+participant "CotacaoServico\nController" as CT
+
+Usuário -> SIM : seleciona simulação salva\ne clica "Gerar orçamento"
+SIM -> C : GET /api/simulacao-producao/historico/{id}
+C --> SIM : simulação com materiais
+SIM -> CC : navega com state (origem = simulacao,\nmateriais, insumos, frete)
+CC -> CC : pré-preenche o orçamento
+Usuário -> CC : completa cliente, preços e lucro
+CC -> CT : POST /api/cotacoes/
+CT --> CC : cotação criada
+@enduml

@@ -19,7 +19,6 @@ import com.dev.Backend.dto.BaixaContaFinanceiraDTO;
 import com.dev.Backend.dto.CobrancaHistoricoDTO;
 import com.dev.Backend.dto.ContaFinanceiraDTO;
 import com.dev.Backend.dto.FinanceiroResumoDTO;
-import com.dev.Backend.dto.GerarContasFinanceirasDTO;
 import com.dev.Backend.dto.RegistrarCobrancaWhatsappDTO;
 import com.dev.Backend.dto.WhatsappCobrancaPreviewDTO;
 import com.dev.Backend.entity.StatusContaFinanceira;
@@ -53,14 +52,6 @@ public class ContaFinanceiraController {
     @GetMapping("/cotacao/{idCotacao}")
     public List<ContaFinanceiraDTO> listarPorCotacao(@PathVariable Long idCotacao) {
         return cotacaoFinanceiroService.listarPorCotacao(idCotacao);
-    }
-
-    @PostMapping("/cotacao/{idCotacao}/gerar")
-    public List<ContaFinanceiraDTO> gerar(
-            @PathVariable Long idCotacao,
-            @RequestParam(defaultValue = "false") boolean substituir,
-            @RequestBody(required = false) GerarContasFinanceirasDTO opcoes) {
-        return cotacaoFinanceiroService.gerarContasDaCotacao(idCotacao, substituir, opcoes);
     }
 
     @PostMapping("/atualizar-vencidas")

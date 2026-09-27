@@ -1,0 +1,46 @@
+@startuml
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam ArrowColor #333333
+skinparam ParticipantBackgroundColor #F4F6FA
+skinparam ParticipantBorderColor #4A5568
+skinparam ActorBorderColor #4A5568
+skinparam DatabaseBackgroundColor #F4F6FA
+skinparam SequenceLifeLineBorderColor #999999
+skinparam NoteBackgroundColor #FFFBEA
+skinparam ClassBackgroundColor #F8FAFC
+skinparam ClassBorderColor #4A5568
+skinparam ClassHeaderBackgroundColor #E2E8F0
+skinparam PackageBorderColor #4A5568
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #4A5568
+skinparam RectangleBorderColor #4A5568
+skinparam ComponentBackgroundColor #F4F6FA
+skinparam NodeBackgroundColor #F4F6FA
+
+actor Usuário
+participant "Frontend\n(VisualizarOrdemServico)" as FE
+participant "OrdemServico\nController" as C
+participant "OrdemServico\nService" as S
+participant "EstoqueService" as E
+database PostgreSQL as DB
+
+Usuário -> FE : altera status (ABERTO → EM_PRODUCAO)
+FE -> C : PUT /api/ordens-servico/{id}
+C -> S : atualizar(id, input)
+S -> S : aplicarDados(os, input)
+alt consumiu material e estoque_baixado = false
+  loop para cada material da cotação
+    S -> S : barrasNecessarias(material)
+    S -> E : baixarBarras(material, barras, "OS #id")
+    E -> DB : update estoque_material
+    E -> DB : insert movimentacao_estoque (SAIDA_OS)
+  end
+  S -> DB : estoque_baixado = true
+end
+S --> FE : OS atualizada
+note over E : sem saldo suficiente a saída é registrada\n(indica necessidade de compra)
+@enduml

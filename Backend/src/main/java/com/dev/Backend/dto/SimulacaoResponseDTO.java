@@ -19,6 +19,7 @@ public class SimulacaoResponseDTO {
     private BigDecimal valorInsumos;
     private BigDecimal totalCustoEstimado;
     private Date dataCriacao;
+    private Boolean padronizado;
     private List<MaterialSimulacaoDTO> materiais = new ArrayList<>();
     private List<ItemPersistidoDTO> itens = new ArrayList<>();
 }

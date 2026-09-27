@@ -7,8 +7,6 @@ import com.dev.Backend.repository.DistribuidoraRepository;
 import com.dev.Backend.repository.MaterialDisponivelRepository;
 import com.dev.Backend.repository.PessoaReposotory;
 import com.dev.Backend.exception.RegraNegocioException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,8 +20,6 @@ import java.util.stream.Collectors;
 @Service
 public class CotacaoServicoService {
 
-    private static final Logger log = LoggerFactory.getLogger(CotacaoServicoService.class);
-
     @Autowired
     private CotacaoServicoRepository cotacaoServicoRepository;
 
@@ -35,9 +31,6 @@ public class CotacaoServicoService {
     
     @Autowired
     private CotacaoCalculationService calculationService;
-
-    @Autowired
-    private CotacaoFinanceiroService cotacaoFinanceiroService;
 
     @Autowired
     private PessoaReposotory pessoaReposotory;
@@ -102,6 +95,8 @@ public class CotacaoServicoService {
             if (matDispOpt.isPresent()) {
                 material.setMaterialDisponivel(matDispOpt.get());
                 material.setQuantidade(matInput.getQuantidade());
+                material.setMetros(matInput.getMetros());
+                material.setPesoKg(matInput.getPesoKg());
                 material.setCotacaoServico(cotacao);
                 material.setDataCriacao(new Date());
                 material.setDataAtualizacao(new Date());
@@ -151,15 +146,7 @@ public class CotacaoServicoService {
             cotacao.getPrecosMateriais().add(preco);
         }
 
-        cotacao = cotacaoServicoRepository.save(cotacao);
-
-        try {
-            cotacaoFinanceiroService.gerarContasDaCotacao(cotacao.getId(), false);
-        } catch (Exception ex) {
-            log.warn("Cotação #{} salva sem contas financeiras: {}", cotacao.getId(), ex.getMessage());
-        }
-
-        return cotacao;
+        return cotacaoServicoRepository.save(cotacao);
     }
 
     public void excluir(Long id) {
@@ -219,7 +206,9 @@ public class CotacaoServicoService {
     private MaterialDTO toMaterialDTO(Material material) {
         MaterialDTO dto = new MaterialDTO();
         dto.setId(material.getId());
-        dto.setQuantidade(material.getQuantidade().toString());
+        dto.setQuantidade(material.getQuantidade() != null ? material.getQuantidade().toString() : "0");
+        dto.setMetros(material.getMetros());
+        dto.setPesoKg(material.getPesoKg());
         dto.setMaterialDisponivel(toMaterialDisponivelDTO(material.getMaterialDisponivel()));
 
         List<PrecoMaterialCotacaoDTO> precosDTO = material.getCotacaoServico().getPrecosMateriais().stream()
@@ -242,6 +231,12 @@ public class CotacaoServicoService {
         MaterialDisponivelDTO dto = new MaterialDisponivelDTO();
         dto.setId(materialDisponivel.getId());
         dto.setDescricao(materialDisponivel.getDescricao());
+        dto.setTamanho(materialDisponivel.getTamanho());
+        if (materialDisponivel.getUnidade() != null) {
+            dto.setUnidade(materialDisponivel.getUnidade().name());
+        }
+        dto.setComprimentoBarraMm(materialDisponivel.getComprimentoBarraMm());
+        dto.setPesoKgPorMetro(materialDisponivel.getPesoKgPorMetro());
         return dto;
     }
 

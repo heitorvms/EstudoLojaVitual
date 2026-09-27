@@ -1,0 +1,186 @@
+@startuml
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam ArrowColor #333333
+skinparam ParticipantBackgroundColor #F4F6FA
+skinparam ParticipantBorderColor #4A5568
+skinparam ActorBorderColor #4A5568
+skinparam DatabaseBackgroundColor #F4F6FA
+skinparam SequenceLifeLineBorderColor #999999
+skinparam NoteBackgroundColor #FFFBEA
+skinparam ClassBackgroundColor #F8FAFC
+skinparam ClassBorderColor #4A5568
+skinparam ClassHeaderBackgroundColor #E2E8F0
+skinparam PackageBorderColor #4A5568
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #4A5568
+skinparam RectangleBorderColor #4A5568
+skinparam ComponentBackgroundColor #F4F6FA
+skinparam NodeBackgroundColor #F4F6FA
+
+!pragma layout smetana
+hide empty methods
+skinparam classAttributeFontSize 10
+
+class Estado {
+  nome
+  sigla
+}
+class Cidade {
+  nome
+}
+class Pessoa {
+  nome
+  email
+  senha
+  cpf
+  endereco
+  cep
+}
+class Permissao {
+  nome
+}
+class PermissaoPessoa
+class CotacaoServico {
+  nome
+  clienteNome
+  telefone
+  percentualInsumos
+  valorFrete
+  percentualLucro
+  valorTotalOrcamento
+}
+class Material {
+  quantidade
+  metros
+  pesoKg
+}
+class MaterialDisponivel {
+  descricao
+  unidade
+  comprimentoBarraMm
+  pesoKgPorMetro
+}
+class MaterialPreco {
+  precoUnitario
+  origem
+  dataInicio
+  dataFim
+}
+class MaterialApelido {
+  descricaoNoFornecedor
+}
+class Distribuidora {
+  nome
+}
+class PrecoMaterialCotacao {
+  preco
+}
+class Simulacao {
+  nomeTrabalho
+  quantidade
+  percentualPerda
+  padronizado
+}
+class SimulacaoItem {
+  consumoPorUnidade
+  quantidadeBarras
+  custoEstimado
+}
+class OrdemServico {
+  status
+  estoqueBaixado
+  observacoes
+}
+class OrdemServicoMaoDeObra {
+  dataTrabalho
+  noturno
+  horas
+  valorHora
+  valorTotal
+  pagoFuncionario
+}
+class FuncionarioOficina {
+  nome
+  cargo
+  valorHora
+  valorHoraNoturno
+  ativo
+}
+class ContaFinanceira {
+  tipo
+  status
+  categoria
+  valor
+  valorPago
+  dataVencimento
+  numeroParcela
+  totalParcelas
+}
+class CobrancaWhatsappHistorico {
+  mensagem
+  tipo
+  dataDisparo
+}
+class CompraLote {
+  dataCompra
+  numeroNota
+  status
+  valorTotal
+}
+class CompraLoteItem {
+  quantidadeKg
+  metros
+  barras
+  valorKg
+}
+class EstoqueMaterial {
+  quantidadeKg
+  metros
+  barras
+}
+class MovimentacaoEstoque {
+  tipo
+  referencia
+  dataMovimentacao
+}
+class ConfiguracaoWhatsapp {
+  mensagemOrcamento
+  mensagemCobranca
+  nomeSessao
+}
+class WhatsappEnvioLog {
+  status
+  telefoneDestino
+  dataEnvio
+}
+
+Cidade "*" --> "1" Estado
+Pessoa "*" --> "1" Cidade
+Pessoa "1" *-- "*" PermissaoPessoa
+PermissaoPessoa "*" --> "1" Permissao
+CotacaoServico "*" --> "0..1" Pessoa : cliente
+CotacaoServico "1" *-- "*" Material
+Material "*" --> "1" MaterialDisponivel
+CotacaoServico "*" -- "*" Distribuidora
+CotacaoServico "1" *-- "*" PrecoMaterialCotacao
+MaterialDisponivel "1" -- "*" MaterialPreco
+MaterialPreco "*" --> "1" Distribuidora
+MaterialDisponivel "1" -- "*" MaterialApelido
+Simulacao "1" *-- "*" SimulacaoItem
+SimulacaoItem "*" --> "1" MaterialDisponivel
+CotacaoServico "1" -- "0..1" OrdemServico
+OrdemServico "1" *-- "*" OrdemServicoMaoDeObra
+OrdemServicoMaoDeObra "*" --> "0..1" FuncionarioOficina
+CotacaoServico "1" -- "*" ContaFinanceira
+ContaFinanceira "1" -- "*" CobrancaWhatsappHistorico
+CotacaoServico "1" -- "*" WhatsappEnvioLog
+CompraLote "*" --> "0..1" Distribuidora
+CompraLote "1" *-- "*" CompraLoteItem
+CompraLoteItem "*" --> "1" MaterialDisponivel
+MaterialDisponivel "1" -- "0..1" EstoqueMaterial
+MaterialDisponivel "1" -- "*" MovimentacaoEstoque
+@enduml

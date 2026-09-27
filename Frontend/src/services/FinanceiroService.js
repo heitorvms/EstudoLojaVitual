@@ -23,14 +23,6 @@ export class FinanceiroService extends BaseService {
     return response.data;
   }
 
-  async gerar(idCotacao, substituir = false, opcoes = null) {
-    const response = await this.axiosInstance.post(
-      `cotacao/${idCotacao}/gerar?substituir=${substituir}`,
-      opcoes || {}
-    );
-    return response.data;
-  }
-
   async previewWhatsappCobranca(idConta) {
     const response = await this.axiosInstance.get(`contas/${idConta}/whatsapp-cobranca`);
     return response.data;

@@ -41,6 +41,10 @@ public class Simulacao {
     @Column(name = "valor_insumos", precision = 14, scale = 2)
     private BigDecimal valorInsumos;
 
+    /** true = modelo padronizado (só materiais + consumo); false = simulação completa */
+    @Column
+    private Boolean padronizado = false;
+
     @OneToMany(
         mappedBy = "simulacao",
         cascade = CascadeType.ALL,

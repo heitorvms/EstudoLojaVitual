@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-const sidebarTransientProps = ['active', 'isOpen', 'iconOnly'];
+const sidebarTransientProps = ['active', 'isOpen', 'iconOnly', 'expanded', 'nested'];
 
 export const SidebarContainer = styled.div.withConfig({
   shouldForwardProp: (prop) => !sidebarTransientProps.includes(prop),
@@ -24,7 +24,8 @@ export const SidebarContainer = styled.div.withConfig({
   .logo {
     display: flex;
     align-items: center;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
+    flex-shrink: 0;
 
     h2 {
       font-size: 20px;
@@ -46,11 +47,22 @@ export const SidebarContainer = styled.div.withConfig({
     }
   }
 
-  ul {
+  ul.menu-list {
     list-style: none;
     padding: 0;
     margin: 0;
     flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #3A3A4E;
+      border-radius: 4px;
+    }
   }
 
   .user-info {
@@ -61,6 +73,7 @@ export const SidebarContainer = styled.div.withConfig({
     background: #2A2A3E;
     border-radius: 5px;
     transition: background 0.3s ease;
+    flex-shrink: 0;
 
     &:hover {
       background: #3A3A4E;
@@ -115,6 +128,7 @@ export const SidebarContainer = styled.div.withConfig({
     gap: 10px;
     padding-top: 12px;
     border-top: 1px solid #2A2A3E;
+    flex-shrink: 0;
 
     .settings-link-collapsed {
       color: #ccc;
@@ -135,20 +149,71 @@ export const SidebarContainer = styled.div.withConfig({
   }
 `;
 
+export const MenuGroup = styled.li.withConfig({
+  shouldForwardProp: (prop) => !sidebarTransientProps.includes(prop),
+})`
+  list-style: none;
+  margin-bottom: 6px;
+
+  .group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px 12px;
+    background: ${props => (props.active ? 'rgba(74, 0, 224, 0.25)' : 'transparent')};
+    color: ${props => (props.active ? '#fff' : '#9a9ab0')};
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: background 0.2s ease, color 0.2s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+    }
+
+    .group-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    svg.chevron {
+      font-size: 12px;
+      transition: transform 0.2s ease;
+      transform: ${props => (props.expanded ? 'rotate(180deg)' : 'rotate(0deg)')};
+      opacity: 0.7;
+    }
+  }
+
+  .group-items {
+    list-style: none;
+    padding: 0 0 4px 0;
+    margin: 0;
+    display: ${props => (props.expanded ? 'block' : 'none')};
+  }
+`;
+
 export const MenuItem = styled.li.withConfig({
   shouldForwardProp: (prop) => !sidebarTransientProps.includes(prop),
 })`
   position: relative;
   display: flex;
   align-items: center;
-  padding: 15px;
+  padding: ${props => (props.nested ? '12px 12px 12px 18px' : '15px')};
   background: ${props => (props.active ? '#4A00E0' : 'transparent')};
   color: ${props => (props.active ? '#fff' : '#ccc')};
   cursor: pointer;
   border-radius: 5px;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   transition: background 0.3s ease, color 0.3s ease;
   justify-content: ${props => (props.isOpen || props.iconOnly ? 'center' : 'flex-start')};
+  min-height: ${props => (props.nested ? '42px' : '48px')};
 
   &:hover {
     background: #4A00E0;
@@ -168,19 +233,23 @@ export const MenuItem = styled.li.withConfig({
     color: inherit;
     background: none;
     border: none;
-    font-size: 16px;
+    font-size: ${props => (props.nested ? '14px' : '16px')};
     cursor: pointer;
     font-weight: 500;
-    padding-left: ${props => (props.isOpen ? '10px' : '0')};
+    padding-left: ${props => (props.isOpen ? (props.nested ? '14px' : '10px') : '0')};
   }
 
   svg {
     font-size: 18px;
     margin-right: ${props => (props.isOpen ? '10px' : '0')};
+    flex-shrink: 0;
   }
 
   span {
     display: ${props => (props.isOpen ? 'inline' : 'none')};
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 `;
 
@@ -203,6 +272,7 @@ export const IconMenu = styled.div`
     display: flex;
     flex-direction: column;
     min-height: 0;
+    overflow-y: auto;
   }
 
   .icon-menu-bottom {

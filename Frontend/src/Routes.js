@@ -13,6 +13,12 @@ import Configuracoes from "./pages/Configuracoes";
 import VisualizarCotacao from "./pages/VisualizarCotacao";
 import SimulacaoProducao from "./pages/SimulacaoProducao";
 import Financeiro from "./pages/Financeiro";
+import OrdensServico from "./pages/OrdensServico";
+import VisualizarOrdemServico from "./pages/VisualizarOrdemServico";
+import FuncionariosOficina from "./pages/FuncionariosOficina";
+import ComprasLote from "./pages/ComprasLote";
+import FormularioCompraLote from "./pages/FormularioCompraLote";
+import Estoque from "./pages/Estoque";
 import RoleRoute from "./components/RoleRoute";
 
 export default function AppRoutes({ toggleSidebar }) {
@@ -58,8 +64,30 @@ export default function AppRoutes({ toggleSidebar }) {
     case "/financeiro":
       title = "Financeiro";
       break;
+    case "/ordens-servico":
+      title = "Ordens de Serviço";
+      break;
+    case "/funcionarios-oficina":
+      title = "Funcionários";
+      break;
+    case "/compras-lote":
+      title = "Compra de Material";
+      break;
+    case "/compras-lote/nova":
+      title = "Nova Compra";
+      break;
+    case "/estoque":
+      title = "Estoque";
+      break;
     default:
       title = "";
+  }
+
+  if (location.pathname.startsWith("/ordens-servico/")) {
+    title = "Ordem de Serviço";
+  }
+  if (location.pathname.match(/^\/compras-lote\/\d+\/editar$/)) {
+    title = "Editar Compra";
   }
 
   return (
@@ -103,6 +131,15 @@ export default function AppRoutes({ toggleSidebar }) {
         <Route path="/simulacao-producao" element={<RoleRoute allowedRoles={["Funcionario","Gerente","Admin"]} element={<SimulacaoProducao />} />} />
 
         <Route path="/financeiro" element={<RoleRoute allowedRoles={["Gerente","Admin"]} element={<Financeiro />} />} />
+
+        <Route path="/ordens-servico" element={<RoleRoute allowedRoles={["Funcionario","Gerente","Admin"]} element={<OrdensServico setCustomContent={setCustomContent} />} />} />
+        <Route path="/ordens-servico/nova/:cotacaoId" element={<RoleRoute allowedRoles={["Funcionario","Gerente","Admin"]} element={<VisualizarOrdemServico />} />} />
+        <Route path="/ordens-servico/:id" element={<RoleRoute allowedRoles={["Funcionario","Gerente","Admin"]} element={<VisualizarOrdemServico />} />} />
+        <Route path="/funcionarios-oficina" element={<RoleRoute allowedRoles={["Gerente","Admin"]} element={<FuncionariosOficina />} />} />
+        <Route path="/compras-lote" element={<RoleRoute allowedRoles={["Gerente","Admin"]} element={<ComprasLote />} />} />
+        <Route path="/compras-lote/nova" element={<RoleRoute allowedRoles={["Gerente","Admin"]} element={<FormularioCompraLote />} />} />
+        <Route path="/compras-lote/:id/editar" element={<RoleRoute allowedRoles={["Gerente","Admin"]} element={<FormularioCompraLote />} />} />
+        <Route path="/estoque" element={<RoleRoute allowedRoles={["Gerente","Admin"]} element={<Estoque />} />} />
       </Routes>
     </>
   );

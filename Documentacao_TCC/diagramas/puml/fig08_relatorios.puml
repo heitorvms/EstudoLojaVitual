@@ -1,0 +1,41 @@
+@startuml
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam ArrowColor #333333
+skinparam ParticipantBackgroundColor #F4F6FA
+skinparam ParticipantBorderColor #4A5568
+skinparam ActorBorderColor #4A5568
+skinparam DatabaseBackgroundColor #F4F6FA
+skinparam SequenceLifeLineBorderColor #999999
+skinparam NoteBackgroundColor #FFFBEA
+skinparam ClassBackgroundColor #F8FAFC
+skinparam ClassBorderColor #4A5568
+skinparam ClassHeaderBackgroundColor #E2E8F0
+skinparam PackageBorderColor #4A5568
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #4A5568
+skinparam RectangleBorderColor #4A5568
+skinparam ComponentBackgroundColor #F4F6FA
+skinparam NodeBackgroundColor #F4F6FA
+
+actor Usuário
+participant "Frontend\n(VisualizarCotacao)" as FE
+participant "RelatorioController" as C
+participant "RelatorioService" as S
+participant "JasperReports" as J
+database PostgreSQL as DB
+
+Usuário -> FE : Gerar PDF
+FE -> C : GET /api/relatorios/{nomeRelatorio}?parametros
+C -> S : gerarRelatorio(nome, parametros, outputStream)
+S -> J : compila e preenche o .jrxml
+J -> DB : consulta via DataSource
+DB --> J : dados
+J --> S : relatório preenchido
+S --> C : PDF escrito no stream
+C --> FE : HTTP 200 (application/pdf)
+FE --> Usuário : download do arquivo
+@enduml

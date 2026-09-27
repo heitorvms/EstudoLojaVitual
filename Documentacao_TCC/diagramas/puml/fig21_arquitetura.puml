@@ -1,0 +1,64 @@
+@startuml
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam ArrowColor #333333
+skinparam ParticipantBackgroundColor #F4F6FA
+skinparam ParticipantBorderColor #4A5568
+skinparam ActorBorderColor #4A5568
+skinparam DatabaseBackgroundColor #F4F6FA
+skinparam SequenceLifeLineBorderColor #999999
+skinparam NoteBackgroundColor #FFFBEA
+skinparam ClassBackgroundColor #F8FAFC
+skinparam ClassBorderColor #4A5568
+skinparam ClassHeaderBackgroundColor #E2E8F0
+skinparam PackageBorderColor #4A5568
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #4A5568
+skinparam RectangleBorderColor #4A5568
+skinparam ComponentBackgroundColor #F4F6FA
+skinparam NodeBackgroundColor #F4F6FA
+
+!pragma layout smetana
+left to right direction
+rectangle "Entrada do sistema\n(login e senha)" as LOGIN
+package "Cadastros" {
+  [Estado]
+  [Cidade]
+  [Materiais]
+  [Distribuidoras]
+  [Funcionários]
+}
+package "Comercial" {
+  [Cotações]
+  [Simulação]
+}
+package "Produção" {
+  [Ordens de Serviço]
+}
+package "Estoque" {
+  [Saldo de estoque]
+  [Compra de material]
+}
+package "Financeiro" {
+  [Contas a pagar]
+  [Contas a receber]
+  [Cobrança WhatsApp]
+}
+package "Configurações" {
+  [Usuários e permissões]
+  [WhatsApp]
+}
+package "Sair" {
+  [Encerrar sessão]
+}
+LOGIN --> Cadastros
+LOGIN --> Comercial
+LOGIN --> Produção
+LOGIN --> Estoque
+LOGIN --> Financeiro
+LOGIN --> Configurações
+LOGIN --> Sair
+@enduml

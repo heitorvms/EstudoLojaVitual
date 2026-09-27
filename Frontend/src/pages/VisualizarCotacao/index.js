@@ -1,18 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Toast } from "primereact/toast";
-import { Button } from "primereact/button";
 import { Column } from "primereact/column";
-import { Dialog } from "primereact/dialog";
-import { Dropdown } from "primereact/dropdown";
-import { InputNumber } from "primereact/inputnumber";
-import { Tag } from "primereact/tag";
 import { ProgressSpinner } from "primereact/progressspinner";
 import "primereact/resources/themes/lara-light-indigo/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 import { CotacaoService } from "../../services/CotacaoService";
-import { FinanceiroService } from "../../services/FinanceiroService";
+import { OrdemServicoService } from "../../services/OrdemServicoService";
 import {
   VisualizarGlobalStyle,
   PageShell,
@@ -43,8 +38,6 @@ import {
   PriceValue,
   ChoiceList,
   ChoiceText,
-  DialogForm,
-  DialogWarning,
   LoadingWrap,
 } from "./styled";
 
@@ -55,25 +48,8 @@ const VisualizarCotacao = () => {
   const [cotacao, setCotacao] = useState(null);
   const [analise, setAnalise] = useState(null);
   const cotacaoService = useMemo(() => new CotacaoService(), []);
-  const financeiroService = useMemo(() => new FinanceiroService(), []);
-  const [contasFinanceiras, setContasFinanceiras] = useState([]);
-  const [gerandoFinanceiro, setGerandoFinanceiro] = useState(false);
-  const [gerarDialog, setGerarDialog] = useState(false);
-  const [opcoesGerar, setOpcoesGerar] = useState({
-    quantidadeParcelasReceber: 1,
-    intervaloDiasParcelas: 30,
-    diasPrimeiraParcela: 30,
-    diasVencimentoPagar: 15,
-    formaPagamentoReceber: "A_VISTA",
-    formaPagamentoPagar: "A_VISTA",
-  });
-
-  const FORMAS_PAG = [
-    { label: "À vista", value: "A_VISTA" },
-    { label: "PIX", value: "PIX" },
-    { label: "Boleto", value: "BOLETO" },
-    { label: "Cartão crédito", value: "CARTAO_CREDITO" },
-  ];
+  const ordemServicoService = useMemo(() => new OrdemServicoService(), []);
+  const [gerandoOs, setGerandoOs] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -98,35 +74,20 @@ const VisualizarCotacao = () => {
     load();
   }, [id, cotacaoService]);
 
-  const carregarFinanceiro = async () => {
+  const gerarOrdemServico = async () => {
+    setGerandoOs(true);
     try {
-      const lista = await financeiroService.listarPorCotacao(id);
-      setContasFinanceiras(lista || []);
-    } catch {
-      setContasFinanceiras([]);
-    }
-  };
-
-  useEffect(() => {
-    if (id) carregarFinanceiro();
-  }, [id]);
-
-  const confirmarGerarFinanceiro = async () => {
-    setGerandoFinanceiro(true);
-    try {
-      await financeiroService.gerar(id, contasFinanceiras.length > 0, opcoesGerar);
-      await carregarFinanceiro();
-      setGerarDialog(false);
-      toast.current?.show({ severity: "success", summary: "Contas geradas", life: 3000 });
+      await ordemServicoService.rascunhoDeCotacao(id);
+      navigate(`/ordens-servico/nova/${id}`);
     } catch (e) {
       toast.current?.show({
         severity: "error",
         summary: "Erro",
-        detail: e.response?.data?.message || e.message,
+        detail: e.response?.data?.message || "Erro ao gerar OS",
         life: 4000,
       });
     } finally {
-      setGerandoFinanceiro(false);
+      setGerandoOs(false);
     }
   };
 
@@ -179,14 +140,6 @@ const VisualizarCotacao = () => {
         Number(cotacao.valorLucro || 0)
       : 0);
 
-  const statusFinanceiroSeverity = (status) => {
-    if (status === "PAGA") return "success";
-    if (status === "VENCIDA") return "danger";
-    if (status === "PARCIAL") return "warning";
-    if (status === "CANCELADA") return "secondary";
-    return "info";
-  };
-
   if (!cotacao) {
     return (
       <PageShell className="visualizar-cotacao-page">
@@ -214,17 +167,11 @@ const VisualizarCotacao = () => {
           </HeaderText>
           <HeaderActions>
             <ButtonPrimary
-              label={contasFinanceiras.length ? "Regerar financeiro" : "Gerar financeiro"}
-              icon="pi pi-wallet"
-              onClick={() => setGerarDialog(true)}
+              label="Gerar OS"
+              icon="pi pi-clipboard"
+              loading={gerandoOs}
+              onClick={gerarOrdemServico}
             />
-            {contasFinanceiras.length > 0 && (
-              <ButtonSecondary
-                label="Financeiro"
-                icon="pi pi-external-link"
-                onClick={() => navigate("/financeiro")}
-              />
-            )}
             <ButtonSecondary label="Voltar" icon="pi pi-arrow-left" onClick={() => navigate(-1)} />
           </HeaderActions>
         </PageHeader>
@@ -260,93 +207,6 @@ const VisualizarCotacao = () => {
             </InfoItem>
           </InfoGrid>
         </SummaryCard>
-
-      {contasFinanceiras.length > 0 && (
-        <PanelCard>
-          <PanelTitle>Financeiro</PanelTitle>
-          <DataTableStyled value={contasFinanceiras} responsiveLayout="scroll" stripedRows>
-            <Column field="tipo" header="Tipo" body={(r) => (r.tipo === "RECEBER" ? "A receber" : "A pagar")} />
-            <Column
-              header="Parcela"
-              body={(r) => (r.totalParcelas > 1 ? `${r.numeroParcela}/${r.totalParcelas}` : "-")}
-            />
-            <Column
-              field="status"
-              header="Status"
-              body={(r) => <Tag value={r.status} severity={statusFinanceiroSeverity(r.status)} rounded />}
-            />
-            <Column field="descricao" header="Descrição" />
-            <Column field="valor" header="Valor" body={(r) => formatCurrency(r.valor)} />
-            <Column field="valorPendente" header="Pendente" body={(r) => formatCurrency(r.valorPendente)} />
-            <Column
-              field="dataVencimento"
-              header="Vencimento"
-              body={(r) => (r.dataVencimento ? new Date(r.dataVencimento).toLocaleDateString("pt-BR") : "-")}
-            />
-          </DataTableStyled>
-        </PanelCard>
-      )}
-
-      <Dialog
-        header="Gerar contas financeiras"
-        visible={gerarDialog}
-        style={{ width: 420 }}
-        onHide={() => setGerarDialog(false)}
-        footer={
-          <>
-            <Button label="Cancelar" text onClick={() => setGerarDialog(false)} />
-            <ButtonPrimary label="Gerar" loading={gerandoFinanceiro} onClick={confirmarGerarFinanceiro} />
-          </>
-        }
-      >
-        <DialogForm>
-          <div>
-            <label>Parcelas (a receber)</label>
-            <InputNumber
-              value={opcoesGerar.quantidadeParcelasReceber}
-              onValueChange={(e) => setOpcoesGerar((o) => ({ ...o, quantidadeParcelasReceber: e.value || 1 }))}
-              min={1}
-              max={24}
-            />
-          </div>
-          <div>
-            <label>Intervalo entre parcelas (dias)</label>
-            <InputNumber
-              value={opcoesGerar.intervaloDiasParcelas}
-              onValueChange={(e) => setOpcoesGerar((o) => ({ ...o, intervaloDiasParcelas: e.value || 30 }))}
-              min={1}
-            />
-          </div>
-          <div>
-            <label>1ª parcela vence em (dias)</label>
-            <InputNumber
-              value={opcoesGerar.diasPrimeiraParcela}
-              onValueChange={(e) => setOpcoesGerar((o) => ({ ...o, diasPrimeiraParcela: e.value ?? 30 }))}
-              min={0}
-            />
-          </div>
-          <div>
-            <label>Vencimento custos (dias)</label>
-            <InputNumber
-              value={opcoesGerar.diasVencimentoPagar}
-              onValueChange={(e) => setOpcoesGerar((o) => ({ ...o, diasVencimentoPagar: e.value || 15 }))}
-              min={1}
-            />
-          </div>
-          <div>
-            <label>Forma pagamento (receber)</label>
-            <Dropdown
-              value={opcoesGerar.formaPagamentoReceber}
-              options={FORMAS_PAG}
-              onChange={(e) => setOpcoesGerar((o) => ({ ...o, formaPagamentoReceber: e.value }))}
-              className="w-full"
-            />
-          </div>
-          {contasFinanceiras.length > 0 && (
-            <DialogWarning>Já existem contas: regerar só se nenhuma tiver baixa.</DialogWarning>
-          )}
-        </DialogForm>
-      </Dialog>
 
       <PanelCard>
         <PanelTitle>Valores por distribuidora</PanelTitle>

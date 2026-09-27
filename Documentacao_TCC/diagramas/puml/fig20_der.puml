@@ -1,0 +1,192 @@
+@startuml
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam ArrowColor #333333
+skinparam ParticipantBackgroundColor #F4F6FA
+skinparam ParticipantBorderColor #4A5568
+skinparam ActorBorderColor #4A5568
+skinparam DatabaseBackgroundColor #F4F6FA
+skinparam SequenceLifeLineBorderColor #999999
+skinparam NoteBackgroundColor #FFFBEA
+skinparam ClassBackgroundColor #F8FAFC
+skinparam ClassBorderColor #4A5568
+skinparam ClassHeaderBackgroundColor #E2E8F0
+skinparam PackageBorderColor #4A5568
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #4A5568
+skinparam RectangleBorderColor #4A5568
+skinparam ComponentBackgroundColor #F4F6FA
+skinparam NodeBackgroundColor #F4F6FA
+
+!pragma layout smetana
+left to right direction
+hide circle
+hide empty methods
+skinparam classAttributeFontSize 9
+skinparam classFontSize 11
+
+entity estado {
+  *id <<PK>>
+  nome
+  sigla
+}
+entity cidade {
+  *id <<PK>>
+  id_estado <<FK>>
+  nome
+}
+entity pessoa {
+  *id <<PK>>
+  id_cidade <<FK>>
+  nome, email, senha, cpf
+}
+entity permissao {
+  *id <<PK>>
+  nome
+}
+entity permissao_pessoa {
+  *id <<PK>>
+  id_pessoa <<FK>>
+  id_permissao <<FK>>
+}
+entity cotacao_servico {
+  *id <<PK>>
+  id_cliente <<FK>>
+  nome, cliente_nome
+  valor_total_orcamento
+}
+entity material {
+  *id <<PK>>
+  id_cotacao <<FK>>
+  id_material_disponivel <<FK>>
+  quantidade, metros, peso_kg
+}
+entity cotacao_distribuidora {
+  id_cotacao <<FK>>
+  id_distribuidora <<FK>>
+}
+entity preco_material_cotacao {
+  *id <<PK>>
+  id_cotacao <<FK>>
+  id_distribuidora <<FK>>
+  id_material <<FK>>
+  preco
+}
+entity distribuidora {
+  *id <<PK>>
+  nome
+}
+entity material_disponivel {
+  *id <<PK>>
+  descricao, unidade
+  comprimento_barra_mm
+  peso_kg_por_metro
+}
+entity material_preco {
+  *id <<PK>>
+  id_material_disponivel <<FK>>
+  id_distribuidora <<FK>>
+  preco_unitario, origem
+}
+entity material_apelido {
+  *id <<PK>>
+  id_material_disponivel <<FK>>
+  id_distribuidora <<FK>>
+}
+entity simulacao {
+  *id <<PK>>
+  nome_trabalho, padronizado
+}
+entity simulacao_item {
+  *id <<PK>>
+  id_simulacao <<FK>>
+  id_material_disponivel <<FK>>
+}
+entity ordem_servico {
+  *id <<PK>>
+  id_cotacao <<FK,UQ>>
+  status, estoque_baixado
+}
+entity ordem_servico_mao_obra {
+  *id <<PK>>
+  id_ordem_servico <<FK>>
+  id_funcionario <<FK>>
+  horas, noturno, pago_funcionario
+}
+entity funcionario_oficina {
+  *id <<PK>>
+  nome, valor_hora
+  valor_hora_noturno
+}
+entity conta_financeira {
+  *id <<PK>>
+  id_cotacao <<FK>>
+  id_distribuidora <<FK>>
+  tipo, status, categoria
+}
+entity cobranca_whatsapp_historico {
+  *id <<PK>>
+  id_conta <<FK>>
+  tipo, data_disparo
+}
+entity whatsapp_envio_log {
+  *id <<PK>>
+  cotacao_id <<FK>>
+  status, data_envio
+}
+entity configuracao_whatsapp {
+  *id <<PK>>
+  nome_sessao, url_wppconnect
+}
+entity compra_lote {
+  *id <<PK>>
+  id_distribuidora <<FK>>
+  status, valor_total
+}
+entity compra_lote_item {
+  *id <<PK>>
+  id_compra_lote <<FK>>
+  id_material_disponivel <<FK>>
+}
+entity estoque_material {
+  *id <<PK>>
+  id_material_disponivel <<FK,UQ>>
+  quantidade_kg, metros, barras
+}
+entity movimentacao_estoque {
+  *id <<PK>>
+  id_material_disponivel <<FK>>
+  tipo, referencia
+}
+
+cidade }o--|| estado
+pessoa }o--o| cidade
+permissao_pessoa }o--|| pessoa
+permissao_pessoa }o--|| permissao
+cotacao_servico }o--o| pessoa
+material }o--|| cotacao_servico
+material }o--|| material_disponivel
+cotacao_distribuidora }o--|| cotacao_servico
+cotacao_distribuidora }o--|| distribuidora
+preco_material_cotacao }o--|| cotacao_servico
+material_preco }o--|| material_disponivel
+material_preco }o--|| distribuidora
+material_apelido }o--|| material_disponivel
+simulacao_item }o--|| simulacao
+simulacao_item }o--|| material_disponivel
+ordem_servico |o--|| cotacao_servico
+ordem_servico_mao_obra }o--|| ordem_servico
+ordem_servico_mao_obra }o--o| funcionario_oficina
+conta_financeira }o--|| cotacao_servico
+conta_financeira }o--o| distribuidora
+cobranca_whatsapp_historico }o--|| conta_financeira
+whatsapp_envio_log }o--|| cotacao_servico
+compra_lote }o--o| distribuidora
+compra_lote_item }o--|| compra_lote
+compra_lote_item }o--|| material_disponivel
+estoque_material |o--|| material_disponivel
+movimentacao_estoque }o--|| material_disponivel
+@enduml

@@ -9,20 +9,22 @@ function Header({ toggleSidebar, title, customContent }) {
       {customContent && (
         <>
           <div className="header-left">
-            <Button
-              label="Nova Cotação"
-              icon="pi pi-plus"
-              className="p-button-success header-button"
-              onClick={customContent.openNew}
-              style={{ marginLeft: '20px' }}
-            />
+            {customContent.openNew && (
+              <Button
+                label={customContent.newLabel || "Nova Cotação"}
+                icon="pi pi-plus"
+                className="p-button-success header-button"
+                onClick={customContent.openNew}
+                style={{ marginLeft: '20px' }}
+              />
+            )}
           </div>
           <div className="header-center">
             <span className="p-input-icon-right">
               <InputText
                 value={customContent.searchTerm}
                 onChange={(e) => customContent.setSearchTerm(e.target.value)}
-                placeholder="Nome ou Telefone"
+                placeholder={customContent.placeholder || "Nome ou Telefone"}
                 className="header-search"
                 onKeyPress={(e) => {
                   if (e.key === 'Enter' && !customContent.isLoading) {

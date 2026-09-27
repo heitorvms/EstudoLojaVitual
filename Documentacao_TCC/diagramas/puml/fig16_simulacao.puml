@@ -1,0 +1,47 @@
+@startuml
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam ArrowColor #333333
+skinparam ParticipantBackgroundColor #F4F6FA
+skinparam ParticipantBorderColor #4A5568
+skinparam ActorBorderColor #4A5568
+skinparam DatabaseBackgroundColor #F4F6FA
+skinparam SequenceLifeLineBorderColor #999999
+skinparam NoteBackgroundColor #FFFBEA
+skinparam ClassBackgroundColor #F8FAFC
+skinparam ClassBorderColor #4A5568
+skinparam ClassHeaderBackgroundColor #E2E8F0
+skinparam PackageBorderColor #4A5568
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #4A5568
+skinparam RectangleBorderColor #4A5568
+skinparam ComponentBackgroundColor #F4F6FA
+skinparam NodeBackgroundColor #F4F6FA
+
+actor Usuário
+participant "Frontend\n(SimulacaoProducao)" as FE
+participant "SimulacaoProducao\nController" as C
+participant "SimulacaoProducao\nService" as S
+database PostgreSQL as DB
+
+opt usar modelo padronizado
+  FE -> C : GET /api/simulacao-producao/historico?padronizado=true
+  C -> S : listarHistorico(true)
+  S --> FE : modelos
+  Usuário -> FE : escolhe modelo (materiais carregados)
+end
+Usuário -> FE : informa materiais, consumo por unidade,\nquantidade, perda, insumos e frete
+FE -> C : POST /api/simulacao-producao/calcular
+C -> S : calcular(request)
+S -> DB : busca materiais e melhor preço vigente
+S -> S : consumo total, perda, barras,\nsobra e custo estimado
+S --> FE : SimulacaoResponseDTO
+Usuário -> FE : Salvar (simulação ou modelo padronizado)
+FE -> C : POST /api/simulacao-producao/historico
+C -> S : salvar(request)
+S -> DB : insert simulacao + simulacao_item
+S --> FE : HTTP 201
+@enduml

@@ -150,69 +150,105 @@ const CriarCotacao = () => {
     const dados = location.state;
     if (!dados || dados.origem !== "simulacao") return;
 
-    setOrigemSimulacao({
-      simulacaoId: dados.simulacaoId,
-      nomeTrabalho: dados.nomeTrabalho,
-    });
+    let cancelled = false;
 
-    const distNomes = [];
-    const distVistos = new Set();
-    for (const m of dados.materiais || []) {
-      const nome = m.distribuidoraNome?.trim();
-      if (nome && !distVistos.has(nome.toLowerCase())) {
-        distVistos.add(nome.toLowerCase());
-        distNomes.push(nome);
+    (async () => {
+      setOrigemSimulacao({
+        simulacaoId: dados.simulacaoId,
+        nomeTrabalho: dados.nomeTrabalho,
+      });
+
+      setComposicaoCustos({
+        percentualInsumos: Number(dados.percentualInsumos ?? 15),
+        valorFrete: Number(dados.valorFrete ?? 0),
+        percentualLucro: Number(dados.percentualLucro ?? 10),
+      });
+
+      const matsInput = dados.materiais || [];
+      const vigentesPorId = new Map();
+      const distPorNome = new Map();
+
+      for (const m of matsInput) {
+        const mid = m.materialDisponivelId;
+        if (!mid) continue;
+        const result = await precoService.vigentesPorMaterial(mid);
+        const vigentes = result.success ? result.data || [] : [];
+        vigentesPorId.set(mid, vigentes);
+        for (const p of vigentes) {
+          const nome = p.distribuidoraNome?.trim();
+          if (nome) distPorNome.set(nome.toLowerCase(), nome);
+        }
+        const snapNome = m.distribuidoraNome?.trim();
+        if (snapNome) distPorNome.set(snapNome.toLowerCase(), snapNome);
       }
-    }
 
-    setDistribuidores(distNomes);
+      if (cancelled) return;
 
-    setComposicaoCustos({
-      percentualInsumos: Number(dados.percentualInsumos ?? 15),
-      valorFrete: Number(dados.valorFrete ?? 0),
-      percentualLucro: Number(dados.percentualLucro ?? 10),
-    });
+      const distNomes = Array.from(distPorNome.values());
+      setDistribuidores(distNomes);
 
-    setCotacao((prev) => ({
-      ...prev,
-      nome: dados.nomeTrabalho || prev.nome,
-      quantidadeProduto: dados.quantidade ? String(dados.quantidade) : prev.quantidadeProduto,
-      materiais: aplicarSyncMateriais(
-        (dados.materiais || []).map((m) => {
-          const precosIniciais = [];
-          if (m.distribuidoraNome && m.precoUnitario != null) {
-            const precoNum = Number(m.precoUnitario);
-            precosIniciais.push({
-              fornecedor: m.distribuidoraNome,
+      const materiaisMontados = matsInput.map((m) => {
+        const vigentes = vigentesPorId.get(m.materialDisponivelId) || [];
+        const precosIniciais = distNomes.map((nomeDist) => {
+          const vig = vigentes.find(
+            (v) => v.distribuidoraNome?.trim().toLowerCase() === nomeDist.toLowerCase()
+          );
+          if (vig != null && vig.precoUnitario != null) {
+            const precoNum = Number(vig.precoUnitario);
+            return {
+              fornecedor: nomeDist,
               preco: precoNum.toFixed(2),
               precoVigente: precoNum,
-            });
+            };
           }
-          return {
-            materialDisponivel: {
-              id: m.materialDisponivelId,
-              descricao: m.descricao,
-              tamanho: m.tamanho,
-            },
-            quantidade: Number(m.quantidadeBarras || 0),
-            precos: precosIniciais,
-          };
-        }),
-        distNomes
-      ),
-    }));
+          if (
+            m.distribuidoraNome?.trim().toLowerCase() === nomeDist.toLowerCase() &&
+            m.precoUnitario != null
+          ) {
+            const precoNum = Number(m.precoUnitario);
+            return {
+              fornecedor: nomeDist,
+              preco: precoNum.toFixed(2),
+              precoVigente: precoNum,
+            };
+          }
+          return { fornecedor: nomeDist, preco: "", precoVigente: null };
+        });
 
-    toast.current?.show({
-      severity: "info",
-      summary: "Simulação importada",
-      detail: distNomes.length
-        ? `Materiais, quantidades e preços da(s) distribuidora(s) ${distNomes.join(", ")} foram carregados.`
-        : "Materiais e quantidades vieram da simulação. Adicione distribuidoras e preencha os preços.",
-      life: 4500,
-    });
+        return {
+          materialDisponivel: {
+            id: m.materialDisponivelId,
+            descricao: m.descricao,
+            tamanho: m.tamanho,
+          },
+          quantidade: Number(m.quantidadeBarras || 0),
+          precos: precosIniciais,
+        };
+      });
 
-    navigate(location.pathname, { replace: true, state: null });
-  }, [location, navigate]);
+      setCotacao((prev) => ({
+        ...prev,
+        nome: dados.nomeTrabalho || prev.nome,
+        quantidadeProduto: dados.quantidade ? String(dados.quantidade) : prev.quantidadeProduto,
+        materiais: aplicarSyncMateriais(materiaisMontados, distNomes),
+      }));
+
+      toast.current?.show({
+        severity: "info",
+        summary: "Simulação importada",
+        detail: distNomes.length
+          ? `Materiais e preços vigentes de ${distNomes.length} distribuidora(s) carregados.`
+          : "Materiais e quantidades vieram da simulação. Adicione distribuidoras e preencha os preços.",
+        life: 4500,
+      });
+
+      navigate(location.pathname, { replace: true, state: null });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location, navigate, precoService]);
 
   const formatPhoneNumber = (value) => {
     const cleaned = ("" + value).replace(/\D/g, "");
@@ -256,7 +292,11 @@ const CriarCotacao = () => {
 
   const possuiPrecoPreenchido = () =>
     cotacao.materiais.some((mat) =>
-      mat.precos.some((p) => p.preco !== "" && p.preco != null && !isNaN(Number(p.preco)))
+      mat.precos.some((p) => {
+        if (p.preco === "" || p.preco == null) return false;
+        const n = Number(p.preco);
+        return !isNaN(n) && n > 0;
+      })
     );
 
   const sugerirPrecosParaMaterial = async (materialId, distNomes) => {
@@ -618,8 +658,9 @@ const CriarCotacao = () => {
   const calcularSubtotalMaterial = (mat) => {
     const qtd = Number(mat.quantidade) || 0;
     const precosValidos = sincronizarPrecosComDistribuidores(mat.precos, distribuidores)
+      .filter((p) => p.preco !== "" && p.preco != null)
       .map((p) => Number(p.preco))
-      .filter((v) => !isNaN(v) && v >= 0);
+      .filter((v) => !isNaN(v) && v > 0);
     if (!precosValidos.length || qtd <= 0) return null;
     const menorUnit = Math.min(...precosValidos);
     return menorUnit * qtd;
@@ -754,6 +795,8 @@ const CriarCotacao = () => {
         materiais: cotacao.materiais.map((m) => ({
           materialDisponivelId: m.materialDisponivel.id,
           quantidade: Number(m.quantidade),
+          metros: m.metros != null ? Number(m.metros) : null,
+          pesoKg: m.pesoKg != null ? Number(m.pesoKg) : null,
         })),
         distribuidoras: distribuidores.map((nome) => ({ nome })),
         precosMateriais: cotacao.materiais.flatMap((m) =>
@@ -887,7 +930,12 @@ const CriarCotacao = () => {
       const quantidade = Number(mat.quantidade) || 1;
       const precosSync = sincronizarPrecosComDistribuidores(mat.precos, distribuidores);
       const precos = precosSync
-        .filter((p) => distribuidores.includes(p.fornecedor) && p.preco && !isNaN(p.preco))
+        .filter((p) => {
+          if (!distribuidores.includes(p.fornecedor)) return false;
+          if (p.preco === "" || p.preco == null) return false;
+          const n = Number(p.preco);
+          return !isNaN(n) && n > 0;
+        })
         .map((p) => ({ distribuidora: p.fornecedor, preco: Number(p.preco) * quantidade }));
       if (precos.length === 0) return null;
       const maisBarato = precos.reduce((min, p) => (p.preco < min.preco ? p : min), precos[0]);
@@ -913,7 +961,12 @@ const CriarCotacao = () => {
       cotacao.materiais.forEach((mat) => {
         const quantidade = Number(mat.quantidade) || 1;
         const precosSync = sincronizarPrecosComDistribuidores(mat.precos, distribuidores);
-        const preco = precosSync.find((p) => p.fornecedor === dist && p.preco && !isNaN(p.preco));
+        const preco = precosSync.find((p) => {
+          if (p.fornecedor !== dist) return false;
+          if (p.preco === "" || p.preco == null) return false;
+          const n = Number(p.preco);
+          return !isNaN(n) && n > 0;
+        });
         valorTotal += preco ? Number(preco.preco) * quantidade : 0;
       });
       return { distribuidora: dist, valorTotal };

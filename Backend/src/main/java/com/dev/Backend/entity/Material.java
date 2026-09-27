@@ -24,6 +24,14 @@ public class Material {
 
     private Integer quantidade;
 
+    /** Metros lineares necessários (quando aplicável). */
+    @Column(name = "metros", precision = 12, scale = 4)
+    private java.math.BigDecimal metros;
+
+    /** Peso estimado em kg. */
+    @Column(name = "peso_kg", precision = 12, scale = 4)
+    private java.math.BigDecimal pesoKg;
+
     @Temporal(TemporalType.TIMESTAMP)
     private Date dataCriacao;
 

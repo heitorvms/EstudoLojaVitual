@@ -1,0 +1,55 @@
+@startuml
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam ArrowColor #333333
+skinparam ParticipantBackgroundColor #F4F6FA
+skinparam ParticipantBorderColor #4A5568
+skinparam ActorBorderColor #4A5568
+skinparam DatabaseBackgroundColor #F4F6FA
+skinparam SequenceLifeLineBorderColor #999999
+skinparam NoteBackgroundColor #FFFBEA
+skinparam ClassBackgroundColor #F8FAFC
+skinparam ClassBorderColor #4A5568
+skinparam ClassHeaderBackgroundColor #E2E8F0
+skinparam PackageBorderColor #4A5568
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #4A5568
+skinparam RectangleBorderColor #4A5568
+skinparam ComponentBackgroundColor #F4F6FA
+skinparam NodeBackgroundColor #F4F6FA
+
+!pragma layout smetana
+package "Frontend (React)" {
+  [Páginas\n(Cotações, OS, Estoque,\nFinanceiro, Simulação...)] as P
+  [RoleRoute] as RR
+  [BaseService (Axios + JWT)] as BS
+}
+package "Backend (Spring Boot)" {
+  [Spring Security + JWT] as SEC
+  [Controllers REST] as CT
+  [Services de negócio] as SV
+  [Repositories JPA] as RP
+  [RelatorioService\n(JasperReports)] as REL
+  [WhatsappService] as WS
+  [FinanceiroVencimentoService\n(@Scheduled)] as SCH
+  [EmailService (JavaMail)] as EM
+}
+database "PostgreSQL" as DB
+[WPPConnect Server] as WPP
+
+P --> RR
+P --> BS
+BS --> SEC : HTTP + Bearer token
+SEC --> CT
+CT --> SV
+SV --> RP
+RP --> DB
+SV --> REL
+SV --> WS
+WS --> WPP
+SCH --> SV
+SV --> EM
+@enduml

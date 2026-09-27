@@ -25,10 +25,12 @@ import com.dev.Backend.dto.FinanceiroResumoDTO;
 import com.dev.Backend.dto.GerarContasFinanceirasDTO;
 import com.dev.Backend.dto.RegistrarCobrancaWhatsappDTO;
 import com.dev.Backend.dto.WhatsappCobrancaPreviewDTO;
+import com.dev.Backend.entity.CategoriaContaFinanceira;
 import com.dev.Backend.entity.CobrancaWhatsappHistorico;
 import com.dev.Backend.entity.ContaFinanceira;
 import com.dev.Backend.entity.CotacaoServico;
 import com.dev.Backend.entity.FormaPagamento;
+import com.dev.Backend.entity.OrdemServico;
 import com.dev.Backend.entity.StatusContaFinanceira;
 import com.dev.Backend.entity.TipoContaFinanceira;
 import com.dev.Backend.entity.TipoDisparoCobranca;
@@ -36,14 +38,12 @@ import com.dev.Backend.entity.ConfiguracaoWhatsapp;
 import com.dev.Backend.repository.CobrancaWhatsappHistoricoRepository;
 import com.dev.Backend.repository.ConfiguracaoWhatsappRepository;
 import com.dev.Backend.repository.ContaFinanceiraRepository;
-import com.dev.Backend.repository.CotacaoServicoRepository;
 import com.dev.Backend.exception.RegraNegocioException;
 
 @Service
 public class CotacaoFinanceiroService {
 
     private final ContaFinanceiraRepository contaFinanceiraRepository;
-    private final CotacaoServicoRepository cotacaoServicoRepository;
     private final ConfiguracaoWhatsappRepository configuracaoWhatsappRepository;
     private final FinanceiroVencimentoService financeiroVencimentoService;
     private final CobrancaWhatsappHistoricoRepository cobrancaHistoricoRepository;
@@ -55,12 +55,10 @@ public class CotacaoFinanceiroService {
 
     public CotacaoFinanceiroService(
             ContaFinanceiraRepository contaFinanceiraRepository,
-            CotacaoServicoRepository cotacaoServicoRepository,
             ConfiguracaoWhatsappRepository configuracaoWhatsappRepository,
             FinanceiroVencimentoService financeiroVencimentoService,
             CobrancaWhatsappHistoricoRepository cobrancaHistoricoRepository) {
         this.contaFinanceiraRepository = contaFinanceiraRepository;
-        this.cotacaoServicoRepository = cotacaoServicoRepository;
         this.configuracaoWhatsappRepository = configuracaoWhatsappRepository;
         this.financeiroVencimentoService = financeiroVencimentoService;
         this.cobrancaHistoricoRepository = cobrancaHistoricoRepository;
@@ -102,38 +100,110 @@ public class CotacaoFinanceiroService {
         return toDTO(conta);
     }
 
+    /** Retorna false quando o orçamento já possui contas que não podem ser substituídas. */
     @Transactional
-    public List<ContaFinanceiraDTO> gerarContasDaCotacao(Long idCotacao, boolean substituirSeExistir) {
-        return gerarContasDaCotacao(idCotacao, substituirSeExistir, GerarContasFinanceirasDTO.padrao());
+    public boolean gerarContasDaOrdem(OrdemServico os, GerarContasFinanceirasDTO opcoes) {
+        CotacaoServico cotacao = os.getCotacao();
+        if (cotacao == null || !descartarContasAntigasSemPagamento(cotacao.getId())) {
+            return false;
+        }
+        GerarContasFinanceirasDTO opts = opcoes != null ? opcoes : GerarContasFinanceirasDTO.padrao();
+        BigDecimal valorMaterial = valorMaterialCliente(cotacao);
+        BigDecimal valorMaoDeObra = valorMaoDeObraCliente(cotacao);
+
+        List<ContaFinanceira> geradas = new ArrayList<>();
+        geradas.addAll(criarParcelasReceber(os, CategoriaContaFinanceira.MATERIAL, valorMaterial, opts.getMaterial(), opts.intervaloDias()));
+        geradas.addAll(criarParcelasReceber(os, CategoriaContaFinanceira.MAO_DE_OBRA, valorMaoDeObra, opts.getMaoDeObra(), opts.intervaloDias()));
+        geradas.addAll(criarContasPagar(os, opts));
+        contaFinanceiraRepository.saveAll(geradas);
+        return true;
+    }
+
+    /**
+     * Cotações antigas geravam contas sem categoria ao serem salvas. Elas são substituídas pelas contas
+     * da OS, exceto quando já houver pagamento registrado. Retorna true quando a geração pode prosseguir.
+     */
+    private boolean descartarContasAntigasSemPagamento(Long idCotacao) {
+        List<ContaFinanceira> existentes = contaFinanceiraRepository.findByCotacaoServicoIdOrderByTipoAscIdAsc(idCotacao);
+        if (existentes.isEmpty()) {
+            return true;
+        }
+        boolean jaGeradasPelaOs = existentes.stream().anyMatch(c -> c.getCategoria() != null);
+        boolean possuiPagamento = existentes.stream().anyMatch(c -> c.getStatus() == StatusContaFinanceira.PAGA
+                || c.getStatus() == StatusContaFinanceira.PARCIAL);
+        if (jaGeradasPelaOs || possuiPagamento) {
+            return false;
+        }
+        cobrancaHistoricoRepository.deleteByContaIdIn(existentes.stream().map(ContaFinanceira::getId).toList());
+        contaFinanceiraRepository.deleteAll(existentes);
+        return true;
+    }
+
+    public BigDecimal valorMaterialCliente(CotacaoServico cotacao) {
+        return nz(cotacao.getTotalCustoMateriais())
+                .add(nz(cotacao.getValorInsumos()))
+                .add(nz(cotacao.getValorFrete()));
+    }
+
+    public BigDecimal valorMaoDeObraCliente(CotacaoServico cotacao) {
+        return nz(cotacao.getValorTotalOrcamento()).subtract(valorMaterialCliente(cotacao)).max(BigDecimal.ZERO);
+    }
+
+    /** Retorna null quando a cotação não possui contas a receber da categoria. */
+    @Transactional(readOnly = true)
+    public Boolean recebimentoQuitado(Long idCotacao, CategoriaContaFinanceira categoria) {
+        List<ContaFinanceira> contas = recebimentosAtivos(idCotacao, categoria);
+        if (contas.isEmpty()) {
+            return null;
+        }
+        return contas.stream().allMatch(c -> c.getStatus() == StatusContaFinanceira.PAGA);
     }
 
     @Transactional
-    public List<ContaFinanceiraDTO> gerarContasDaCotacao(
-            Long idCotacao, boolean substituirSeExistir, GerarContasFinanceirasDTO opcoes) {
-        GerarContasFinanceirasDTO opts = opcoes != null ? opcoes : GerarContasFinanceirasDTO.padrao();
-        CotacaoServico cotacao = cotacaoServicoRepository.findById(idCotacao)
-                .orElseThrow(() -> new RegraNegocioException("Cotação não encontrada: " + idCotacao));
-
-        if (contaFinanceiraRepository.existsByCotacaoServicoId(idCotacao)) {
-            if (!substituirSeExistir) {
-                throw new RegraNegocioException("Já existem contas financeiras para esta cotação. Use substituir=true para regerar.");
-            }
-            List<ContaFinanceira> existentes = contaFinanceiraRepository.findByCotacaoServicoIdOrderByTipoAscIdAsc(idCotacao);
-            boolean temPaga = existentes.stream().anyMatch(c -> c.getStatus() == StatusContaFinanceira.PAGA
-                    || c.getStatus() == StatusContaFinanceira.PARCIAL);
-            if (temPaga) {
-                throw new RegraNegocioException("Não é possível regerar: existem contas com pagamento registrado.");
-            }
-            List<Long> idsRemover = existentes.stream().map(ContaFinanceira::getId).toList();
-            cobrancaHistoricoRepository.deleteByContaIdIn(idsRemover);
-            contaFinanceiraRepository.deleteAll(existentes);
+    public void quitarRecebimento(Long idCotacao, CategoriaContaFinanceira categoria) {
+        List<ContaFinanceira> contas = recebimentosAtivos(idCotacao, categoria);
+        if (contas.isEmpty()) {
+            throw new RegraNegocioException("Não há contas a receber desta categoria para a OS.");
         }
+        Date agora = new Date();
+        for (ContaFinanceira conta : contas) {
+            if (conta.getStatus() == StatusContaFinanceira.PAGA) continue;
+            conta.setValorPago(conta.getValor());
+            conta.setDataPagamento(agora);
+            conta.setStatus(StatusContaFinanceira.PAGA);
+        }
+        contaFinanceiraRepository.saveAll(contas);
+    }
 
-        List<ContaFinanceira> geradas = new ArrayList<>();
-        geradas.addAll(criarContasReceber(cotacao, opts));
-        geradas.addAll(criarContasPagar(cotacao, opts));
+    @Transactional
+    public void estornarRecebimento(Long idCotacao, CategoriaContaFinanceira categoria) {
+        List<ContaFinanceira> contas = recebimentosAtivos(idCotacao, categoria);
+        for (ContaFinanceira conta : contas) {
+            conta.setValorPago(BigDecimal.ZERO);
+            conta.setDataPagamento(null);
+            conta.setStatus(StatusContaFinanceira.PENDENTE);
+        }
+        contaFinanceiraRepository.saveAll(contas);
+        atualizarContasVencidas();
+    }
 
-        return contaFinanceiraRepository.saveAll(geradas).stream().map(this::toDTO).toList();
+    @Transactional
+    public void cancelarContasEmAberto(Long idCotacao) {
+        List<ContaFinanceira> contas = contaFinanceiraRepository.findByCotacaoServicoIdOrderByTipoAscIdAsc(idCotacao);
+        for (ContaFinanceira conta : contas) {
+            if (conta.getStatus() == StatusContaFinanceira.PENDENTE || conta.getStatus() == StatusContaFinanceira.VENCIDA) {
+                conta.setStatus(StatusContaFinanceira.CANCELADA);
+            }
+        }
+        contaFinanceiraRepository.saveAll(contas);
+    }
+
+    private List<ContaFinanceira> recebimentosAtivos(Long idCotacao, CategoriaContaFinanceira categoria) {
+        return contaFinanceiraRepository.findByCotacaoServicoIdOrderByTipoAscIdAsc(idCotacao).stream()
+                .filter(c -> c.getTipo() == TipoContaFinanceira.RECEBER)
+                .filter(c -> c.getCategoria() == categoria)
+                .filter(c -> c.getStatus() != StatusContaFinanceira.CANCELADA)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -317,86 +387,69 @@ public class CotacaoFinanceiroService {
         return toDTO(contaFinanceiraRepository.save(conta));
     }
 
-    private List<ContaFinanceira> criarContasReceber(CotacaoServico cotacao, GerarContasFinanceirasDTO opts) {
-        BigDecimal valorTotal = nz(cotacao.getValorTotalOrcamento());
-        if (valorTotal.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RegraNegocioException("Valor total do orçamento inválido para gerar conta a receber.");
-        }
-
-        int parcelas = opts.parcelasReceber();
-        String grupo = UUID.randomUUID().toString();
-        FormaPagamento forma = opts.getFormaPagamentoReceber() != null
-                ? opts.getFormaPagamentoReceber() : FormaPagamento.A_VISTA;
-
-        BigDecimal valorBase = valorTotal.divide(BigDecimal.valueOf(parcelas), 2, RoundingMode.HALF_UP);
+    private List<ContaFinanceira> criarParcelasReceber(OrdemServico os, CategoriaContaFinanceira categoria,
+                                                       BigDecimal valorTotal, GerarContasFinanceirasDTO.RecebimentoDTO opcoes,
+                                                       int intervaloDias) {
         List<ContaFinanceira> contas = new ArrayList<>();
+        if (valorTotal.compareTo(BigDecimal.ZERO) <= 0) {
+            return contas;
+        }
+        GerarContasFinanceirasDTO.RecebimentoDTO opts = opcoes != null ? opcoes : new GerarContasFinanceirasDTO.RecebimentoDTO();
+        CotacaoServico cotacao = os.getCotacao();
+        int parcelas = opts.totalParcelas();
+        String grupo = UUID.randomUUID().toString();
+        String rotulo = categoria == CategoriaContaFinanceira.MATERIAL ? "Material" : "Mão de obra";
+        BigDecimal valorBase = valorTotal.divide(BigDecimal.valueOf(parcelas), 2, RoundingMode.HALF_UP);
         BigDecimal acumulado = BigDecimal.ZERO;
 
         for (int i = 1; i <= parcelas; i++) {
-            BigDecimal valorParcela = (i == parcelas)
-                    ? valorTotal.subtract(acumulado)
-                    : valorBase;
+            BigDecimal valorParcela = (i == parcelas) ? valorTotal.subtract(acumulado) : valorBase;
             acumulado = acumulado.add(valorParcela);
 
             ContaFinanceira conta = baseConta(cotacao, TipoContaFinanceira.RECEBER);
+            conta.setCategoria(categoria);
             conta.setValor(valorParcela);
-            conta.setFormaPagamento(forma);
+            conta.setFormaPagamento(opts.forma());
             conta.setGrupoParcela(grupo);
             conta.setNumeroParcela(i);
             conta.setTotalParcelas(parcelas);
             String sufixoParcela = parcelas > 1 ? " — parcela " + i + "/" + parcelas : "";
-            conta.setDescricao("Recebimento orçamento #" + cotacao.getId() + " — " + safe(cotacao.getNome()) + sufixoParcela);
+            conta.setDescricao(rotulo + " — OS #" + os.getId() + " — " + safe(cotacao.getNome()) + sufixoParcela);
             preencherSnapshotCliente(cotacao, conta);
-            conta.setDataVencimento(vencimentoComDias(opts.diasPrimeira() + opts.intervaloDias() * (i - 1)));
+            conta.setDataVencimento(vencimentoComDias(opts.diasPrimeira() + intervaloDias * (i - 1)));
             contas.add(conta);
         }
         return contas;
     }
 
-    private List<ContaFinanceira> criarContasPagar(CotacaoServico cotacao, GerarContasFinanceirasDTO opts) {
-        List<ContaFinanceira> contas = new ArrayList<>();
+    private List<ContaFinanceira> criarContasPagar(OrdemServico os, GerarContasFinanceirasDTO opts) {
+        CotacaoServico cotacao = os.getCotacao();
         FormaPagamento forma = opts.getFormaPagamentoPagar() != null
                 ? opts.getFormaPagamentoPagar() : FormaPagamento.A_VISTA;
-        int dias = opts.diasPagar();
-
-        BigDecimal materiais = nz(cotacao.getTotalCustoMateriais());
-        if (materiais.compareTo(BigDecimal.ZERO) > 0) {
-            ContaFinanceira contaMat = baseConta(cotacao, TipoContaFinanceira.PAGAR);
-            contaMat.setValor(materiais);
-            contaMat.setFormaPagamento(forma);
-            contaMat.setDescricao("Materiais — orçamento #" + cotacao.getId());
-            contaMat.setDataVencimento(vencimentoComDias(dias));
-            contaMat.setNumeroParcela(1);
-            contaMat.setTotalParcelas(1);
-            vincularDistribuidoraPrincipal(cotacao, contaMat);
-            contas.add(contaMat);
-        }
-
-        BigDecimal insumos = nz(cotacao.getValorInsumos());
-        if (insumos.compareTo(BigDecimal.ZERO) > 0) {
-            ContaFinanceira contaIns = baseConta(cotacao, TipoContaFinanceira.PAGAR);
-            contaIns.setValor(insumos);
-            contaIns.setFormaPagamento(forma);
-            contaIns.setDescricao("Insumos — orçamento #" + cotacao.getId());
-            contaIns.setDataVencimento(vencimentoComDias(dias));
-            contaIns.setNumeroParcela(1);
-            contaIns.setTotalParcelas(1);
-            contas.add(contaIns);
-        }
-
-        BigDecimal frete = nz(cotacao.getValorFrete());
-        if (frete.compareTo(BigDecimal.ZERO) > 0) {
-            ContaFinanceira contaFrete = baseConta(cotacao, TipoContaFinanceira.PAGAR);
-            contaFrete.setValor(frete);
-            contaFrete.setFormaPagamento(forma);
-            contaFrete.setDescricao("Frete — orçamento #" + cotacao.getId());
-            contaFrete.setDataVencimento(vencimentoComDias(dias));
-            contaFrete.setNumeroParcela(1);
-            contaFrete.setTotalParcelas(1);
-            contas.add(contaFrete);
-        }
-
+        List<ContaFinanceira> contas = new ArrayList<>();
+        adicionarContaPagar(contas, os, CategoriaContaFinanceira.MATERIAL, "Materiais", cotacao.getTotalCustoMateriais(), forma, opts.diasPagar());
+        adicionarContaPagar(contas, os, CategoriaContaFinanceira.INSUMOS, "Insumos", cotacao.getValorInsumos(), forma, opts.diasPagar());
+        adicionarContaPagar(contas, os, CategoriaContaFinanceira.FRETE, "Frete", cotacao.getValorFrete(), forma, opts.diasPagar());
         return contas;
+    }
+
+    private void adicionarContaPagar(List<ContaFinanceira> contas, OrdemServico os, CategoriaContaFinanceira categoria,
+                                     String rotulo, BigDecimal valor, FormaPagamento forma, int dias) {
+        if (nz(valor).compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+        ContaFinanceira conta = baseConta(os.getCotacao(), TipoContaFinanceira.PAGAR);
+        conta.setCategoria(categoria);
+        conta.setValor(nz(valor));
+        conta.setFormaPagamento(forma);
+        conta.setDescricao(rotulo + " — OS #" + os.getId());
+        conta.setDataVencimento(vencimentoComDias(dias));
+        conta.setNumeroParcela(1);
+        conta.setTotalParcelas(1);
+        if (categoria == CategoriaContaFinanceira.MATERIAL) {
+            vincularDistribuidoraPrincipal(os.getCotacao(), conta);
+        }
+        contas.add(conta);
     }
 
     private void preencherSnapshotCliente(CotacaoServico cotacao, ContaFinanceira conta) {
@@ -494,6 +547,7 @@ public class CotacaoFinanceiroService {
         ContaFinanceiraDTO dto = new ContaFinanceiraDTO();
         dto.setId(conta.getId());
         dto.setTipo(conta.getTipo());
+        dto.setCategoria(conta.getCategoria());
         dto.setStatus(conta.getStatus());
         dto.setFormaPagamento(conta.getFormaPagamento());
         dto.setValor(conta.getValor());

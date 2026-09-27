@@ -37,6 +37,10 @@ public class ContaFinanceira {
     private StatusContaFinanceira status;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private CategoriaContaFinanceira categoria;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "forma_pagamento", nullable = false, length = 30)
     private FormaPagamento formaPagamento = FormaPagamento.A_VISTA;
 

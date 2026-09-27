@@ -13,6 +13,10 @@ public interface SimulacaoRepository extends JpaRepository<Simulacao, Long> {
 
     List<Simulacao> findAllByOrderByDataCriacaoDesc();
 
+    List<Simulacao> findByPadronizadoTrueOrderByDataCriacaoDesc();
+
+    List<Simulacao> findByPadronizadoFalseOrPadronizadoIsNullOrderByDataCriacaoDesc();
+
     @Query("SELECT s FROM Simulacao s " +
            "LEFT JOIN FETCH s.itens i " +
            "LEFT JOIN FETCH i.materialDisponivel " +

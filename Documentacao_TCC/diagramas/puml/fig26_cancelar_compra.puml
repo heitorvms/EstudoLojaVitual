@@ -1,0 +1,45 @@
+@startuml
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam ArrowColor #333333
+skinparam ParticipantBackgroundColor #F4F6FA
+skinparam ParticipantBorderColor #4A5568
+skinparam ActorBorderColor #4A5568
+skinparam DatabaseBackgroundColor #F4F6FA
+skinparam SequenceLifeLineBorderColor #999999
+skinparam NoteBackgroundColor #FFFBEA
+skinparam ClassBackgroundColor #F8FAFC
+skinparam ClassBorderColor #4A5568
+skinparam ClassHeaderBackgroundColor #E2E8F0
+skinparam PackageBorderColor #4A5568
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #4A5568
+skinparam RectangleBorderColor #4A5568
+skinparam ComponentBackgroundColor #F4F6FA
+skinparam NodeBackgroundColor #F4F6FA
+
+actor "Gerente / Admin" as U
+participant "Frontend\n(ComprasLote)" as FE
+participant "CompraEstoque\nController" as C
+participant "CompraLoteService" as S
+participant "EstoqueService" as E
+database PostgreSQL as DB
+
+U -> FE : Cancelar compra + motivo
+FE -> C : POST /api/compras-lote/{id}/cancelar
+C -> S : cancelar(id, motivo)
+alt motivo vazio ou compra já cancelada
+  S --> FE : erro de regra de negócio
+else
+  loop para cada item
+    S -> E : estornarCompra(material, kg, metros, barras)
+    E -> DB : update estoque_material
+    E -> DB : insert movimentacao_estoque (AJUSTE)
+  end
+  S -> DB : status CANCELADA, motivo, data
+  S --> FE : compra cancelada
+end
+@enduml

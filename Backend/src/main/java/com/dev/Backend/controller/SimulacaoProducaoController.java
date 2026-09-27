@@ -73,8 +73,9 @@ public class SimulacaoProducaoController {
     }
 
     @GetMapping("/historico")
-    public ResponseEntity<List<SimulacaoHistoricoDTO>> listarHistorico() {
-        return ResponseEntity.ok(service.listarHistorico());
+    public ResponseEntity<List<SimulacaoHistoricoDTO>> listarHistorico(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) Boolean padronizado) {
+        return ResponseEntity.ok(service.listarHistorico(padronizado));
     }
 
     @GetMapping("/historico/{id}")

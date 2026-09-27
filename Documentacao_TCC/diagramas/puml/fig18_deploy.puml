@@ -1,0 +1,45 @@
+@startuml
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam ArrowColor #333333
+skinparam ParticipantBackgroundColor #F4F6FA
+skinparam ParticipantBorderColor #4A5568
+skinparam ActorBorderColor #4A5568
+skinparam DatabaseBackgroundColor #F4F6FA
+skinparam SequenceLifeLineBorderColor #999999
+skinparam NoteBackgroundColor #FFFBEA
+skinparam ClassBackgroundColor #F8FAFC
+skinparam ClassBorderColor #4A5568
+skinparam ClassHeaderBackgroundColor #E2E8F0
+skinparam PackageBorderColor #4A5568
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #4A5568
+skinparam RectangleBorderColor #4A5568
+skinparam ComponentBackgroundColor #F4F6FA
+skinparam NodeBackgroundColor #F4F6FA
+
+!pragma layout smetana
+node "Estação do usuário" {
+  artifact "Navegador\nFrontend React (porta 3000)" as FE
+}
+node "Servidor de aplicação" {
+  artifact "Backend Spring Boot\n(porta 8080, JWT)" as BE
+  artifact "JasperReports\n(PDF em memória)" as JR
+}
+database "PostgreSQL\n(porta 5432)" as DB
+node "Docker" {
+  artifact "WPPConnect Server\n(porta 21465)" as WPP
+}
+cloud "WhatsApp" as WA
+node "Servidor SMTP" as SMTP
+
+FE --> BE : HTTP/JSON (API REST)
+BE --> DB : JDBC / JPA
+BE --> JR
+BE --> WPP : HTTP (RestTemplate)
+WPP --> WA
+BE --> SMTP : JavaMail\n(recuperação de senha)
+@enduml

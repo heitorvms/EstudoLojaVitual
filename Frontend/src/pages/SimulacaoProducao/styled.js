@@ -95,10 +95,41 @@ export const SectionHeader = styled.div`
 
 export const ButtonContainer = styled.div`
   display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
   flex-wrap: wrap;
+  width: 100%;
+`;
+
+export { ActionBar, IconActionButton } from "../../styles/oficinaLayout";
+
+export const TabsWrap = styled.div`
+  width: 100%;
+
+  .p-tabview .p-tabview-nav {
+    border: none;
+    background: transparent;
+    margin-bottom: 0.5rem;
+  }
+
+  .p-tabview .p-tabview-nav li .p-tabview-nav-link {
+    color: #666;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    font-weight: 600;
+  }
+
+  .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+    color: #1a1a2e;
+    border-bottom-color: #1a1a2e;
+  }
+
+  .p-tabview .p-tabview-panels {
+    background: transparent;
+    padding: 0;
+  }
 `;
 
 export const ButtonStyled = styled(Button)`
@@ -204,9 +235,14 @@ export const DataTableStyled = styled(DataTable)`
 
   .p-datatable-tbody > tr {
     transition: all 0.3s ease;
+    cursor: pointer;
     &:hover {
       background-color: #f8f9fa;
     }
+  }
+
+  .p-datatable-tbody > tr.p-highlight {
+    background-color: rgba(26, 26, 46, 0.08) !important;
   }
 
   .p-datatable-tbody > tr > td {

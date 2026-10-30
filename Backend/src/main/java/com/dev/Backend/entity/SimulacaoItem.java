@@ -6,12 +6,14 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "simulacao_item")
 @Data
-@EqualsAndHashCode(exclude = "simulacao")
-@ToString(exclude = "simulacao")
+@EqualsAndHashCode(exclude = {"simulacao", "pecas"})
+@ToString(exclude = {"simulacao", "pecas"})
 public class SimulacaoItem {
 
     @Id
@@ -49,4 +51,8 @@ public class SimulacaoItem {
 
     @Column(name = "custo_estimado", precision = 14, scale = 2)
     private BigDecimal custoEstimado;
+
+    @OneToMany(mappedBy = "simulacaoItem", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("comprimentoMm DESC")
+    private List<SimulacaoItemPeca> pecas = new ArrayList<>();
 }

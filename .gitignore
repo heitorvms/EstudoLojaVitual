@@ -176,3 +176,9 @@ docker-compose.override.yml
 # Jasper — cache de compilação em temp (manter src/main/resources/relatorios/*.jasper se versionado)
 # -----------------------------------------------------------------------------
 **/jasperreports-compile-*/
+
+# -----------------------------------------------------------------------------
+# Python (scripts da documentação)
+# -----------------------------------------------------------------------------
+__pycache__/
+*.pyc

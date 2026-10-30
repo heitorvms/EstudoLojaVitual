@@ -1,6 +1,8 @@
 # HSA Serralheria – Atualização da Documentação do TCC
 ## PARTE 4 – Textos prontos para colar (Resumo, Caps. 3, 4, 6, 8, 9)
 
+> **Atenção (29/10/2026):** os textos abaixo estão desatualizados. Usar as versões da seção 4 de `PARTE6_Atualizacao_Outubro.md`.
+
 **Instrução:** substituir os trechos correspondentes no ODT. Números conferidos no código (set/2026): **27** controllers, **37** services, **32** repositories, **45** arquivos em `entity/`, **21** páginas React, **21** services frontend. Contagem de tabelas físicas no PostgreSQL depende do `ddl-auto`; documentar como “tabelas/entidades mapeadas pelo JPA” quando não houver dump oficial.
 
 ---

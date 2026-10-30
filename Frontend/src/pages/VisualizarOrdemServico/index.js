@@ -12,6 +12,7 @@ import { STATUS_OS, statusInfo } from "../OrdensServico/statusOrdemServico";
 import LancamentoHorasForm, { novoLancamento, lancamentoValido } from "../OrdensServico/LancamentoHorasForm";
 import CancelarOsDialog from "../OrdensServico/CancelarOsDialog";
 import FinanceiroOsPanel, { exibeContas, opcoesFinanceiroPadrao } from "./FinanceiroOsPanel";
+import MaterialServicoPanel from "./MaterialServicoPanel";
 import { formatarDataIso } from "../../utils/datas";
 import {
   OficinaGlobalStyle,
@@ -33,15 +34,9 @@ import {
   CostTotal,
   FooterActions,
 } from "../../styles/oficinaLayout";
+import { moeda } from "../../utils/moeda";
 
-const moeda = (v) => `R$ ${Number(v || 0).toFixed(2).replace(".", ",")}`;
-
-const opcaoStatus = (opcao) => (
-  <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontWeight: 700, color: opcao.cor }}>
-    <i className={opcao.icon} />
-    {opcao.label}
-  </span>
-);
+const opcaoStatus = (opcao) => <span style={{ fontWeight: 700, color: opcao.cor }}>{opcao.label}</span>;
 
 const tagPagamento = (rotulo, pago) => (
   <Tag value={`${rotulo} ${pago ? "pago" : "pendente"}`} severity={pago ? "success" : "warning"} />
@@ -268,17 +263,7 @@ export default function VisualizarOrdemServico() {
           }
         />
 
-        <PanelCard>
-          <PanelTitle>Materiais utilizados</PanelTitle>
-          <DataTableStyled value={os.materiais || []} emptyMessage="Orçamento sem materiais">
-            <Column field="descricao" header="Material" />
-            <Column field="quantidade" header="Barras" />
-            <Column
-              header="Tamanho da barra"
-              body={(r) => (r.comprimentoBarraMm ? `${(r.comprimentoBarraMm / 1000).toLocaleString("pt-BR")} m` : "-")}
-            />
-          </DataTableStyled>
-        </PanelCard>
+        <MaterialServicoPanel materiais={os.materiais} estoqueBaixado={os.estoqueBaixado} />
 
         <PanelCard>
           <PanelTitle>Mão de obra</PanelTitle>

@@ -20,10 +20,9 @@ import {
   FormGrid,
   DataTableStyled,
 } from "../../styles/oficinaLayout";
+import { moeda } from "../../utils/moeda";
 
 const empty = { nome: "", telefone: "", cargo: "", valorHora: 0, valorHoraNoturno: 0, ativo: true };
-
-const moeda = (v) => `R$ ${Number(v || 0).toFixed(2).replace(".", ",")}`;
 
 export default function FuncionariosOficina() {
   const toast = useRef(null);

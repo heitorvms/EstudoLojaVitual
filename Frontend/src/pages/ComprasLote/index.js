@@ -7,6 +7,7 @@ import { Dialog } from "primereact/dialog";
 import { InputTextarea } from "primereact/inputtextarea";
 import { InputText } from "primereact/inputtext";
 import { CompraEstoqueService } from "../../services/CompraEstoqueService";
+import { moeda } from "../../utils/moeda";
 import {
   OficinaGlobalStyle,
   PageShell,
@@ -168,7 +169,7 @@ export default function ComprasLote() {
             <Column header="Itens" body={(r) => r.itens?.length || 0} style={{ width: 80 }} />
             <Column
               header="Total"
-              body={(r) => `R$ ${Number(r.valorTotal || 0).toFixed(2)}`}
+              body={(r) => moeda(r.valorTotal)}
             />
             <Column
               header="Status"

@@ -1,28 +1,7 @@
 import styled, { createGlobalStyle } from "styled-components";
 import { Button, Card, DataTable, Dialog, InputText } from "primereact";
 
-export const ContainerPage = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 40px;
-  padding: 20px;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-
-  @media (max-width: 768px) {
-    padding: 10px;
-  }
-`;
-
-export const Title = styled.h2`
-  text-align: center;
-  margin-bottom: 20px;
-  font-size: 2rem;
-  font-weight: bold;
-  color: #1A1A2E;
-`;
+export { PageShellCentered as ContainerPage, PageHeader, HeaderText } from "../../styles/oficinaLayout";
 
 export const CardsContainer = styled.div`
   display: grid;

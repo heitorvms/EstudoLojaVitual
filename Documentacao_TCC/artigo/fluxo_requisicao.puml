@@ -1,0 +1,27 @@
+@startuml
+!pragma layout smetana
+skinparam dpi 150
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam rectangle {
+  BackgroundColor #F4F6FA
+  BorderColor #535C6A
+}
+skinparam database {
+  BackgroundColor #F4F6FA
+  BorderColor #535C6A
+}
+left to right direction
+
+rectangle "Navegador\n\nReact 19 + PrimeReact\nReact Router 7\nAxios (token JWT)" as front
+rectangle "Spring Boot 3.3.4\n\nSpring Security\n(filtro JWT)\n↓\nController REST\n↓\nService\n↓\nRepository (Spring Data JPA)" as back
+database "PostgreSQL" as db
+rectangle "JasperReports\n(PDF)" as jasper
+rectangle "WPPConnect Server\n(Docker)" as wpp
+
+front --> back : HTTP/JSON\nAuthorization: Bearer
+back --> db : Hibernate\nJDBC
+back --> jasper
+back --> wpp : RestTemplate
+@enduml

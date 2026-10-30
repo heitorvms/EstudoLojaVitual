@@ -1,6 +1,8 @@
 # HSA Serralheria – Atualização da Documentação do TCC
 ## PARTE 1 – Inventário do que mudou (sistema atual × TCC v2)
 
+> **Atenção (29/10/2026):** inventário histórico de 22/09. O estado atual do sistema e o roteiro para o PDF estão em `PARTE6_Atualizacao_Outubro.md`. Estado/Cidade não entram no TCC.
+
 **Fonte antiga:** `HSA_Serralheria_TCC_v2.odt`  
 **Formatação:** `Detalhamento do Modelo de Artigo-2.pdf` (margens A4, TNR, estilos Título/Autor/Resumo etc.)  
 **Data desta parte:** 22/09/2026

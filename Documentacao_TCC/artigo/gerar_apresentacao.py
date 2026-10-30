@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Gera a apresentação (16:9) do sistema HSA Serralheria, no estilo do modelo do autor."""
+"""Gera a apresentação (16:9) com foco nas tecnologias do sistema HSA Serralheria."""
 import shutil
 from pathlib import Path
 
 from fpdf import FPDF
 
-from gerar_artigo import PRINTS, SEM_MENU, SEM_MENU_RODAPE, recortar
+from gerar_artigo import INTEIRA, PRINTS, recortar
 
 ROOT = Path(__file__).resolve().parent
 FONTS = ROOT / "fonts"
@@ -19,19 +19,19 @@ AZUL = (0xB8, 0xC6, 0xDD)
 CINZA = (0xF0, 0xF1, 0xF4)
 BRANCO = (0xF0, 0xF1, 0xF4)
 ESCURO = (0x11, 0x1B, 0x1E)
-DESTAQUE = (0x6A, 0x00, 0xE0)
+CHIP = (0xDD, 0xE1, 0xE8)
 
-ETAPAS = ["Simulação", "Cotação", "Ordem de Serviço", "Estoque", "Financeiro"]
+SPRING, JAVA, VSCODE, REACT, JS, POSTMAN, POSTGRES, WPP = (f"logo_{i}.png" for i in range(8))
 
 LOGOS_POSICAO = [
-    ("logo_0.png", "Spring Boot", (81, 131, 391, 294)),
-    ("logo_1.png", "Java 21", (480, 88, 708, 316)),
-    ("logo_3.png", "React 19", (803, 88, 1031, 315)),
-    ("logo_4.png", "JavaScript", (1132, 88, 1359, 315)),
-    ("logo_6.png", "PostgreSQL", (86, 404, 311, 636)),
-    ("logo_2.png", "VS Code", (487, 408, 714, 635)),
-    ("logo_7.png", "WPPConnect", (787, 392, 1047, 651)),
-    ("logo_5.png", "Postman", (1132, 408, 1359, 635)),
+    (SPRING, "Spring Boot", (81, 131, 391, 294)),
+    (JAVA, "Java 21", (480, 88, 708, 316)),
+    (REACT, "React 19", (803, 88, 1031, 315)),
+    (JS, "JavaScript", (1132, 88, 1359, 315)),
+    (POSTGRES, "PostgreSQL", (86, 404, 311, 636)),
+    (VSCODE, "VS Code", (487, 408, 714, 635)),
+    (WPP, "WPPConnect", (787, 392, 1047, 651)),
+    (POSTMAN, "Postman", (1132, 408, 1359, 635)),
 ]
 
 
@@ -69,37 +69,33 @@ class Apresentacao(FPDF):
             y = self.get_y() + espaco
         return y
 
-    def trilha(self, atual):
-        largura, gap, y = 34, 3, 12
-        x = W - 14 - len(ETAPAS) * largura - (len(ETAPAS) - 1) * gap
-        for i, etapa in enumerate(ETAPAS):
-            ativo = i == atual
-            self.set_fill_color(*(DESTAQUE if ativo else (0xDD, 0xE1, 0xE8)))
-            self.rect(x, y, largura, 8, "F", round_corners=True, corner_radius=2)
-            self.set_font("Poppins", "B" if ativo else "", 8.5)
-            self.set_text_color(*((255, 255, 255) if ativo else (0x53, 0x5C, 0x6A)))
-            self.set_xy(x, y)
-            self.cell(largura, 8, f"{i + 1}. {etapa}", align="C")
-            x += largura + gap
+    def etiqueta(self, x, y, conteudo, fundo=CHIP, cor=ARDOSIA, tamanho=11):
+        self.set_font("Poppins", "B", tamanho)
+        largura = self.get_string_width(conteudo) + 10
+        self.set_fill_color(*fundo)
+        self.rect(x, y, largura, 10, "F", round_corners=True, corner_radius=2.5)
+        self.set_text_color(*cor)
+        self.set_xy(x, y)
+        self.cell(largura, 10, conteudo, align="C")
+        return x + largura + 4
 
-    def tela_processo(self, etapa, titulo, descricao, telas):
+    def slide_tecnologia(self, titulo, subtitulo, logos, etiquetas, itens):
         self.slide(CINZA)
-        self.texto(14, 9, 170, titulo, fonte="Serif", tamanho=34, cor=ARDOSIA, altura=15)
-        self.trilha(etapa)
-        self.texto(14, 27, W - 28, descricao, tamanho=11.5)
-        largura, gap, topo = 150, 10, 44
-        x = (W - (largura * 2 + gap)) / 2
-        for caminho, legenda, corte in telas:
-            imagem = recortar(caminho, corte)
-            altura = min(largura * imagem.height / imagem.width, 128)
-            largura_real = altura * imagem.width / imagem.height
-            xi = x + (largura - largura_real) / 2
-            self.image(imagem, x=xi, y=topo, w=largura_real, h=altura)
-            self.set_draw_color(0xC8, 0xCD, 0xD6)
-            self.set_line_width(0.3)
-            self.rect(xi, topo, largura_real, altura)
-            self.texto(x, topo + altura + 2.5, largura, legenda, tamanho=10, cor=ARDOSIA, align="C")
-            x += largura + gap
+        self.texto(22, 16, 290, titulo, fonte="Serif", tamanho=40, cor=ARDOSIA, altura=17)
+        self.texto(22, 36, 290, subtitulo, tamanho=13, cor=ARDOSIA)
+        self.linha(22, 50, W - 22, (0xC8, 0xCD, 0xD6))
+        self.set_fill_color(255, 255, 255)
+        self.rect(22, 60, 100, 110, "F", round_corners=True, corner_radius=4)
+        tamanho_logo = 44 if len(logos) > 1 else 62
+        y = 60 + (110 - tamanho_logo * len(logos) - 8 * (len(logos) - 1)) / 2
+        for logo in logos:
+            self.image(str(LOGOS / logo), x=72 - tamanho_logo / 2, y=y, w=tamanho_logo, h=tamanho_logo,
+                       keep_aspect_ratio=True)
+            y += tamanho_logo + 8
+        x = 138
+        for nome in etiquetas:
+            x = self.etiqueta(x, 60, nome)
+        self.marcadores(138, 80, 178, itens, tamanho=13, espaco=4.5)
 
 
 def capa(pdf):
@@ -107,48 +103,28 @@ def capa(pdf):
     pdf.texto(0, 22, W, "UNIPAR - Universidade Paranaense - Paranavaí", fonte="Serif", tamanho=19, cor=BRANCO, align="C")
     pdf.texto(0, 62, W, "HSA Serralheria", fonte="Serif", tamanho=80, cor=BRANCO, align="C", altura=34)
     pdf.linha(44, 115, W - 44, (0xB8, 0xBE, 0xC8))
-    pdf.texto(0, 128, W, "Sistema web para orçamentos, ordens de serviço e gestão de estoque",
+    pdf.texto(0, 128, W, "Tecnologias web aplicadas ao desenvolvimento de um sistema de gestão",
               tamanho=14, cor=BRANCO, align="C")
     pdf.texto(0, 157, W, "HEITOR VENÂNCIO MARINS DA SILVA\n60002213", tamanho=11, cor=BRANCO, align="C")
 
 
-def ramo_atuacao(pdf):
+def objetivo(pdf):
     pdf.slide(AZUL)
-    pdf.texto(64, 36, 210, "Ramo de atuação", fonte="Serif", tamanho=60, altura=26)
-    pdf.linha(64, 64, 268, ESCURO, 0.2)
-    pdf.texto(64, 84, 204, (
-        "A HSA Serralheria é uma empresa do ramo metalúrgico que atua na fabricação e comercialização de estruturas "
-        "metálicas, portões e cadeiras produzidas em escala. Além desses produtos, a empresa realiza diversos serviços "
-        "de serralheria, oferecendo soluções personalizadas conforme as necessidades de seus clientes, sempre "
-        "priorizando qualidade, eficiência e confiabilidade."
-    ), tamanho=12.5)
+    pdf.texto(64, 34, 220, "Objetivo", fonte="Serif", tamanho=60, altura=26)
+    pdf.linha(64, 62, 274, ESCURO, 0.2)
+    pdf.texto(64, 80, 210, (
+        "Apresentar as tecnologias utilizadas no desenvolvimento de um sistema web de gestão para a HSA Serralheria, "
+        "empresa do ramo metalúrgico de Paranavaí-PR, detalhando a função de cada uma e como elas se integram."
+    ), tamanho=14)
+    pdf.texto(64, 122, 210, "Critérios de escolha", estilo="B", tamanho=13)
+    x = 64
+    for criterio in ("Código aberto", "Maturidade", "Comunidade ativa", "Compatibilidade"):
+        x = pdf.etiqueta(x, 134, criterio, fundo=(0xF0, 0xF1, 0xF4), cor=ESCURO, tamanho=11)
 
 
-def problema_solucao(pdf):
-    pdf.slide(CINZA)
-    pdf.texto(28, 32, 250, "Problema e solução", fonte="Serif", tamanho=60, cor=ARDOSIA, altura=26)
-    pdf.linha(92, 92, 310, (0x8A, 0x92, 0x9E))
-    pdf.texto(92, 98, 100, "Problema atual da empresa", estilo="B", tamanho=13)
-    pdf.marcadores(92, 110, 100, [
-        "Orçamentos lentos e calculados à mão",
-        "Anotações em papel e risco de erros de cálculo",
-        "Preços dos materiais em constante variação",
-        "Sem controle de produção, estoque e mão de obra",
-        "Sem histórico de fornecedores e pagamentos",
-    ], tamanho=11)
-    pdf.texto(210, 98, 100, "Solução do sistema", estilo="B", tamanho=13)
-    pdf.marcadores(210, 110, 100, [
-        "Cotação com a distribuidora de menor preço",
-        "Simulação de produção em escala",
-        "Ordem de serviço com baixa de estoque e mão de obra",
-        "Compras de material e saldo de estoque",
-        "Financeiro com cobrança e PDF via WhatsApp",
-    ], tamanho=11)
-
-
-def tecnologias(pdf):
+def visao_geral(pdf):
     pdf.slide(ARDOSIA)
-    pdf.texto(14, 10, 200, "Tecnologias utilizadas", fonte="Serif", tamanho=30, cor=BRANCO, altura=13)
+    pdf.texto(14, 10, 250, "Tecnologias utilizadas", fonte="Serif", tamanho=30, cor=BRANCO, altura=13)
     fator, escala = W / 1440, 0.72
     for arquivo, nome, (x1, y1, x2, y2) in LOGOS_POSICAO:
         x = W / 2 + (x1 * fator - W / 2) * escala
@@ -156,43 +132,67 @@ def tecnologias(pdf):
         largura, altura = (x2 - x1) * fator * escala, (y2 - y1) * fator * escala
         pdf.image(str(LOGOS / arquivo), x=x, y=y, w=largura, h=altura, keep_aspect_ratio=True)
         pdf.texto(x - 10, y + altura + 2, largura + 20, nome, tamanho=10.5, cor=BRANCO, align="C")
-    pdf.texto(0, 172, W, "Também: Spring Security + JWT  ·  JasperReports  ·  PrimeReact  ·  Apache POI  ·  Docker",
-              tamanho=11, cor=BRANCO, align="C")
+    pdf.texto(0, 172, W, "Também: Spring Security + JWT  ·  Hibernate  ·  PrimeReact  ·  Axios  ·  JasperReports  ·  "
+              "Apache POI  ·  Docker  ·  Git", tamanho=11, cor=BRANCO, align="C")
 
 
-def fluxo(pdf):
-    pdf.slide(ARDOSIA)
-    pdf.texto(0, 30, W, "Processo do sistema", fonte="Serif", tamanho=48, cor=BRANCO, align="C", altura=20)
-    detalhes = [
-        "Consumo e custo da produção em escala",
-        "Menor preço entre as distribuidoras",
-        "Status da produção e mão de obra",
-        "Baixa automática e compras",
-        "Contas e cobrança via WhatsApp",
+def jwt(pdf):
+    pdf.slide(CINZA)
+    pdf.texto(22, 16, 290, "Segurança: Spring Security + JWT", fonte="Serif", tamanho=40, cor=ARDOSIA, altura=17)
+    pdf.texto(22, 36, 290, "Autenticação sem sessão no servidor (stateless)", tamanho=13, cor=ARDOSIA)
+    pdf.linha(22, 50, W - 22, (0xC8, 0xCD, 0xD6))
+    partes = [
+        ("Cabeçalho", "algoritmo HMAC-SHA", (0xF4, 0xC4, 0xC4)),
+        ("Conteúdo (claims)", "usuário, perfil e validade", (0xD9, 0xC8, 0xF2)),
+        ("Assinatura", "garante que não foi alterado", (0xC4, 0xE3, 0xF4)),
     ]
-    largura, gap, y = 54, 9, 88
-    x = (W - len(ETAPAS) * largura - (len(ETAPAS) - 1) * gap) / 2
-    for i, (etapa, detalhe) in enumerate(zip(ETAPAS, detalhes)):
-        pdf.set_fill_color(*AZUL)
-        pdf.rect(x, y, largura, 46, "F", round_corners=True, corner_radius=4)
-        pdf.texto(x, y + 5, largura, str(i + 1), fonte="Serif", tamanho=24, align="C", altura=10)
-        pdf.texto(x + 2, y + 17, largura - 4, etapa, estilo="B", tamanho=11.5, align="C")
-        pdf.texto(x + 4, y + 26, largura - 8, detalhe, tamanho=9, align="C", altura=4.2)
-        if i < len(ETAPAS) - 1:
-            pdf.texto(x + largura, y + 17, gap, "›", fonte="Serif", tamanho=28, cor=BRANCO, align="C", altura=10)
-        x += largura + gap
+    x = 22
+    for i, (nome, detalhe, cor) in enumerate(partes):
+        pdf.set_fill_color(*cor)
+        pdf.rect(x, 60, 88, 30, "F", round_corners=True, corner_radius=3)
+        pdf.texto(x, 65, 88, nome, estilo="B", tamanho=13, align="C")
+        pdf.texto(x, 75, 88, detalhe, tamanho=10.5, align="C")
+        if i < 2:
+            pdf.texto(x + 88, 64, 13, ".", fonte="Serif", tamanho=40, cor=ARDOSIA, align="C", altura=17)
+        x += 101
+    pdf.texto(22, 93, 290, "Token JWT (RFC 7519): três partes em Base64URL separadas por ponto", tamanho=10.5,
+              cor=ARDOSIA)
+    pdf.marcadores(22, 110, 294, [
+        "Login: a biblioteca jjwt 0.12.6 gera o token assinado",
+        "Front-end: o Axios envia o cabeçalho Authorization: Bearer em cada requisição",
+        "Back-end: um filtro (OncePerRequestFilter) valida assinatura e validade e libera o acesso por perfil",
+        "Senhas armazenadas com hash BCrypt, que inclui um valor aleatório (salt)",
+    ], tamanho=13, espaco=4.5)
+
+
+def resultado(pdf):
+    pdf.slide(CINZA)
+    pdf.texto(22, 16, 150, "Resultado", fonte="Serif", tamanho=40, cor=ARDOSIA, altura=17)
+    pdf.texto(22, 36, 85, "O sistema HSA Serralheria em funcionamento", tamanho=13, cor=ARDOSIA)
+    imagem = recortar(PRINTS / "04_cotacao_detalhe.png", INTEIRA)
+    largura = 200
+    altura = largura * imagem.height / imagem.width
+    pdf.image(imagem, x=W - 22 - largura, y=(H - altura) / 2 + 6, w=largura)
+    pdf.set_draw_color(0xC8, 0xCD, 0xD6)
+    pdf.rect(W - 22 - largura, (H - altura) / 2 + 6, largura, altura)
+    y = 62
+    for numero, rotulo in (("26", "controllers REST"), ("36", "services"), ("30", "entidades JPA"),
+                           ("20", "páginas React")):
+        pdf.texto(22, y, 90, numero, fonte="Serif", tamanho=34, cor=ARDOSIA, altura=14)
+        pdf.texto(22, y + 14, 90, rotulo, tamanho=12)
+        y += 28
 
 
 def consideracoes(pdf):
     pdf.slide(AZUL)
-    pdf.texto(64, 30, 220, "Resultados", fonte="Serif", tamanho=60, altura=26)
-    pdf.linha(64, 58, 268, ESCURO, 0.2)
-    pdf.marcadores(64, 74, 210, [
-        "Processo comercial e produtivo centralizado em um único sistema",
-        "Orçamentos mais rápidos, com menos erros e histórico de preços",
-        "Integração entre cotação, ordem de serviço, estoque e financeiro",
-        "Comunicação com o cliente por PDF e WhatsApp",
-        "Próximos passos: hospedagem em nuvem, versão mobile e novos relatórios",
+    pdf.texto(64, 30, 220, "Considerações finais", fonte="Serif", tamanho=54, altura=24)
+    pdf.linha(64, 58, 274, ESCURO, 0.2)
+    pdf.marcadores(64, 72, 210, [
+        "Tecnologias de código aberto, bem documentadas e integradas pela API REST",
+        "Spring Boot e Spring Data JPA reduziram o código de infraestrutura",
+        "JWT separou front-end e back-end sem sessão no servidor",
+        "Docker simplificou a execução do WPPConnect",
+        "Próximos passos: toda a aplicação em Docker, testes automatizados e nuvem",
     ], tamanho=13, espaco=4)
 
 
@@ -202,22 +202,24 @@ def referencias(pdf):
     acesso = "Acesso em: 27 set. 2026."
     colunas = [
         [
+            f"Java SE. Versão 21. Developer: Oracle. Disponível em: https://www.oracle.com/java/. {acesso}",
             f"Spring Boot. Versão 3.3.4. Developer: Spring Framework Team. Disponível em: https://spring.io/projects/spring-boot. {acesso}",
             f"Spring Security. Versão 6.3. Developer: Spring Framework Team. Disponível em: https://spring.io/projects/spring-security. {acesso}",
             f"JSON Web Token (jjwt). Versão 0.12.6. Developer: Stormpath / Auth0. Disponível em: https://github.com/jwtk/jjwt. {acesso}",
-            f"JasperReports. Versão 7.0.3. Developer: Jaspersoft. Disponível em: https://community.jaspersoft.com/. {acesso}",
+            f"Hibernate ORM. Developer: Red Hat. Disponível em: https://hibernate.org/orm/. {acesso}",
             f"PostgreSQL. Developer: PostgreSQL Global Development Group. Disponível em: https://www.postgresql.org/. {acesso}",
         ],
         [
             f"React. Versão 19.0.0. Developer: Meta Platforms, Inc. Disponível em: https://react.dev/. {acesso}",
             f"PrimeReact. Versão 10.9.3. Developer: PrimeTek Informatics. Disponível em: https://primereact.org/. {acesso}",
             f"Axios. Versão 1.8.1. Developer: Matt Zabriskie et al. Disponível em: https://axios-http.com/. {acesso}",
+            f"JasperReports. Versão 7.0.3. Developer: Jaspersoft. Disponível em: https://community.jaspersoft.com/. {acesso}",
             f"WPPConnect Server. Developer: WPPConnect Team. Disponível em: https://github.com/wppconnect-team/wppconnect-server. {acesso}",
-            f"Postman. Developer: Postman, Inc. Disponível em: https://www.postman.com/. {acesso}",
+            f"Docker. Developer: Docker, Inc. Disponível em: https://docs.docker.com/. {acesso}",
         ],
     ]
     for coluna, x in zip(colunas, (28, 176)):
-        pdf.marcadores(x, 38, 138, coluna, tamanho=10.5, cor=BRANCO, espaco=5)
+        pdf.marcadores(x, 34, 138, coluna, tamanho=10, cor=BRANCO, espaco=3.5)
 
 
 def encerramento(pdf):
@@ -228,35 +230,64 @@ def encerramento(pdf):
 def gerar():
     pdf = Apresentacao()
     capa(pdf)
-    ramo_atuacao(pdf)
-    problema_solucao(pdf)
-    tecnologias(pdf)
-    fluxo(pdf)
-    pdf.tela_processo(0, "Simulação",
-                      "Para a produção em escala, o sistema calcula o consumo de material, a perda e o custo unitário, "
-                      "e converte o resultado em orçamento.",
-                      [(PRINTS / "07_simulacao_form.png", "Dados da simulação", SEM_MENU),
-                       (PRINTS / "08_simulacao_resultado.png", "Resultado com custos", SEM_MENU)])
-    pdf.tela_processo(1, "Cotação",
-                      "Compara os preços das distribuidoras, escolhe a de menor custo e soma insumos, frete e lucro; "
-                      "o orçamento sai em PDF e pode ir pelo WhatsApp.",
-                      [(PRINTS / "04_cotacao_detalhe.png", "Valores por distribuidora", SEM_MENU),
-                       (PRINTS / "05_cotacao_custos.png", "Composição de custos", SEM_MENU)])
-    pdf.tela_processo(2, "Ordem de serviço",
-                      "Gerada a partir da cotação, acompanha a produção por status e recebe as horas trabalhadas "
-                      "de cada funcionário.",
-                      [(PRINTS / "10_os_detalhe.png", "Detalhe da OS", SEM_MENU),
-                       (PRINTS / "12_os_mao_obra.png", "Lançamento de mão de obra", SEM_MENU)])
-    pdf.tela_processo(3, "Estoque e compras",
-                      "A OS em produção baixa o estoque automaticamente; as compras em lote dão entrada no saldo e "
-                      "podem ser estornadas.",
-                      [(PRINTS / "14_estoque.png", "Saldo de estoque", SEM_MENU),
-                       (PRINTS / "15_compra.png", "Nova compra de material", SEM_MENU)])
-    pdf.tela_processo(4, "Financeiro",
-                      "A OS gera contas a pagar e a receber por categoria; as cobranças vencidas podem ser enviadas "
-                      "pelo WhatsApp.",
-                      [(PRINTS / "16_financeiro.png", "Painel financeiro", SEM_MENU),
-                       (PRINTS / "18_whatsapp.png", "Conexão com o WhatsApp", SEM_MENU_RODAPE)])
+    objetivo(pdf)
+    visao_geral(pdf)
+    pdf.slide_tecnologia(
+        "Back-end: Java 21 + Spring Boot", "Linguagem e framework do servidor",
+        [JAVA, SPRING], ["Java 21 LTS", "Spring Boot 3.3.4", "Maven"],
+        [
+            "Java: orientada a objetos, compilada para bytecode e executada na JVM",
+            "Spring: inversão de controle e injeção de dependências",
+            "Spring Boot: autoconfiguração, starters e servidor Tomcat embutido",
+            "API REST com @RestController, em camadas controller, service e repository",
+            "Lombok gera getters, setters e construtores por anotações",
+        ],
+    )
+    pdf.slide_tecnologia(
+        "Persistência: JPA + PostgreSQL", "Mapeamento objeto-relacional e banco de dados",
+        [POSTGRES], ["Spring Data JPA", "Hibernate", "PostgreSQL"],
+        [
+            "JPA: especificação de mapeamento objeto-relacional; Hibernate: implementação",
+            "Classes @Entity viram tabelas; o Hibernate gera o SQL do PostgreSQL",
+            "Interfaces JpaRepository já trazem inserir, consultar, alterar e excluir",
+            "PostgreSQL: código aberto, transações ACID e chaves estrangeiras",
+        ],
+    )
+    jwt(pdf)
+    pdf.slide_tecnologia(
+        "Front-end: React 19", "Interface executada no navegador",
+        [REACT, JS], ["React 19", "PrimeReact 10", "Axios 1.8", "React Router 7"],
+        [
+            "React: interface declarativa baseada em componentes reutilizáveis",
+            "Estado controlado com hooks (useState, useEffect)",
+            "SPA: o React Router troca as páginas sem recarregar e protege rotas por perfil",
+            "PrimeReact e Material UI: tabelas, formulários e diálogos prontos",
+            "Axios: cliente HTTP com interceptor que envia o token JWT",
+        ],
+    )
+    pdf.slide_tecnologia(
+        "Integrações e bibliotecas", "Recursos de apoio ao back-end",
+        [WPP], ["WPPConnect + Docker", "JasperReports 7", "Apache POI 5"],
+        [
+            "WPPConnect Server: API REST de código aberto para o WhatsApp Web",
+            "Docker: executa o WPPConnect em contêiner, isolado e com suas dependências",
+            "JasperReports: modelos JRXML preenchidos e exportados em PDF na memória",
+            "Apache POI: leitura e escrita de planilhas .xlsx (XSSFWorkbook)",
+            "JavaMail + FreeMarker: envio de e-mails com modelos",
+        ],
+    )
+    pdf.slide_tecnologia(
+        "Ferramentas de desenvolvimento", "Apoio à codificação, testes e documentação",
+        [VSCODE, POSTMAN], ["VS Code", "Postman", "Git", "PlantUML"],
+        [
+            "VS Code: editor com extensões para Java e JavaScript",
+            "Postman: testes dos endpoints da API com o token JWT",
+            "Git: versionamento do código",
+            "Maven e NPM: dependências e build do back-end e do front-end",
+            "PlantUML: diagramas UML gerados a partir de texto",
+        ],
+    )
+    resultado(pdf)
     consideracoes(pdf)
     referencias(pdf)
     encerramento(pdf)

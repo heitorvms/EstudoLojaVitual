@@ -30,6 +30,10 @@ public class CotacaoServicoDTO {
     private Date dataAtualizacao;
     private BigDecimal valorPendente;
     private Date dataVencimento;
+    private Long ordemServicoId;
+
+    public Long getOrdemServicoId() { return ordemServicoId; }
+    public void setOrdemServicoId(Long ordemServicoId) { this.ordemServicoId = ordemServicoId; }
 
     public String getAnaliseEscolhaJson() { return analiseEscolhaJson; }
     public void setAnaliseEscolhaJson(String analiseEscolhaJson) { this.analiseEscolhaJson = analiseEscolhaJson; }

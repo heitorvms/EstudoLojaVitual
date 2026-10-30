@@ -6,6 +6,7 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import { ProgressSpinner } from "primereact/progressspinner";
+import { Tag } from "primereact/tag";
 import "primereact/resources/themes/lara-light-indigo/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
@@ -14,7 +15,8 @@ import { RelatorioService } from "../../services/RelatorioService";
 import debounce from "lodash/debounce";
   import {
   ContainerPage,
-  Title,
+  PageHeader,
+  HeaderText,
   CardStyled,
   DataTableStyled,
   ButtonStyled,
@@ -27,6 +29,7 @@ import debounce from "lodash/debounce";
   const [listaCotacoes, setListaCotacoes] = useState([]);
   const [sortOrder, setSortOrder] = useState("recent-desc");
   const [periodFilter, setPeriodFilter] = useState("all");
+  const [situacao, setSituacao] = useState("ABERTAS");
   const [totalRecords, setTotalRecords] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [rowsPerPage] = useState(6);
@@ -62,18 +65,19 @@ import debounce from "lodash/debounce";
       if (periodFilter !== "all") {
         let allItems = [];
         if (searchQuery) {
-          allItems = await cotacaoService.getAllSearch(searchQuery, rowsPerPage);
+          allItems = await cotacaoService.getAllSearch(searchQuery, rowsPerPage, situacao);
         } else {
-          allItems = await cotacaoService.getAll();
+          allItems = await cotacaoService.getAll(situacao);
         }
         setListaCotacoes(Array.isArray(allItems) ? allItems : []);
         setLastSearchedTerm(searchQuery.trim());
       } else {
+        const direcao = sortOrder === "recent-asc" ? "asc" : "desc";
         let response;
         if (searchQuery) {
-          response = await cotacaoService.search(searchQuery, page, rowsPerPage);
+          response = await cotacaoService.search(searchQuery, page, rowsPerPage, direcao, situacao);
         } else {
-          response = await cotacaoService.getPaginado(page, rowsPerPage);
+          response = await cotacaoService.getPaginado(page, rowsPerPage, direcao, situacao);
         }
         setListaCotacoes(response.content || []);
         setTotalRecords(response.totalElements || 0);
@@ -94,7 +98,7 @@ import debounce from "lodash/debounce";
       setIsLoading(false);
       setShowCardLoading(false);
     }
-  }, [rowsPerPage, periodFilter, cotacaoService]);
+  }, [rowsPerPage, periodFilter, sortOrder, situacao, cotacaoService]);
 
   useEffect(() => {
     fetchCotacoes(currentPage, lastSearchedTerm);
@@ -104,7 +108,7 @@ import debounce from "lodash/debounce";
   useEffect(() => {
     setCurrentPage(0);
     fetchCotacoes(0, lastSearchedTerm);
-  }, [periodFilter]);
+  }, [periodFilter, sortOrder, situacao]);
 
   const handleSearch = () => {
     if (isLoading) return;
@@ -133,7 +137,7 @@ import debounce from "lodash/debounce";
 
   const resetSearch = useCallback(
     debounce(() => {
-      if (!searchTerm.trim()) {
+      if (!searchTerm.trim() && lastSearchedTerm) {
         setIsSearching(false);
         setLastSearchedTerm("");
         setCurrentPage(0);
@@ -146,7 +150,7 @@ import debounce from "lodash/debounce";
         });
       }
     }, 1000),
-    [searchTerm, fetchCotacoes]
+    [searchTerm, lastSearchedTerm, fetchCotacoes]
   );
 
   useEffect(() => {
@@ -392,7 +396,12 @@ import debounce from "lodash/debounce";
     <ContainerPage>
       <GlobalStyle />
       <ConfirmDialog />
-      <Title>Lista de Cotações</Title>
+      <PageHeader>
+        <HeaderText>
+          <h1>Cotações</h1>
+          <p>Orçamentos enviados aos clientes; as que viraram OS ficam ocultas por padrão</p>
+        </HeaderText>
+      </PageHeader>
       {expandedCotacao && (
         <ExpandedContainer>
           <CardStyled className="expanded">
@@ -439,6 +448,18 @@ import debounce from "lodash/debounce";
                 label="Visualizar"
                 style={{ marginTop: "10px", marginLeft: 8 }}
               />
+              {expandedCotacao.ordemServicoId && (
+                <ButtonStyled
+                  icon="pi pi-clipboard"
+                  className="p-button-secondary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/ordens-servico/${expandedCotacao.ordemServicoId}`);
+                  }}
+                  label={`Ver OS #${expandedCotacao.ordemServicoId}`}
+                  style={{ marginTop: "10px", marginLeft: 8 }}
+                />
+              )}
               <ButtonStyled
                 icon="pi pi-file-pdf"
                 className="p-button-info"
@@ -488,6 +509,18 @@ import debounce from "lodash/debounce";
             justifyContent: "flex-end",
             margin: "8px 0 16px 0"
           }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <label style={{ fontSize: 13, color: "#555" }}>Situação:</label>
+              <select
+                value={situacao}
+                onChange={(e) => setSituacao(e.target.value)}
+                style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #ddd" }}
+              >
+                <option value="ABERTAS">Em aberto</option>
+                <option value="COM_OS">Viraram OS</option>
+                <option value="TODAS">Todas</option>
+              </select>
+            </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <label style={{ fontSize: 13, color: "#555" }}>Ordenar:</label>
               <select
@@ -540,6 +573,9 @@ import debounce from "lodash/debounce";
                   )}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {cot.ordemServicoId && (
+                    <Tag severity="info" value={`OS #${cot.ordemServicoId}`} style={{ whiteSpace: "nowrap" }} />
+                  )}
                   <i
                     className={
                       expandedCotacao && expandedCotacao.id === cot.id ? "pi pi-chevron-up" : "pi pi-chevron-down"

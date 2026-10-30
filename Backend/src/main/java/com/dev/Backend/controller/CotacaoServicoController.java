@@ -5,6 +5,7 @@ import com.dev.Backend.dto.CotacaoServicoDTO;
 import com.dev.Backend.dto.CotacaoServicoInputDTO;
 import com.dev.Backend.dto.DistribuidoraCotacaoDTO;
 import com.dev.Backend.entity.CotacaoServico;
+import com.dev.Backend.entity.SituacaoCotacao;
 import com.dev.Backend.service.CotacaoServicoService;
 
 import java.util.List;
@@ -12,6 +13,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,8 +41,10 @@ public class CotacaoServicoController {
     }
 
     @GetMapping("/")
-    public Page<CotacaoServicoDTO> buscarTodos(Pageable pageable) {
-        return cotacaoServicoService.buscarTodos(pageable);
+    public Page<CotacaoServicoDTO> buscarTodos(
+            @RequestParam(defaultValue = "ABERTAS") SituacaoCotacao situacao,
+            @PageableDefault(sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return cotacaoServicoService.buscar("", situacao, pageable);
     }
 
     @GetMapping("/{id}")
@@ -51,8 +56,11 @@ public class CotacaoServicoController {
     }
 
     @GetMapping("/search")
-    public Page<CotacaoServicoDTO> search(@RequestParam String query, Pageable pageable) {
-        return cotacaoServicoService.search(query, pageable);
+    public Page<CotacaoServicoDTO> search(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "ABERTAS") SituacaoCotacao situacao,
+            @PageableDefault(sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return cotacaoServicoService.buscar(query, situacao, pageable);
     }
 
     @PostMapping("/")

@@ -49,9 +49,9 @@ public class EstoqueService {
     @Transactional
     public void estornarCompra(MaterialDisponivel md, BigDecimal kg, BigDecimal metros, Integer barras, String ref) {
         EstoqueMaterial e = obterOuCriar(md);
-        e.setQuantidadeKg(nz(e.getQuantidadeKg()).subtract(nz(kg)).max(BigDecimal.ZERO));
-        e.setMetros(nz(e.getMetros()).subtract(nz(metros)).max(BigDecimal.ZERO));
-        e.setBarras(Math.max(0, nzi(e.getBarras()) - nzi(barras)));
+        e.setQuantidadeKg(nz(e.getQuantidadeKg()).subtract(nz(kg)));
+        e.setMetros(nz(e.getMetros()).subtract(nz(metros)));
+        e.setBarras(nzi(e.getBarras()) - nzi(barras));
         e.setDataAtualizacao(new Date());
         estoqueMaterialRepository.save(e);
         movimentar(md, TipoMovimentacaoEstoque.AJUSTE,
@@ -65,10 +65,10 @@ public class EstoqueService {
         BigDecimal metros = metrosDasBarras(md, quantidade);
         BigDecimal kg = kgDosMetros(md, metros);
 
-        // Sem saldo suficiente, a saída ainda é registrada (indica necessidade de compra)
-        e.setBarras(Math.max(0, nzi(e.getBarras()) - quantidade));
-        e.setMetros(nz(e.getMetros()).subtract(metros).max(BigDecimal.ZERO));
-        e.setQuantidadeKg(nz(e.getQuantidadeKg()).subtract(kg).max(BigDecimal.ZERO));
+        // Sem saldo suficiente o saldo fica negativo: indica o que falta comprar e mantém a devolução exata
+        e.setBarras(nzi(e.getBarras()) - quantidade);
+        e.setMetros(nz(e.getMetros()).subtract(metros));
+        e.setQuantidadeKg(nz(e.getQuantidadeKg()).subtract(kg));
         e.setDataAtualizacao(new Date());
         estoqueMaterialRepository.save(e);
         movimentar(md, TipoMovimentacaoEstoque.SAIDA_OS, kg, metros, quantidade, ref);

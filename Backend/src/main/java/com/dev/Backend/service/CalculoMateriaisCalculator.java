@@ -2,14 +2,18 @@ package com.dev.Backend.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 
 import com.dev.Backend.dto.MaterialSimulacaoDTO;
+import com.dev.Backend.dto.PecaCorteDTO;
+import com.dev.Backend.dto.PlanoCorteDTO;
 import com.dev.Backend.entity.MaterialDisponivel;
 
 public final class CalculoMateriaisCalculator {
 
     private static final int SCALE_DIMENSAO = 4;
     private static final BigDecimal CEM = BigDecimal.valueOf(100);
+    private static final BigDecimal MIL = BigDecimal.valueOf(1000);
 
     private CalculoMateriaisCalculator() {
     }
@@ -64,5 +68,27 @@ public final class CalculoMateriaisCalculator {
         dto.setPrecoUnitario(null);
         dto.setCustoEstimado(null);
         return dto;
+    }
+
+    /** Substitui a estimativa por percentual de perda pelas barras do plano de corte. */
+    public static void aplicarPlanoCorte(MaterialSimulacaoDTO dto, PlanoCorteDTO plano) {
+        BigDecimal metragemPedida = dto.getTamanho().multiply(BigDecimal.valueOf(plano.totalBarras()))
+            .setScale(SCALE_DIMENSAO, RoundingMode.HALF_UP);
+        dto.setQuantidadeBarras(plano.totalBarras());
+        dto.setTotalComPerda(metragemPedida);
+        dto.setSobraEstimada(metragemPedida.subtract(dto.getConsumoTotal())
+            .setScale(SCALE_DIMENSAO, RoundingMode.HALF_UP));
+        dto.setPlanoCorte(plano);
+    }
+
+    public static BigDecimal consumoDasPecas(List<PecaCorteDTO> pecas) {
+        long totalMm = pecas.stream()
+            .mapToLong(p -> (long) p.comprimentoMm() * p.quantidade())
+            .sum();
+        return BigDecimal.valueOf(totalMm).divide(MIL, SCALE_DIMENSAO, RoundingMode.HALF_UP);
+    }
+
+    public static int comprimentoBarraMm(MaterialDisponivel material) {
+        return material.getTamanho().multiply(MIL).setScale(0, RoundingMode.HALF_UP).intValueExact();
     }
 }

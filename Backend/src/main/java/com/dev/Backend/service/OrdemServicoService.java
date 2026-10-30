@@ -3,6 +3,7 @@ package com.dev.Backend.service;
 import com.dev.Backend.dto.GerarContasFinanceirasDTO;
 import com.dev.Backend.dto.OrdemServicoDTO;
 import com.dev.Backend.dto.OrdemServicoInputDTO;
+import com.dev.Backend.dto.PlanoCorteDTO;
 import com.dev.Backend.entity.*;
 import com.dev.Backend.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,8 @@ public class OrdemServicoService {
     @Autowired private FuncionarioOficinaRepository funcionarioOficinaRepository;
     @Autowired private EstoqueService estoqueService;
     @Autowired private CotacaoFinanceiroService financeiroService;
+    @Autowired private PlanoCorteService planoCorteService;
+    @Autowired private RetalhoService retalhoService;
 
     @Transactional(readOnly = true)
     public Page<OrdemServicoDTO> listar(String query, Pageable pageable) {
@@ -122,7 +125,7 @@ public class OrdemServicoService {
     }
 
     private OrdemServicoDTO toDTO(OrdemServico os) {
-        OrdemServicoDTO dto = OrdemServicoDTO.from(os);
+        OrdemServicoDTO dto = OrdemServicoDTO.from(os, planoCorteService::doMaterialDaCotacao);
         CotacaoServico cotacao = os.getCotacao();
         if (cotacao == null) {
             return dto;
@@ -215,6 +218,7 @@ public class OrdemServicoService {
         }
         if (devolverEstoque && Boolean.TRUE.equals(os.getEstoqueBaixado())) {
             movimentarMateriais(os, true);
+            retalhoService.removerDaOrdem(os.getId());
             os.setEstoqueBaixado(false);
         }
     }
@@ -226,7 +230,18 @@ public class OrdemServicoService {
             return;
         }
         movimentarMateriais(os, false);
+        registrarRetalhos(os);
         os.setEstoqueBaixado(true);
+    }
+
+    private void registrarRetalhos(OrdemServico os) {
+        if (os.getCotacao() == null) return;
+        for (Material mat : os.getCotacao().getMateriais()) {
+            PlanoCorteDTO plano = planoCorteService.doMaterialDaCotacao(mat);
+            if (plano != null && !plano.retalhos().isEmpty()) {
+                retalhoService.registrar(os, mat.getMaterialDisponivel(), plano.retalhos());
+            }
+        }
     }
 
     private void movimentarMateriais(OrdemServico os, boolean devolucao) {

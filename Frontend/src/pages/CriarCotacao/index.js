@@ -222,6 +222,7 @@ const CriarCotacao = () => {
             tamanho: m.tamanho,
           },
           quantidade: Number(m.quantidadeBarras || 0),
+          pecas: m.pecas || [],
           precos: precosIniciais,
         };
       });
@@ -797,6 +798,7 @@ const CriarCotacao = () => {
           quantidade: Number(m.quantidade),
           metros: m.metros != null ? Number(m.metros) : null,
           pesoKg: m.pesoKg != null ? Number(m.pesoKg) : null,
+          pecas: m.pecas || [],
         })),
         distribuidoras: distribuidores.map((nome) => ({ nome })),
         precosMateriais: cotacao.materiais.flatMap((m) =>

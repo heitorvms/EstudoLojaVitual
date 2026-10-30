@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  FaHome, FaCity, FaMap, FaSignOutAlt, FaBars, FaUserCircle, FaShoppingCart,
+  FaHome, FaSignOutAlt, FaBars, FaUserCircle, FaShoppingCart,
   FaBox, FaWarehouse, FaCalculator, FaCog, FaMoneyBillWave, FaClipboardList,
   FaUsers, FaTruck, FaBoxes, FaChevronDown,
 } from 'react-icons/fa';
@@ -11,8 +11,6 @@ import { UserService } from '../../services/UserService';
 
 const PATH_TO_ITEM = [
   { match: (p) => p === '/', id: 'Home' },
-  { match: (p) => p === '/estado', id: 'Estado' },
-  { match: (p) => p === '/cidade', id: 'Cidade' },
   { match: (p) => p === '/cotacoes' || p.startsWith('/cotacoes/') || p === '/criar-cotacao', id: 'Cotacoes' },
   { match: (p) => p === '/materiais-disponiveis', id: 'MateriaisDisponiveis' },
   { match: (p) => p === '/distribuidora', id: 'Distribuidora' },
@@ -67,8 +65,6 @@ function Sidebar({ isOpen, setIsOpen }) {
         id: 'cadastros',
         label: 'Cadastros',
         items: [
-          { id: 'Estado', to: '/estado', label: 'Estado', icon: FaMap },
-          { id: 'Cidade', to: '/cidade', label: 'Cidade', icon: FaCity },
           { id: 'MateriaisDisponiveis', to: '/materiais-disponiveis', label: 'Materiais', icon: FaBox },
           { id: 'Distribuidora', to: '/distribuidora', label: 'Distribuidora', icon: FaWarehouse },
           { id: 'Funcionarios', to: '/funcionarios-oficina', label: 'Funcionários', icon: FaUsers },

@@ -1,31 +1,31 @@
 import React from "react";
-import { ContainerPage, TitlePage } from "../Home/styled";
-import { FaHome, FaCity, FaMap } from 'react-icons/fa';
+import { FaShoppingCart, FaClipboardList, FaBoxes } from "react-icons/fa";
+import { PageShellCentered, PageHeader, HeaderText } from "../../styles/oficinaLayout";
+import { FeatureGrid, FeatureCard } from "./styled";
 
-const Page = () => {
-    return (
-        <ContainerPage>
-            <TitlePage>Seja bem-vindo</TitlePage>
-            <div className="welcome-message">
-                <p>Aqui você pode gerenciar estados, cidades e muito mais!</p>
-                <p>Explore as funcionalidades através do menu lateral.</p>
-            </div>
-            <div className="features">
-                <div className="feature-item">
-                    <FaHome size={40} color="#791e94" />
-                    <p>Gerencie sua home page</p>
-                </div>
-                <div className="feature-item">
-                    <FaMap size={40} color="#791e94" />
-                    <p>Administre estados</p>
-                </div>
-                <div className="feature-item">
-                    <FaCity size={40} color="#791e94" />
-                    <p>Controle cidades</p>
-                </div>
-            </div>
-        </ContainerPage>
-    );
-}
+const FEATURES = [
+  { icon: FaShoppingCart, texto: "Monte cotações e orçamentos" },
+  { icon: FaClipboardList, texto: "Acompanhe as ordens de serviço" },
+  { icon: FaBoxes, texto: "Controle estoque e retalhos" },
+];
+
+const Page = () => (
+  <PageShellCentered>
+    <PageHeader>
+      <HeaderText>
+        <h1>Seja bem-vindo</h1>
+        <p>Aqui você gerencia orçamentos, produção e estoque da serralheria. Use o menu lateral para navegar.</p>
+      </HeaderText>
+    </PageHeader>
+    <FeatureGrid>
+      {FEATURES.map(({ icon: Icon, texto }) => (
+        <FeatureCard key={texto}>
+          <Icon size={40} />
+          <p>{texto}</p>
+        </FeatureCard>
+      ))}
+    </FeatureGrid>
+  </PageShellCentered>
+);
 
 export default Page;

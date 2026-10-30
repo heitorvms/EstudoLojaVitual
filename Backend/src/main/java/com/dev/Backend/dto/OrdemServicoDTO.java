@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Function;
 
 public class OrdemServicoDTO {
     private Long id;
@@ -30,7 +31,7 @@ public class OrdemServicoDTO {
     private boolean materialPago;
     private boolean maoDeObraPago;
 
-    public static OrdemServicoDTO from(OrdemServico o) {
+    public static OrdemServicoDTO from(OrdemServico o, Function<Material, PlanoCorteDTO> planoCorte) {
         OrdemServicoDTO dto = new OrdemServicoDTO();
         dto.id = o.getId();
         dto.status = o.getStatus();
@@ -54,7 +55,7 @@ public class OrdemServicoDTO {
             dto.cotacaoId = cotacao.getId();
             dto.valorOrcamento = cotacao.getValorTotalOrcamento();
             for (Material m : cotacao.getMateriais()) {
-                dto.materiais.add(MaterialUtilizadoDTO.from(m));
+                dto.materiais.add(MaterialUtilizadoDTO.from(m, planoCorte.apply(m)));
             }
         }
         return dto;
@@ -75,8 +76,9 @@ public class OrdemServicoDTO {
         private String descricao;
         private Integer quantidade;
         private Integer comprimentoBarraMm;
+        private PlanoCorteDTO planoCorte;
 
-        static MaterialUtilizadoDTO from(Material m) {
+        static MaterialUtilizadoDTO from(Material m, PlanoCorteDTO planoCorte) {
             MaterialUtilizadoDTO dto = new MaterialUtilizadoDTO();
             MaterialDisponivel md = m.getMaterialDisponivel();
             if (md != null) {
@@ -85,6 +87,7 @@ public class OrdemServicoDTO {
                 dto.comprimentoBarraMm = md.getComprimentoBarraMm() != null ? md.getComprimentoBarraMm() : 6000;
             }
             dto.quantidade = m.getQuantidade();
+            dto.planoCorte = planoCorte;
             return dto;
         }
 
@@ -92,6 +95,7 @@ public class OrdemServicoDTO {
         public String getDescricao() { return descricao; }
         public Integer getQuantidade() { return quantidade; }
         public Integer getComprimentoBarraMm() { return comprimentoBarraMm; }
+        public PlanoCorteDTO getPlanoCorte() { return planoCorte; }
     }
 
     public Long getId() { return id; }

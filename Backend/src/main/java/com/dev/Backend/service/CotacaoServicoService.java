@@ -5,6 +5,7 @@ import com.dev.Backend.entity.*;
 import com.dev.Backend.repository.CotacaoServicoRepository;
 import com.dev.Backend.repository.DistribuidoraRepository;
 import com.dev.Backend.repository.MaterialDisponivelRepository;
+import com.dev.Backend.repository.OrdemServicoRepository;
 import com.dev.Backend.repository.PessoaReposotory;
 import com.dev.Backend.exception.RegraNegocioException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,12 @@ public class CotacaoServicoService {
 
     @Autowired
     private PessoaReposotory pessoaReposotory;
+
+    @Autowired
+    private PlanoCorteService planoCorteService;
+
+    @Autowired
+    private OrdemServicoRepository ordemServicoRepository;
     
     public List<DistribuidoraCotacaoDTO> calcularValoresPorDistribuidora(Long cotacaoId, Double percentualLucro) {
         CotacaoServico cotacao = cotacaoServicoRepository.findById(cotacaoId)
@@ -47,9 +54,9 @@ public class CotacaoServicoService {
         return calculationService.buscarDistribuidoraMaisBarata(cotacao, percentualLucro);
     }
 
-    public Page<CotacaoServicoDTO> buscarTodos(Pageable pageable) {
-        Page<CotacaoServico> cotacoes = cotacaoServicoRepository.findAll(pageable);
-        return cotacoes.map(this::toDTO);
+    public Page<CotacaoServicoDTO> buscar(String query, SituacaoCotacao situacao, Pageable pageable) {
+        String termo = query == null ? "" : query.trim();
+        return cotacaoServicoRepository.buscar(termo, situacao.name(), pageable).map(this::toDTO);
     }
 
     public CotacaoServico inserir(CotacaoServico cotacaoServico) {
@@ -97,6 +104,7 @@ public class CotacaoServicoService {
                 material.setQuantidade(matInput.getQuantidade());
                 material.setMetros(matInput.getMetros());
                 material.setPesoKg(matInput.getPesoKg());
+                adicionarPecas(material, matInput.getPecas());
                 material.setCotacaoServico(cotacao);
                 material.setDataCriacao(new Date());
                 material.setDataAtualizacao(new Date());
@@ -200,6 +208,8 @@ public class CotacaoServicoService {
     dto.setDataVencimento(cotacao.getDataVencimento());
             dto.setDataCriacao(cotacao.getDataCriacao());
             dto.setDataAtualizacao(cotacao.getDataAtualizacao());
+    ordemServicoRepository.findByCotacaoId(cotacao.getId())
+            .ifPresent(os -> dto.setOrdemServicoId(os.getId()));
     return dto;
     }
 
@@ -216,8 +226,21 @@ public class CotacaoServicoService {
             .map(this::toPrecoMaterialCotacaoDTO)
             .collect(Collectors.toList());
         dto.setPrecos(precosDTO);
+        dto.setPecas(planoCorteService.pecasDe(material));
+        dto.setPlanoCorte(planoCorteService.doMaterialDaCotacao(material));
 
         return dto;
+    }
+
+    private void adicionarPecas(Material material, List<PecaCorteDTO> pecas) {
+        for (PecaCorteDTO p : planoCorteService.normalizar(pecas)) {
+            MaterialPeca peca = new MaterialPeca();
+            peca.setMaterial(material);
+            peca.setDescricao(p.descricao());
+            peca.setComprimentoMm(p.comprimentoMm());
+            peca.setQuantidade(p.quantidade());
+            material.getPecas().add(peca);
+        }
     }
 
     private DistribuidoraDTO toDistribuidoraDTO(Distribuidora distribuidora) {
@@ -247,10 +270,5 @@ public class CotacaoServicoService {
         dto.setPreco(preco.getPreco());
         return dto;
     }
-
-    public Page<CotacaoServicoDTO> search(String query, Pageable pageable) {
-        Page<CotacaoServico> cotacoes = cotacaoServicoRepository.findByNomeContainingOrClienteNomeContainingOrTelefoneContaining(query, query, query, pageable);
-        return cotacoes.map(this::toDTO);
-}
 
 }

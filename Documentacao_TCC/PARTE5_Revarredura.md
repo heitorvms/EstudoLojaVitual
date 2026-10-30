@@ -1,6 +1,8 @@
 # HSA Serralheria – Revarredura do código (27/09/2026)
 ## O que mudou desde o `HSA_Serralheria_Volume_Atualizado.pdf` e o que alterar no TCC
 
+> **Atenção (29/10/2026):** parte deste arquivo foi superada pela `PARTE6_Atualizacao_Outubro.md`. Plano de corte e retalhos **voltaram** ao sistema (com outro modelo), os números da seção 2 mudaram e Estado/Cidade **não entram** no TCC. Em caso de conflito, vale a Parte 6.
+
 ---
 
 ## 1. Resumo das mudanças no sistema
@@ -107,7 +109,6 @@ id, tipo VARCHAR(20) [PAGAR/RECEBER], status VARCHAR(20) [PENDENTE/PARCIAL/PAGA/
 - **Cobranca_Whatsapp_Historico** (id_conta, mensagem, telefone, link_whatsapp, tipo [PREVIEW/ABERTURA_WHATSAPP/LOTE_VENCIDAS], data_disparo)
 - **Material_Apelido** (usado na importação de planilhas)
 - **Preco_Material_Cotacao**
-- Opcional: Estado, Cidade
 
 ### 4.5 Nova ordem sugerida das tabelas
 3 Pessoa · 4 Permissao · 5 Permissao_Pessoa · 6 Cotacao_Servico · 7 Material · 8 Material_Disponivel · 9 Material_Preco · 10 Distribuidora · 11 Simulacao · 12 Simulacao_Item · 13 Ordem_Servico · 14 Ordem_Servico_Mao_Obra · 15 Funcionario_Oficina · 16 Conta_Financeira · 17 Cobranca_Whatsapp_Historico · 18 Compra_Lote · 19 Compra_Lote_Item · 20 Estoque_Material · 21 Movimentacao_Estoque · 22 Configuracao_Whatsapp · 23 Whatsapp_Envio_Log · 24 Matriz de acesso
@@ -119,7 +120,6 @@ Tabela 1 (classes): remover TipoServico/TipoServicoItem, ItemCorte, Retalho; acr
 ## 5. Relacionamentos para o DER / Classes (versão atual)
 
 ```
-pessoa N──1 cidade N──1 estado
 pessoa 1──N permissao_pessoa N──1 permissao
 cotacao_servico N──1 pessoa (cliente, opcional)
 cotacao_servico 1──N material N──1 material_disponivel

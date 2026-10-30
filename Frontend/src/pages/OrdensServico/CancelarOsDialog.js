@@ -25,7 +25,7 @@ export default function CancelarOsDialog({ os, visible, loading, onConfirm, onHi
             checked={devolverEstoque}
             onChange={(e) => setDevolverEstoque(e.checked)}
           />
-          <label htmlFor="devolverEstoque">Devolver os materiais ao estoque (não foram usados)</label>
+          <label htmlFor="devolverEstoque">Devolver os materiais ao estoque e remover os retalhos gerados (não foram usados)</label>
         </div>
       )}
       <FooterActions>

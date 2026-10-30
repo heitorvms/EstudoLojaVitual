@@ -1,6 +1,8 @@
 # HSA Serralheria – Atualização da Documentação do TCC
 ## PARTE 2 – Dicionários de Dados (tabelas novas + atualizações)
 
+> **Atenção (29/10/2026):** arquivo de 22/09. Correções na seção 4 da Parte 5 e tabelas novas (Retalho_Estoque, Material_Peca, Simulacao_Item_Peca, Configuracao_Producao) na seção 5 de `PARTE6_Atualizacao_Outubro.md`.
+
 **Formato:** PK | Nome | Tipo | Nulo | A/N | Descrição (igual ao TCC v2)  
 **A/N:** A = alfanumérico (texto), N = numérico/data/boolean/FK  
 **Fonte:** Do autor (código JPA em `Backend/.../entity`)

@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.dev.Backend.dto.ItemPersistidoDTO;
 import com.dev.Backend.dto.ItemSimulacaoInputDTO;
 import com.dev.Backend.dto.MaterialSimulacaoDTO;
+import com.dev.Backend.dto.PecaCorteDTO;
 import com.dev.Backend.dto.SimulacaoHistoricoDTO;
 import com.dev.Backend.dto.SimulacaoRequestDTO;
 import com.dev.Backend.dto.SimulacaoResponseDTO;
@@ -24,6 +25,7 @@ import com.dev.Backend.entity.MaterialDisponivel;
 import com.dev.Backend.entity.MaterialPreco;
 import com.dev.Backend.entity.Simulacao;
 import com.dev.Backend.entity.SimulacaoItem;
+import com.dev.Backend.entity.SimulacaoItemPeca;
 import com.dev.Backend.repository.MaterialDisponivelRepository;
 import com.dev.Backend.repository.SimulacaoRepository;
 
@@ -36,6 +38,9 @@ public class SimulacaoProducaoService {
 
     @Autowired
     private MaterialDisponivelRepository materialDisponivelRepository;
+
+    @Autowired
+    private PlanoCorteService planoCorteService;
 
     @Autowired
     private SimulacaoRepository simulacaoRepository;
@@ -62,6 +67,11 @@ public class SimulacaoProducaoService {
             MaterialDisponivel md = materiaisPorId.get(item.getMaterialDisponivelId());
             MaterialSimulacaoDTO dto = CalculoMateriaisCalculator.calcular(
                 md, item.getConsumoPorUnidade(), request.getQuantidade(), perda);
+            if (!item.getPecas().isEmpty()) {
+                dto.setPecas(item.getPecas());
+                CalculoMateriaisCalculator.aplicarPlanoCorte(dto,
+                    planoCorteService.calcular(item.getPecas(), request.getQuantidade(), md));
+            }
             aplicarMenorPrecoVigente(dto, md);
             response.getMateriais().add(dto);
 
@@ -131,6 +141,14 @@ public class SimulacaoProducaoService {
             item.setPrecoUnitarioSnapshot(calc.getPrecoUnitario());
             item.setDistribuidoraNomeSnapshot(calc.getDistribuidoraNome());
             item.setCustoEstimado(calc.getCustoEstimado());
+            for (PecaCorteDTO p : input.getPecas()) {
+                SimulacaoItemPeca peca = new SimulacaoItemPeca();
+                peca.setSimulacaoItem(item);
+                peca.setDescricao(p.descricao());
+                peca.setComprimentoMm(p.comprimentoMm());
+                peca.setQuantidade(p.quantidade());
+                item.getPecas().add(peca);
+            }
             simulacao.getItens().add(item);
         }
     }
@@ -229,6 +247,7 @@ public class SimulacaoProducaoService {
                 throw new IllegalArgumentException(
                     "materialDisponivelId é obrigatório em todos os itens.");
             }
+            normalizarPecas(item);
             if (item.getConsumoPorUnidade() == null
                 || item.getConsumoPorUnidade().signum() <= 0) {
                 throw new IllegalArgumentException(
@@ -238,6 +257,14 @@ public class SimulacaoProducaoService {
                 throw new IllegalArgumentException(
                     "Há materiais duplicados na lista de itens.");
             }
+        }
+    }
+
+    /** Com peças informadas, o consumo por unidade passa a ser a soma das peças. */
+    private void normalizarPecas(ItemSimulacaoInputDTO item) {
+        item.setPecas(planoCorteService.normalizar(item.getPecas()));
+        if (!item.getPecas().isEmpty()) {
+            item.setConsumoPorUnidade(CalculoMateriaisCalculator.consumoDasPecas(item.getPecas()));
         }
     }
 
@@ -269,6 +296,9 @@ public class SimulacaoProducaoService {
 
         for (SimulacaoItem item : s.getItens()) {
             MaterialDisponivel md = item.getMaterialDisponivel();
+            List<PecaCorteDTO> pecas = item.getPecas().stream()
+                .map(p -> new PecaCorteDTO(p.getDescricao(), p.getComprimentoMm(), p.getQuantidade()))
+                .toList();
 
             MaterialSimulacaoDTO calc = new MaterialSimulacaoDTO();
             calc.setMaterialId(md.getId());
@@ -282,12 +312,15 @@ public class SimulacaoProducaoService {
             calc.setPrecoUnitario(item.getPrecoUnitarioSnapshot());
             calc.setDistribuidoraNome(item.getDistribuidoraNomeSnapshot());
             calc.setCustoEstimado(item.getCustoEstimado());
+            calc.setPecas(pecas);
+            calc.setPlanoCorte(planoCorteService.paraExibicao(pecas, s.getQuantidade(), md));
             dto.getMateriais().add(calc);
 
             ItemPersistidoDTO persistido = new ItemPersistidoDTO();
             persistido.setId(item.getId());
             persistido.setMaterialDisponivelId(md.getId());
             persistido.setConsumoPorUnidade(item.getConsumoPorUnidade());
+            persistido.setPecas(pecas);
             dto.getItens().add(persistido);
         }
         return dto;

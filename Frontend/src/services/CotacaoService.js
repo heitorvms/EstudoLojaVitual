@@ -5,22 +5,20 @@ export class CotacaoService extends BaseService {
     super("cotacoes/");
   }
 
-  async getPaginado(page = 0, size = 10) {
-    try {
-      const response = await this.axiosInstance.get(`?page=${page}&size=${size}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+  async getPaginado(page = 0, size = 10, direcao = "desc", situacao = "ABERTAS") {
+    const response = await this.axiosInstance.get(
+      `?page=${page}&size=${size}&sort=id,${direcao}&situacao=${situacao}`
+    );
+    return response.data;
   }
 
-  async getAll() {
+  async getAll(situacao = "ABERTAS") {
     try {
-      const firstPage = await this.getPaginado(0, 10);
+      const firstPage = await this.getPaginado(0, 10, "desc", situacao);
       const totalPages = firstPage.totalPages;
       const promises = [];
       for (let i = 1; i < totalPages; i++) {
-        promises.push(this.getPaginado(i, 10));
+        promises.push(this.getPaginado(i, 10, "desc", situacao));
       }
       const otherPages = await Promise.all(promises);
       return [firstPage, ...otherPages].flatMap(page => page.content);
@@ -30,33 +28,27 @@ export class CotacaoService extends BaseService {
     }
   }
 
-  async getAllSearch(query, size = 10) {
+  async getAllSearch(query, size = 10, situacao = "ABERTAS") {
     try {
-      const first = await this.search(query, 0, size);
+      const first = await this.search(query, 0, size, "desc", situacao);
       const totalPages = first.totalPages || 1;
-      const content = [...(first.content || [])];
       const pagePromises = [];
       for (let i = 1; i < totalPages; i++) {
-        pagePromises.push(
-          this.axiosInstance
-            .get(`/search?query=${encodeURIComponent(query)}&page=${i}&size=${size}`)
-            .then((r) => r.data)
-        );
+        pagePromises.push(this.search(query, i, size, "desc", situacao));
       }
       const others = await Promise.all(pagePromises);
-      others.forEach((p) => {
-        if (p?.content?.length) content.push(...p.content);
-      });
-      return content;
+      return [first, ...others].flatMap((p) => p?.content || []);
     } catch (error) {
       console.error("Erro ao buscar todas as cotações com busca:", error.response?.data || error.message);
       throw error;
     }
   }
 
-  async search(query, page = 0, size = 10) {
+  async search(query, page = 0, size = 10, direcao = "desc", situacao = "ABERTAS") {
     try {
-      const response = await this.axiosInstance.get(`/search?query=${query}&page=${page}&size=${size}`);
+      const response = await this.axiosInstance.get(
+        `/search?query=${encodeURIComponent(query)}&page=${page}&size=${size}&sort=id,${direcao}&situacao=${situacao}`
+      );
       return response.data;
     } catch (error) {
       console.error("Erro ao buscar cotações:", error.response?.data || error.message);

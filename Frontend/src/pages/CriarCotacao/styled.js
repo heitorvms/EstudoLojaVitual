@@ -258,50 +258,18 @@ export const ResumoEscolhaMaterialValor = styled.span`
   font-weight: 700;
 `;
 
-export const ContainerPage = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 40px;
-  padding: 20px;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  background-color: #f8f9fa;
-  min-height: 100vh;
-
-  @media (max-width: 768px) {
-    padding: 10px;
-  }
-`;
-
-export const Title = styled.h2`
-  text-align: center;
-  margin-bottom: 20px;
-  font-size: 2rem;
-  font-weight: bold;
-  color: #1A1A2E;
-`;
-
-export const FormSection = styled.div`
-  width: 100%;
-  margin-bottom: 2rem;
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-  }
-`;
+export {
+  PageShellCentered as ContainerPage,
+  PageTitle as Title,
+  PanelCard as FormSection,
+  PanelTitle as FormTitle,
+} from "../../styles/oficinaLayout";
 
 export const SubTitle = styled.h3`
-  color: #1A1A2E;
-  margin-bottom: 1rem;
-  font-size: 1.5rem;
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #1a1a2e;
 `;
 
 export const MateriaisSectionHeader = styled.div`
@@ -427,10 +395,9 @@ export const ListaMateriaisHeader = styled.div`
 
 export const ListaMateriaisTitle = styled.h3`
   margin: 0;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1A1A2E;
-  letter-spacing: -0.01em;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #1a1a2e;
   line-height: 1.3;
 `;
 
@@ -878,16 +845,6 @@ export const ErrorMessage = styled.small`
   color: #dc3545;
   font-size: 0.875rem;
   display: block;
-`;
-
-export const FormTitle = styled.div`
-  color: #1A1A2E;
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid #1A1A2E;
-  width: 100%;
 `;
 
 export const GlobalStyle = createGlobalStyle`

@@ -38,6 +38,7 @@ import {
   LoteList,
   EmptyHint,
 } from "./styled";
+import { ButtonPrimary, ButtonSecondary } from "../../styles/oficinaLayout";
 
 const TIPOS = [
   { label: "Todos os tipos", value: null },
@@ -247,7 +248,7 @@ const Financeiro = () => {
 
   const parcelaBody = (r) =>
     r.totalParcelas > 1 ? (
-      <span style={{ fontWeight: 600, color: "#4a00e0" }}>
+      <span style={{ fontWeight: 600, color: "#1a1a2e" }}>
         {r.numeroParcela}/{r.totalParcelas}
       </span>
     ) : (
@@ -307,17 +308,15 @@ const Financeiro = () => {
           <p>Controle de contas a receber e a pagar geradas pelos orçamentos, com cobrança e baixas.</p>
         </HeaderText>
         <HeaderActions>
-          <Button
+          <ButtonSecondary
             icon="pi pi-refresh"
             label="Atualizar"
-            outlined
             onClick={carregar}
             loading={loading}
           />
-          <Button
+          <ButtonPrimary
             icon="pi pi-whatsapp"
             label="Cobrança em lote"
-            severity="warning"
             loading={waLoading}
             onClick={abrirLoteVencidas}
           />
@@ -356,7 +355,7 @@ const Financeiro = () => {
               <small>Recebimentos em atraso</small>
             </div>
           </ResumoCard>
-          <ResumoCard $accent="#4a00e0" $iconBg="rgba(74, 0, 224, 0.1)">
+          <ResumoCard $accent="#1a1a2e" $iconBg="rgba(26, 26, 46, 0.08)">
             <div className="icon-wrap">
               <i className="pi pi-calendar-times" />
             </div>
@@ -431,7 +430,7 @@ const Financeiro = () => {
               field="cotacaoId"
               header="Orç."
               body={(r) => (
-                <span style={{ fontWeight: 600, color: "#4a00e0" }}>#{r.cotacaoId}</span>
+                <span style={{ fontWeight: 600, color: "#1a1a2e" }}>#{r.cotacaoId}</span>
               )}
               style={{ width: "72px" }}
             />

@@ -1,6 +1,8 @@
 # HSA Serralheria – Atualização da Documentação do TCC
 ## PARTE 3 – Classes, Casos de Uso e Sequências (texto + Mermaid)
 
+> **Atenção (29/10/2026):** arquivo de 22/09, superado pelas Partes 5 e 6. Para figuras e textos atuais, usar `PARTE6_Atualizacao_Outubro.md`.
+
 **Uso:** copiar textos para o Cap. 5; colar Mermaid no [mermaid.live](https://mermaid.live) / Draw.io / exportar PNG e inserir como Figuras no ODT.
 
 **Contagens atuais (corrigir Cap. 3/4 na Parte 4):** 27 controllers, 37 services, 32 repositories, 45 arquivos em entity/, 21 páginas React, 21 services frontend.
@@ -120,7 +122,6 @@ flowchart LR
 | WhatsappEnvioLog | Log de envios |
 | Produto | Catálogo comercial |
 | Permissao / PermissaoPessoa | Perfis de acesso |
-| Estado / Cidade | Localização |
 
 Fonte: Do autor
 

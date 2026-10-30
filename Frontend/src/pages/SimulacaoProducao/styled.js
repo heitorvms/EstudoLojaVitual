@@ -1,55 +1,14 @@
 import styled, { createGlobalStyle } from "styled-components";
 import { Button, InputText, DataTable } from "primereact";
 
-export const ContainerPage = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 40px;
-  padding: 20px;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  background-color: #f8f9fa;
-  min-height: 100vh;
-
-  @media (max-width: 768px) {
-    padding: 10px;
-  }
-`;
-
-export const Title = styled.h2`
-  text-align: center;
-  margin-bottom: 20px;
-  font-size: 2rem;
-  font-weight: bold;
-  color: #1A1A2E;
-`;
-
-export const FormSection = styled.div`
-  width: 100%;
-  margin-bottom: 2rem;
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-  }
-`;
-
-export const FormTitle = styled.div`
-  color: #1A1A2E;
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid #1A1A2E;
-  width: 100%;
-`;
+export {
+  PageShellCentered as ContainerPage,
+  PageTitle as Title,
+  PageHeader,
+  HeaderText,
+  PanelCard as FormSection,
+  PanelTitle as FormTitle,
+} from "../../styles/oficinaLayout";
 
 export const SubTitle = styled.h3`
   color: #1A1A2E;
@@ -375,6 +334,37 @@ export const InfoBadge = styled.span`
   border-radius: 20px;
   font-size: 0.85rem;
   font-weight: 600;
+`;
+
+export const HintText = styled.p`
+  margin: 0 0 1rem;
+  color: #6c757d;
+  font-size: 0.875rem;
+  line-height: 1.5;
+
+  strong {
+    color: #1A1A2E;
+  }
+
+  &.erro {
+    color: #dc3545;
+  }
+`;
+
+export const BadgeList = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+
+  strong {
+    color: #1A1A2E;
+  }
+`;
+
+export const PlanoMaterialBlock = styled.div`
+  margin-bottom: 2rem;
 `;
 
 export const GlobalStyle = createGlobalStyle`

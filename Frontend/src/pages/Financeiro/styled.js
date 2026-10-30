@@ -14,12 +14,10 @@ export const FinanceiroGlobalStyle = createGlobalStyle`
   }
 
   .financeiro-page .p-datatable .p-datatable-thead > tr > th {
-    background: #f1f3f9;
+    background: #f5f5f5;
     color: #1a1a2e;
     font-weight: 600;
     font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
     border: none;
     padding: 0.85rem 1rem;
   }
@@ -35,7 +33,7 @@ export const FinanceiroGlobalStyle = createGlobalStyle`
   }
 
   .financeiro-page .p-datatable .p-datatable-tbody > tr:hover {
-    background: #f8f9ff !important;
+    background: #fafafa !important;
   }
 
   .financeiro-page .p-paginator {
@@ -45,7 +43,7 @@ export const FinanceiroGlobalStyle = createGlobalStyle`
   }
 
   .financeiro-page .p-dialog .p-dialog-header {
-    background: linear-gradient(135deg, #1a1a2e 0%, #4a00e0 100%);
+    background: #1a1a2e;
     color: #fff;
     border-radius: 12px 12px 0 0;
     padding: 1.1rem 1.25rem;
@@ -69,17 +67,7 @@ export const FinanceiroGlobalStyle = createGlobalStyle`
   }
 `;
 
-export const ContainerPage = styled.div`
-  min-height: calc(100vh - 64px);
-  padding: 1.75rem 2rem 2.5rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  background: linear-gradient(160deg, #f0f2f8 0%, #e8ecf4 45%, #f5f6fa 100%);
-
-  @media (max-width: 768px) {
-    padding: 1rem;
-  }
-`;
+export { PageShellCentered as ContainerPage } from "../../styles/oficinaLayout";
 
 export const PageHeader = styled.header`
   display: flex;
@@ -92,19 +80,16 @@ export const PageHeader = styled.header`
 
 export const HeaderText = styled.div`
   h1 {
-    margin: 0 0 0.35rem;
-    font-size: 1.75rem;
-    font-weight: 700;
+    margin: 0;
+    font-size: 2rem;
+    font-weight: bold;
     color: #1a1a2e;
-    letter-spacing: -0.02em;
   }
 
   p {
-    margin: 0;
-    color: #64748b;
-    font-size: 0.95rem;
-    max-width: 520px;
-    line-height: 1.5;
+    margin: 6px 0 0;
+    color: #666;
+    font-size: 14px;
   }
 `;
 
@@ -133,10 +118,10 @@ export const ResumoCard = styled.div`
   position: relative;
   overflow: hidden;
   background: #fff;
-  border-radius: 14px;
+  border-radius: 8px;
   padding: 1.15rem 1.25rem;
-  box-shadow: 0 4px 20px rgba(26, 26, 46, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #ddd;
   display: flex;
   align-items: flex-start;
   gap: 0.85rem;
@@ -149,8 +134,8 @@ export const ResumoCard = styled.div`
     left: 0;
     width: 4px;
     height: 100%;
-    background: ${(p) => p.$accent || "#4a00e0"};
-    border-radius: 14px 0 0 14px;
+    background: ${(p) => p.$accent || "#1a1a2e"};
+    border-radius: 8px 0 0 8px;
   }
 
   &:hover {
@@ -165,8 +150,8 @@ export const ResumoCard = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
-    background: ${(p) => p.$iconBg || "rgba(74, 0, 224, 0.1)"};
-    color: ${(p) => p.$accent || "#4a00e0"};
+    background: ${(p) => p.$iconBg || "rgba(26, 26, 46, 0.08)"};
+    color: ${(p) => p.$accent || "#1a1a2e"};
     font-size: 1.15rem;
     flex-shrink: 0;
   }
@@ -187,7 +172,9 @@ export const ResumoCard = styled.div`
   }
 
   span {
-    font-size: 1.35rem;
+    display: block;
+    font-size: clamp(1rem, 1.5vw, 1.35rem);
+    white-space: nowrap;
     font-weight: 700;
     color: #1a1a2e;
     letter-spacing: -0.02em;
@@ -203,11 +190,11 @@ export const ResumoCard = styled.div`
 
 export const PanelCard = styled.section`
   background: #fff;
-  border-radius: 16px;
-  padding: 1.25rem 1.5rem;
-  box-shadow: 0 4px 24px rgba(26, 26, 46, 0.07);
-  margin-bottom: 1.25rem;
-  border: 1px solid #eef1f6;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  margin-bottom: 16px;
+  border: 1px solid #ddd;
 `;
 
 export const PanelTitle = styled.h3`
@@ -220,7 +207,7 @@ export const PanelTitle = styled.h3`
   gap: 0.5rem;
 
   i {
-    color: #4a00e0;
+    color: #1a1a2e;
   }
 `;
 
@@ -298,6 +285,7 @@ export const TipoBadge = styled.span`
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 600;
+  white-space: nowrap;
   background: ${(p) => (p.$receber ? "rgba(16, 185, 129, 0.12)" : "rgba(245, 158, 11, 0.12)")};
   color: ${(p) => (p.$receber ? "#059669" : "#d97706")};
 `;
@@ -324,7 +312,7 @@ export const DialogForm = styled.div`
     padding: 0.75rem 1rem;
     background: #f8f9ff;
     border-radius: 10px;
-    border-left: 3px solid #4a00e0;
+    border-left: 3px solid #1a1a2e;
     font-size: 0.9rem;
     color: #475569;
   }
@@ -376,7 +364,7 @@ export const HistoricoList = styled.ul`
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #4a00e0;
+    background: #1a1a2e;
     margin-top: 0.45rem;
     flex-shrink: 0;
   }

@@ -18,7 +18,9 @@ import { MaterialPrecoService } from "../../services/MaterialPrecoService";
 import { DistribuidoraService } from "../../services/DistribuidoraService";
 import {
   ContainerPage,
-  TitlePage,
+  PageHeader,
+  HeaderText,
+  ButtonPrimary,
   FormSection,
   FormTitle,
   FormRow,
@@ -467,22 +469,17 @@ const MateriaisDisponiveis = () => {
       <ConfirmDialog />
       <Toast ref={toast} />
 
-      <TitlePage>Cadastro de Materiais Disponíveis</TitlePage>
-
-      <div
-        style={{
-          width: "100%",
-          display: "flex",
-          justifyContent: "flex-end",
-          marginBottom: "1rem",
-        }}
-      >
-        <ButtonStyled
+      <PageHeader>
+        <HeaderText>
+          <h1>Materiais</h1>
+          <p>Cadastro de materiais com descrição e tamanho da barra</p>
+        </HeaderText>
+        <ButtonPrimary
           label="Importar Planilha"
           icon="pi pi-file-excel"
           onClick={abrirImport}
         />
-      </div>
+      </PageHeader>
 
       <FormSection>
         <FormTitle>

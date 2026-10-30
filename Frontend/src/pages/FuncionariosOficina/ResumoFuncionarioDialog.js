@@ -5,6 +5,7 @@ import { Column } from "primereact/column";
 import { Tag } from "primereact/tag";
 import { statusLabel, statusSeverity } from "../OrdensServico/statusOrdemServico";
 import { formatarDataIso, paraIsoData } from "../../utils/datas";
+import { moeda } from "../../utils/moeda";
 import {
   ButtonPrimary,
   ButtonSecondary,
@@ -13,8 +14,6 @@ import {
   InfoGrid,
   InfoItem,
 } from "../../styles/oficinaLayout";
-
-const moeda = (v) => `R$ ${Number(v || 0).toFixed(2).replace(".", ",")}`;
 
 const mesAtual = () => {
   const hoje = new Date();

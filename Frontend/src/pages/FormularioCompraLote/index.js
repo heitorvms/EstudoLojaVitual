@@ -10,6 +10,7 @@ import { Tag } from "primereact/tag";
 import { CompraEstoqueService } from "../../services/CompraEstoqueService";
 import { MaterialDisponivelService } from "../../services/MaterialDisponivelService";
 import { DistribuidoraService } from "../../services/DistribuidoraService";
+import { moeda } from "../../utils/moeda";
 import {
   OficinaGlobalStyle,
   PageShell,
@@ -348,7 +349,7 @@ export default function FormularioCompraLote() {
             <Column field="barras" header="Barras" body={(r) => r.barras ?? "-"} />
             <Column field="metros" header="Metros" body={(r) => (r.metros != null ? Number(r.metros).toFixed(3) : "-")} />
             <Column field="quantidadeKg" header="Kg" body={(r) => (r.quantidadeKg != null ? Number(r.quantidadeKg).toFixed(3) : "-")} />
-            <Column field="valorKg" header="R$/kg" body={(r) => (r.valorKg != null ? Number(r.valorKg).toFixed(2) : "-")} />
+            <Column field="valorKg" header="R$/kg" body={(r) => (r.valorKg != null ? moeda(r.valorKg) : "-")} />
             <Column
               header=""
               style={{ width: 70 }}
@@ -364,7 +365,7 @@ export default function FormularioCompraLote() {
 
           <CostTotal>
             <strong>Total estimado</strong>
-            <span>R$ {totalGeral.toFixed(2)}</span>
+            <span>{moeda(totalGeral)}</span>
           </CostTotal>
 
           <HeaderActions style={{ marginTop: 16, justifyContent: "flex-start" }}>

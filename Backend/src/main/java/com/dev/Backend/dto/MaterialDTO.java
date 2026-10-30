@@ -10,6 +10,8 @@ public class MaterialDTO {
     private BigDecimal pesoKg;
     private MaterialDisponivelDTO materialDisponivel;
     private List<PrecoMaterialCotacaoDTO> precos;
+    private List<PecaCorteDTO> pecas;
+    private PlanoCorteDTO planoCorte;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -23,4 +25,8 @@ public class MaterialDTO {
     public void setMaterialDisponivel(MaterialDisponivelDTO materialDisponivel) { this.materialDisponivel = materialDisponivel; }
     public List<PrecoMaterialCotacaoDTO> getPrecos() { return precos; }
     public void setPrecos(List<PrecoMaterialCotacaoDTO> precos) { this.precos = precos; }
+    public List<PecaCorteDTO> getPecas() { return pecas; }
+    public void setPecas(List<PecaCorteDTO> pecas) { this.pecas = pecas; }
+    public PlanoCorteDTO getPlanoCorte() { return planoCorte; }
+    public void setPlanoCorte(PlanoCorteDTO planoCorte) { this.planoCorte = planoCorte; }
 }

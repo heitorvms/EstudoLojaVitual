@@ -55,6 +55,7 @@ export const OficinaGlobalStyle = createGlobalStyle`
     color: #666;
     border: none;
     border-bottom: 2px solid transparent;
+    margin-bottom: 0;
     background: transparent;
   }
 
@@ -65,6 +66,7 @@ export const OficinaGlobalStyle = createGlobalStyle`
 
   .oficina-page .p-tag {
     border-radius: 999px;
+    white-space: nowrap;
   }
 `;
 
@@ -84,6 +86,24 @@ export const ContainerPage = styled.div`
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
+`;
+
+export const PageShellCentered = styled.div`
+  min-height: calc(100vh - 80px);
+  background: #f0f0f2;
+  padding: 32px max(24px, calc((100% - 1200px) / 2)) 48px;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px 12px 32px;
+  }
+`;
+
+export const PageTitle = styled.h1`
+  margin: 0 0 24px;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #1a1a2e;
 `;
 
 export const PageHeader = styled.header`
@@ -196,6 +216,20 @@ export const DataTableStyled = styled(DataTable)`
   .p-datatable-wrapper {
     border-radius: 4px;
     overflow: hidden;
+  }
+`;
+
+export const TagList = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+
+  .p-tag {
+    white-space: nowrap;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
   }
 `;
 

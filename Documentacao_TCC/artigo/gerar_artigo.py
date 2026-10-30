@@ -9,7 +9,6 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parent
 PRINTS = ROOT / "prints"
-DIAG = ROOT.parent / "diagramas"
 FONTS = ROOT.parent / "fonts"
 WIN_FONTS = Path(r"C:/Windows/Fonts")
 OUT_PDF = ROOT / "HSA_Artigo_Cientifico_Resumido.pdf"
@@ -25,7 +24,6 @@ ENDERECO = ["Universidade Paranaense (Unipar) – Unidade de Paranavaí", "Paran
 EMAILS = ""
 
 SEM_MENU = (0.23, 0, 0.985, 1)
-SEM_MENU_RODAPE = (0.23, 0, 0.985, 0.78)
 INTEIRA = (0, 0, 1, 1)
 
 
@@ -142,7 +140,7 @@ class Artigo(FPDF):
         self._primeiro = False
 
     def tabela_dados(self, titulo, linhas, larguras):
-        self.garantir(60)
+        self.garantir(8 + 5.5 * len(linhas))
         self.espaco(6)
         self.tabela += 1
         self.set_x(ML)
@@ -175,34 +173,47 @@ class Artigo(FPDF):
 
 
 RESUMO = (
-    "Pequenas serralherias ainda elaboram orçamentos de forma manual, o que gera lentidão, erros de cálculo e perda "
-    "de histórico. Este artigo apresenta o HSA Serralheria, sistema web que automatiza cotações com escolha da "
-    "distribuidora de menor preço, simulação de produção, ordens de serviço com baixa de estoque e mão de obra, "
-    "compras de material e gestão financeira com cobrança via WhatsApp. O desenvolvimento seguiu levantamento de "
-    "requisitos junto à empresa, modelagem UML e implementação com Java, Spring Boot, React e PostgreSQL. Conclui-se "
-    "que a solução centraliza o processo comercial e produtivo, reduzindo erros e retrabalho."
+    "A escolha das tecnologias influencia diretamente a segurança, a manutenção e a escalabilidade de um sistema web. "
+    "Este artigo tem como objetivo apresentar e detalhar as tecnologias empregadas no desenvolvimento de um sistema "
+    "de gestão para uma serralheria, descrevendo o papel de cada uma e a forma como se integram. A metodologia "
+    "combinou pesquisa nas documentações oficiais com a aplicação prática em desenvolvimento incremental, utilizando "
+    "Java, Spring Boot, Spring Security, PostgreSQL, React e WPPConnect. Conclui-se que o conjunto adotado, de código "
+    "aberto e amplamente documentado, permitiu construir uma aplicação segura, organizada em camadas e de fácil "
+    "manutenção."
 )
 
 TECNOLOGIAS = [
-    ["Camada", "Tecnologia", "Finalidade"],
-    ["Back-end", "Java 21, Spring Boot 3.3.4, Spring Data JPA", "API REST, regras de negócio e persistência"],
-    ["Segurança", "Spring Security, JWT (jjwt 0.12.6), BCrypt", "Autenticação e controle de acesso por perfil"],
-    ["Banco de dados", "PostgreSQL", "Armazenamento relacional dos dados"],
-    ["Front-end", "React 19, PrimeReact 10, Material UI 6, Axios", "Interface web e consumo da API"],
-    ["Relatórios", "JasperReports 7.0.3", "Geração do orçamento em PDF"],
-    ["Planilhas", "Apache POI 5.3.0", "Importação de preços das distribuidoras"],
-    ["Mensageria", "WPPConnect Server (Docker)", "Envio de orçamentos e cobranças via WhatsApp"],
-    ["Ferramentas", "VS Code, Postman, Maven, NPM, Git, PlantUML", "Codificação, testes de API, build e modelagem"],
+    ["Tecnologia", "Versão", "Função no projeto"],
+    ["Java", "21 (LTS)", "Linguagem do back-end"],
+    ["Spring Boot", "3.3.4", "Base da API REST, injeção de dependências e servidor embutido"],
+    ["Spring Data JPA / Hibernate", "3.3.4 / 6.5", "Mapeamento objeto-relacional e acesso ao banco"],
+    ["Spring Security / jjwt", "6.3 / 0.12.6", "Autenticação com token JWT e autorização por perfil"],
+    ["PostgreSQL", "—", "Sistema gerenciador de banco de dados relacional"],
+    ["React", "19", "Biblioteca de interface do front-end"],
+    ["PrimeReact / Material UI", "10 / 6", "Componentes visuais prontos"],
+    ["Axios / React Router", "1.8 / 7", "Requisições HTTP e navegação entre páginas"],
+    ["JasperReports", "7.0.3", "Geração de relatórios em PDF"],
+    ["Apache POI", "5.3.0", "Leitura e escrita de planilhas .xlsx"],
+    ["WPPConnect Server / Docker", "—", "API de integração com o WhatsApp em contêiner"],
+    ["Maven / NPM", "—", "Gerenciamento de dependências e build"],
+    ["VS Code / Postman / Git", "—", "Edição de código, testes de API e versionamento"],
 ]
 
 REFERENCIAS = [
+    f"Apache Software Foundation (2026) Apache POI: the Java API for Microsoft Documents. Disponível em: "
+    f"<https://poi.apache.org/>. {ACESSO}",
+    f"Axios (2026) Axios Documentation. Disponível em: <https://axios-http.com/>. {ACESSO}",
     "Booch, G. et al. (2006) UML: guia do usuário. 2. ed. Rio de Janeiro: Elsevier.",
-    f"Brasil (2018) Lei nº 13.709, de 14 de agosto de 2018. Lei Geral de Proteção de Dados Pessoais (LGPD). "
-    f"Disponível em: <https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm>. {ACESSO}",
+    f"Docker Inc. (2026) Docker Documentation. Disponível em: <https://docs.docker.com/>. {ACESSO}",
+    "Fielding, R. T. (2000) Architectural Styles and the Design of Network-based Software Architectures. Tese "
+    "(Doutorado em Ciência da Informação e Computação). University of California, Irvine.",
+    f"Hibernate (2026) Hibernate ORM Documentation. Disponível em: <https://hibernate.org/orm/documentation/>. {ACESSO}",
     f"Jones, M. et al. (2015) RFC 7519: JSON Web Token (JWT). Internet Engineering Task Force (IETF). "
     f"Disponível em: <https://www.rfc-editor.org/rfc/rfc7519>. {ACESSO}",
     f"Meta Platforms (2026) React: the library for web and native user interfaces. Disponível em: "
     f"<https://react.dev/>. {ACESSO}",
+    f"Oracle (2026) Java Platform, Standard Edition. Disponível em: <https://www.oracle.com/java/technologies/javase/>. "
+    f"{ACESSO}",
     f"PostgreSQL Global Development Group (2026) PostgreSQL Documentation. Disponível em: "
     f"<https://www.postgresql.org/docs/>. {ACESSO}",
     "Pressman, R. S. e Maxim, B. R. (2016) Engenharia de software: uma abordagem profissional. 8. ed. "
@@ -212,6 +223,8 @@ REFERENCIAS = [
     f"Spring (2026a) Spring Boot Reference Documentation. Disponível em: <https://docs.spring.io/spring-boot/>. {ACESSO}",
     f"Spring (2026b) Spring Security Reference. Disponível em: <https://docs.spring.io/spring-security/reference/>. "
     f"{ACESSO}",
+    f"Spring (2026c) Spring Data JPA Reference Documentation. Disponível em: "
+    f"<https://docs.spring.io/spring-data/jpa/reference/>. {ACESSO}",
     f"TIBCO Jaspersoft (2026) JasperReports Library. Disponível em: "
     f"<https://community.jaspersoft.com/project/jasperreports-library>. {ACESSO}",
     f"WPPConnect Team (2026) WPPConnect Server. Disponível em: <https://github.com/wppconnect-team/wppconnect-server>. "
@@ -222,147 +235,203 @@ REFERENCIAS = [
 def gerar():
     pdf = Artigo()
     pdf.add_page()
-    pdf.titulo_artigo("HSA SERRALHERIA: SISTEMA WEB PARA ORÇAMENTOS, ORDENS DE SERVIÇO E GESTÃO DE ESTOQUE")
+    pdf.titulo_artigo("TECNOLOGIAS WEB APLICADAS AO DESENVOLVIMENTO DE UM SISTEMA DE GESTÃO PARA SERRALHERIA")
     pdf.cabecalho_autores()
     pdf.resumo(RESUMO)
 
     pdf.secao("1. Introdução")
     pdf.paragrafo(
-        "A HSA Serralheria é uma empresa do ramo metalúrgico que fabrica e comercializa estruturas metálicas, portões e "
-        "cadeiras produzidas em escala, além de prestar serviços personalizados de serralheria. Nesse segmento, cada "
-        "orçamento depende de medidas, quantidades de barras e chapas, insumos, frete e mão de obra, e os preços dos "
-        "materiais variam com frequência entre as distribuidoras."
+        "O desenvolvimento de sistemas web envolve a combinação de diversas tecnologias: uma linguagem e um framework "
+        "para o servidor, um banco de dados, uma biblioteca para a interface e ferramentas de apoio. A escolha desse "
+        "conjunto define a segurança da aplicação, o esforço de manutenção e a facilidade de evolução do software "
+        "[Sommerville, 2011]."
     )
     pdf.paragrafo(
-        "Antes do sistema, os orçamentos eram calculados manualmente, com apoio de anotações em papel e planilhas "
-        "isoladas. Esse processo tornava a resposta ao cliente lenta, favorecia erros de cálculo, dificultava a "
-        "comparação entre fornecedores e não mantinha histórico de preços, produção, estoque e pagamentos."
+        "Nesse contexto, este artigo tem como objetivo apresentar e detalhar as tecnologias utilizadas no "
+        "desenvolvimento de um sistema web de gestão para a HSA Serralheria, empresa do ramo metalúrgico de "
+        "Paranavaí-PR. O foco está no papel de cada tecnologia e na forma como elas se integram; o sistema construído é "
+        "apresentado como resultado da aplicação desse conjunto."
     )
     pdf.paragrafo(
-        "O objetivo deste trabalho é apresentar o HSA Serralheria, um sistema web que integra em um único ambiente o "
-        "processo comercial e produtivo da empresa: da cotação e da simulação de produção até a ordem de serviço, o "
-        "controle de estoque, a mão de obra da oficina e o financeiro, com envio de orçamentos e cobranças via WhatsApp."
+        "O artigo está organizado da seguinte forma: a Seção 2 descreve a metodologia; a Seção 3 detalha a arquitetura e "
+        "as tecnologias do back-end, do banco de dados, do front-end e da integração; a Seção 4 apresenta os resultados "
+        "obtidos; e a Seção 5, as considerações finais."
     )
 
-    pdf.secao("2. Metodologia Utilizada")
+    pdf.secao("2. Metodologia")
     pdf.paragrafo(
-        "O trabalho foi conduzido como um estudo aplicado, desenvolvido em quatro etapas: levantamento de requisitos, "
-        "modelagem, implementação e testes, seguindo boas práticas da engenharia de software [Sommerville, 2011]."
+        "A pesquisa foi de natureza aplicada. Inicialmente, realizou-se um estudo das documentações oficiais das "
+        "tecnologias candidatas, adotando como critérios de escolha o licenciamento de código aberto, a maturidade, o "
+        "tamanho da comunidade e a compatibilidade entre as ferramentas."
     )
     pdf.paragrafo(
-        "No levantamento de requisitos, foram realizadas entrevistas com o proprietário e a observação do processo de "
-        "orçamento e produção da oficina. As necessidades identificadas foram organizadas em funcionalidades e "
-        "priorizadas conforme o impacto no dia a dia da empresa, começando pelo cálculo da cotação."
-    )
-    pdf.paragrafo(
-        "Na modelagem, utilizou-se a UML [Booch et al., 2006], com diagramas de casos de uso, classes, sequência, "
-        "componentes e implantação, além do diagrama de entidade e relacionamento, gerados com a ferramenta PlantUML."
-    )
-    pdf.paragrafo(
-        "A implementação seguiu o modelo incremental [Pressman e Maxim, 2016]: cada módulo foi desenvolvido, testado "
-        "na API com o Postman e validado na interface antes de iniciar o seguinte, com o código versionado em Git."
+        "Em seguida, as tecnologias escolhidas foram aplicadas no desenvolvimento do sistema, seguindo o modelo "
+        "incremental [Pressman e Maxim, 2016]. A modelagem foi feita com a UML [Booch et al., 2006] na ferramenta "
+        "PlantUML; cada incremento teve seus endpoints testados no Postman antes da integração com a interface, e o "
+        "código foi versionado com Git."
     )
 
-    pdf.secao("3. Desenvolvimento")
+    pdf.secao("3. Tecnologias Utilizadas")
     pdf.paragrafo(
-        "Esta seção apresenta as tecnologias adotadas, a arquitetura do sistema e o fluxo principal da solução."
+        "Esta seção apresenta a arquitetura adotada e detalha as tecnologias do back-end, do banco de dados, do "
+        "front-end e da integração, resumidas ao final na Tabela 1."
     )
 
-    pdf.secao("3.1. Tecnologias Utilizadas")
+    pdf.secao("3.1. Arquitetura Cliente-Servidor e API REST")
     pdf.paragrafo(
-        "Foram escolhidas tecnologias de código aberto, amplamente utilizadas no mercado e com documentação ativa, o "
-        "que reduz custos de licenciamento e facilita a manutenção. A Tabela 1 resume as tecnologias por camada."
+        "O sistema adota a arquitetura cliente-servidor, com o front-end e o back-end desenvolvidos como aplicações "
+        "independentes. A comunicação segue o estilo arquitetural REST [Fielding, 2000]: o cliente acessa recursos "
+        "identificados por URLs usando os métodos HTTP (GET, POST, PUT e DELETE) e troca dados no formato JSON. Como o "
+        "REST é sem estado, cada requisição carrega as informações necessárias para ser atendida, inclusive o token de "
+        "autenticação."
     )
-    pdf.tabela_dados("Tecnologias utilizadas no sistema", TECNOLOGIAS, (22, 44, 44))
+    pdf.paragrafo(
+        "No servidor, o código é organizado em camadas: os controllers recebem as requisições HTTP, os services "
+        "concentram as regras de negócio e os repositories acessam o banco de dados. A Figura 1 mostra o caminho de uma "
+        "requisição entre as tecnologias."
+    )
+    pdf.figuras([(ROOT / "fluxo_requisicao.png", "Integração entre as tecnologias do sistema")], largura_total=140,
+                corte=INTEIRA)
 
-    pdf.secao("3.2. Arquitetura do Sistema")
+    pdf.secao("3.2. Back-end")
     pdf.paragrafo(
-        "O sistema segue a arquitetura cliente-servidor com back-end e front-end desacoplados, comunicando-se por uma "
-        "API REST no formato JSON. O front-end em React [Meta Platforms, 2026] é executado no navegador e envia, em cada "
-        "requisição, um token JWT [Jones et al., 2015] gerado no login. O back-end em Spring Boot [Spring, 2026a] é "
-        "organizado nas camadas controller, service e repository, e persiste os dados no PostgreSQL "
-        "[PostgreSQL Global Development Group, 2026] por meio do Spring Data JPA."
+        "O back-end é a aplicação executada no servidor, responsável pelas regras de negócio, pela segurança e pelo "
+        "acesso ao banco de dados, expondo a API REST consumida pela interface."
+    )
+    pdf.secao("3.2.1. Java")
+    pdf.paragrafo(
+        "Java é uma linguagem orientada a objetos cujo código é compilado para bytecode e executado na Java Virtual "
+        "Machine (JVM), o que garante portabilidade entre sistemas operacionais [Oracle, 2026]. Foi utilizada a versão "
+        "21, de suporte estendido (LTS), que recebe atualizações de segurança por longo prazo. O projeto usa o Maven "
+        "para gerenciar dependências e compilar a aplicação, e o Lombok para gerar automaticamente métodos de acesso e "
+        "construtores a partir de anotações."
+    )
+    pdf.secao("3.2.2. Spring Boot")
+    pdf.paragrafo(
+        "O Spring Boot é construído sobre o Spring Framework, cujo núcleo é a inversão de controle: o framework cria e "
+        "injeta os objetos (beans) de que cada classe precisa, reduzindo o acoplamento. O Spring Boot acrescenta a "
+        "autoconfiguração, os starters, que agrupam dependências por finalidade, e um servidor Tomcat embutido, que "
+        "permite executar a aplicação como um único arquivo sem instalar um servidor à parte [Spring, 2026a]."
     )
     pdf.paragrafo(
-        "Os orçamentos em PDF são gerados em memória com o JasperReports [TIBCO Jaspersoft, 2026]. A integração com o "
-        "WhatsApp é feita pelo WPPConnect Server [WPPConnect Team, 2026], executado em um contêiner Docker, e a "
-        "recuperação de senha utiliza um servidor SMTP. A Figura 1 apresenta o diagrama de implantação."
+        "Na versão 3.3.4 adotada, foram usados os starters web, data-jpa, security, mail e freemarker. Os endpoints são "
+        "criados com a anotação @RestController, e o agendamento de tarefas com @Scheduled executa rotinas automáticas "
+        "em horários definidos. O envio de e-mails usa o JavaMail com modelos de mensagem FreeMarker."
     )
-    pdf.figuras([(DIAG / "fig18_deploy.png", "Diagrama de implantação do sistema")], largura_total=125, corte=INTEIRA)
+    pdf.secao("3.2.3. Spring Data JPA e Hibernate")
     pdf.paragrafo(
-        "A segurança é garantida pelo Spring Security [Spring, 2026b]: as senhas são armazenadas com criptografia "
-        "BCrypt e cada rota é liberada conforme o perfil do usuário (Admin, Gerente ou Funcionario). Os dados pessoais "
-        "são tratados apenas para a finalidade comercial da empresa, em conformidade com a LGPD [Brasil, 2018]."
+        "A JPA (Java Persistence API) é a especificação Java para mapeamento objeto-relacional, e o Hibernate é a "
+        "implementação utilizada [Hibernate, 2026]. As classes anotadas com @Entity são convertidas em tabelas, e o "
+        "Hibernate traduz as operações sobre objetos em comandos SQL para o dialeto do PostgreSQL."
+    )
+    pdf.paragrafo(
+        "O Spring Data JPA simplifica essa camada: basta declarar uma interface que estende JpaRepository para obter as "
+        "operações de inserção, consulta, alteração e exclusão, e consultas adicionais podem ser derivadas do nome do "
+        "método [Spring, 2026c]. Com a opção ddl-auto=update, o esquema do banco é atualizado a partir das entidades."
+    )
+    pdf.secao("3.2.4. Spring Security e JWT")
+    pdf.paragrafo(
+        "O Spring Security trata a autenticação e a autorização por meio de uma cadeia de filtros que intercepta as "
+        "requisições [Spring, 2026b]. No projeto, ele foi configurado sem sessão no servidor (stateless), e as senhas "
+        "são armazenadas com o algoritmo de hash BCrypt, que inclui um valor aleatório (salt) em cada senha."
+    )
+    pdf.paragrafo(
+        "A identidade do usuário é transportada por um JSON Web Token (JWT), padrão definido na RFC 7519 [Jones et al., "
+        "2015]. O token tem três partes codificadas em Base64URL: cabeçalho, conteúdo (claims, como usuário e validade) "
+        "e assinatura. A biblioteca jjwt 0.12.6 gera o token no login, assinado com HMAC-SHA; a cada requisição, um "
+        "filtro próprio (OncePerRequestFilter) valida a assinatura e a validade antes de liberar o acesso conforme o "
+        "perfil."
+    )
+    pdf.secao("3.2.5. Bibliotecas de Relatórios e Planilhas")
+    pdf.paragrafo(
+        "O JasperReports 7.0.3 gera relatórios a partir de modelos no formato JRXML, compilados em arquivos .jasper "
+        "[TIBCO Jaspersoft, 2026]. O modelo é preenchido com os dados do banco e exportado para PDF diretamente em "
+        "memória, sem gravar arquivos no servidor. Já o Apache POI 5.3.0 é a API Java para documentos do Microsoft "
+        "Office [Apache Software Foundation, 2026]; com a classe XSSFWorkbook, o sistema lê e gera planilhas .xlsx "
+        "para importação de dados."
     )
 
-    pdf.secao("3.3. Fluxo Principal do Sistema")
+    pdf.secao("3.3. Banco de Dados: PostgreSQL")
     pdf.paragrafo(
-        "O sistema é organizado nos módulos Cadastros, Comercial, Produção, Estoque, Financeiro e Configurações. O "
-        "fluxo principal parte da cotação, que pode ser criada diretamente ou a partir de uma simulação de produção; a "
-        "cotação gera a ordem de serviço, que baixa o estoque, recebe os lançamentos de mão de obra e origina as contas "
-        "a pagar e a receber."
+        "O PostgreSQL é um sistema gerenciador de banco de dados objeto-relacional de código aberto, com suporte a "
+        "transações ACID, integridade referencial por chaves estrangeiras e ampla aderência ao padrão SQL "
+        "[PostgreSQL Global Development Group, 2026]. A aplicação se conecta a ele pelo driver JDBC, e o acesso aos "
+        "dados passa pelo Hibernate, que gera a maior parte dos comandos SQL."
     )
 
-    pdf.secao("3.3.1. Cotação")
+    pdf.secao("3.4. Front-end")
     pdf.paragrafo(
-        "Na cotação, o usuário informa o cliente, o serviço e os materiais com suas quantidades. O sistema consulta os "
-        "preços cadastrados de cada distribuidora, compara os valores e indica a de menor custo, somando insumos, frete "
-        "e margem de lucro para compor o valor final. O orçamento pode ser emitido em PDF e enviado ao cliente pelo "
-        "WhatsApp, e os preços podem ser atualizados pela importação de planilhas das distribuidoras."
+        "O front-end é a aplicação executada no navegador do usuário, responsável pela interface e pelo consumo da API "
+        "REST do back-end."
     )
-    pdf.figuras([
-        (PRINTS / "04_cotacao_detalhe.png", "Detalhe da cotação por distribuidora"),
-        (PRINTS / "05_cotacao_custos.png", "Composição de custos da cotação"),
-    ])
+    pdf.secao("3.4.1. JavaScript e React")
+    pdf.paragrafo(
+        "O front-end foi desenvolvido em JavaScript com o React 19, biblioteca para construção de interfaces baseada em "
+        "componentes reutilizáveis [Meta Platforms, 2026]. O React é declarativo: o desenvolvedor descreve como a tela "
+        "deve ficar para cada estado, e a biblioteca atualiza apenas as partes que mudaram. O estado dos componentes é "
+        "controlado com hooks, como useState e useEffect."
+    )
+    pdf.paragrafo(
+        "O projeto foi criado com o Create React App e usa o NPM, gerenciador de pacotes do Node.js, para instalar as "
+        "dependências. A aplicação funciona como uma SPA (single-page application): o React Router 7 troca as páginas "
+        "sem recarregar o navegador e bloqueia rotas conforme o perfil do usuário."
+    )
+    pdf.secao("3.4.2. PrimeReact, Material UI e Axios")
+    pdf.paragrafo(
+        "O PrimeReact 10 fornece componentes prontos, como tabelas com paginação e filtros, formulários, caixas de "
+        "diálogo e notificações, além do conjunto de ícones PrimeIcons [PrimeTek, 2026]; o Material UI 6 complementa "
+        "alguns elementos visuais. Essas bibliotecas reduzem o tempo de construção das telas e mantêm a interface "
+        "padronizada."
+    )
+    pdf.paragrafo(
+        "A comunicação com a API usa o Axios 1.8, cliente HTTP baseado em Promises [Axios, 2026]. Foi criada uma "
+        "instância com o endereço base da API e um interceptor que adiciona automaticamente o cabeçalho "
+        "Authorization: Bearer com o token JWT em todas as requisições."
+    )
 
-    pdf.secao("3.3.2. Ordem de Serviço e Estoque")
+    pdf.secao("3.5. Integração com WhatsApp: WPPConnect e Docker")
     pdf.paragrafo(
-        "A ordem de serviço é gerada a partir da cotação e acompanha a produção pelos status aberto, em produção, "
-        "concluído e cancelado. Ao entrar em produção, os materiais são baixados automaticamente do estoque, que é "
-        "reabastecido pelas compras de material em lote. As horas trabalhadas são lançadas por funcionário, com valor "
-        "diurno e noturno, e o gerente controla o pagamento de cada lançamento."
+        "O WPPConnect Server é um projeto de código aberto, desenvolvido em Node.js, que expõe uma API REST para o "
+        "WhatsApp Web [WPPConnect Team, 2026]. Ele é executado em um contêiner Docker, tecnologia que empacota a "
+        "aplicação com todas as suas dependências e a isola do sistema operacional, garantindo que funcione da mesma "
+        "forma em qualquer máquina [Docker Inc., 2026]. O back-end se comunica com o WPPConnect por HTTP, usando o "
+        "RestTemplate do Spring, para enviar mensagens e arquivos PDF."
     )
 
-    pdf.secao("3.3.3. Financeiro")
+    pdf.secao("3.6. Ferramentas de Desenvolvimento")
     pdf.paragrafo(
-        "A partir da ordem de serviço são geradas as contas a receber do cliente e as contas a pagar por categoria "
-        "(material, mão de obra, insumos e frete). Uma rotina diária marca as contas vencidas, e as cobranças podem ser "
-        "enviadas pelo WhatsApp de forma individual ou em lote. A Figura 4 mostra uma ordem de serviço e a Figura 5, o "
-        "painel financeiro."
+        "O código foi escrito no Visual Studio Code, editor com extensões para Java e JavaScript. O Postman foi usado "
+        "para testar os endpoints da API de forma isolada, enviando requisições com o token JWT. O Git controlou as "
+        "versões do código, e o PlantUML gerou os diagramas UML a partir de descrições em texto. A Tabela 1 resume as "
+        "tecnologias adotadas, suas versões e a função de cada uma no projeto."
     )
-    pdf.figuras([
-        (PRINTS / "10_os_detalhe.png", "Detalhe da ordem de serviço"),
-        (PRINTS / "16_financeiro.png", "Painel financeiro"),
-    ])
+    pdf.tabela_dados("Tecnologias utilizadas no projeto", TECNOLOGIAS, (36, 18, 56))
 
     pdf.secao("4. Resultados Obtidos")
     pdf.paragrafo(
-        "Como resultado, foi entregue um sistema web funcional que cobre o fluxo completo da empresa, da cotação ao "
-        "financeiro. O back-end reúne 26 controllers REST, 36 services de negócio e 30 entidades persistidas no "
-        "PostgreSQL, e o front-end possui 20 páginas React organizadas por módulo."
+        "O resultado da aplicação dessas tecnologias foi o sistema HSA Serralheria, uma aplicação web em funcionamento "
+        "cuja interface é mostrada na Figura 2. O back-end reúne 26 controllers REST, 36 services e 30 entidades JPA "
+        "persistidas no PostgreSQL, e o front-end possui 20 páginas React."
     )
+    pdf.figuras([(PRINTS / "04_cotacao_detalhe.png", "Interface do sistema desenvolvido")], largura_total=110,
+                corte=INTEIRA)
     pdf.paragrafo(
-        "Nos testes realizados, como a cotação de 50 cadeiras para igreja apresentada nas Figuras 2 e 3, o sistema "
-        "comparou os preços entre as distribuidoras, indicou a de menor custo e calculou automaticamente insumos, frete "
-        "e lucro, substituindo as contas que antes eram feitas à mão."
-    )
-    pdf.paragrafo(
-        "Com a integração entre os módulos, a ordem de serviço passou a ser gerada a partir da cotação sem redigitação "
-        "de dados, o estoque é atualizado automaticamente e as contas a pagar e a receber são criadas a partir da ordem "
-        "de serviço. As informações que antes ficavam em papel e planilhas passaram a ser registradas em um único banco "
-        "de dados, com histórico de preços, produção, estoque e pagamentos."
+        "Na prática, a autoconfiguração do Spring Boot e os repositories do Spring Data JPA reduziram o código de "
+        "infraestrutura, permitindo concentrar o esforço nas regras de negócio. O uso de JWT sem sessão simplificou a "
+        "separação entre front-end e back-end, e os componentes do PrimeReact padronizaram as telas. A execução do "
+        "WPPConnect em Docker evitou a instalação manual do Node.js e de suas dependências na máquina do servidor."
     )
 
     pdf.secao("5. Considerações Finais")
     pdf.paragrafo(
-        "O HSA Serralheria atingiu o objetivo de centralizar em um único sistema o processo comercial e produtivo da "
-        "empresa. A escolha automática da distribuidora de menor preço, a integração entre cotação, ordem de serviço, "
-        "estoque e financeiro e o envio de documentos pelo WhatsApp tornam o atendimento mais ágil e reduzem erros e "
-        "retrabalho."
+        "O conjunto formado por Java, Spring Boot, PostgreSQL e React mostrou-se adequado ao desenvolvimento de um "
+        "sistema web de gestão: todas as tecnologias são de código aberto, possuem documentação ampla e se integram de "
+        "forma consistente por meio da API REST. A separação em camadas e o uso de padrões como JWT e JPA facilitam a "
+        "manutenção e a evolução do software."
     )
     pdf.paragrafo(
-        "Como trabalhos futuros, propõem-se a hospedagem do sistema em nuvem, a criação de uma versão para "
-        "dispositivos móveis voltada à oficina e a ampliação dos relatórios gerenciais para apoio à tomada de decisão."
+        "Como trabalhos futuros, propõem-se a execução de toda a aplicação em contêineres Docker, a criação de testes "
+        "automatizados e a publicação do sistema em um serviço de nuvem."
     )
 
     pdf.referencias(REFERENCIAS)

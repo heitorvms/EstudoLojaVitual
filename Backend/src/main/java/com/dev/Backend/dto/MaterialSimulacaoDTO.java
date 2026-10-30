@@ -1,6 +1,8 @@
 package com.dev.Backend.dto;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 import lombok.Data;
 
@@ -18,4 +20,6 @@ public class MaterialSimulacaoDTO {
     private BigDecimal custoEstimado;
     private Long distribuidoraId;
     private String distribuidoraNome;
+    private List<PecaCorteDTO> pecas = new ArrayList<>();
+    private PlanoCorteDTO planoCorte;
 }

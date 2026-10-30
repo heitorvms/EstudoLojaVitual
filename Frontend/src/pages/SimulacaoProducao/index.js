@@ -14,10 +14,14 @@ import "primeicons/primeicons.css";
 
 import { MaterialDisponivelService } from "../../services/MaterialDisponivelService";
 import { SimulacaoProducaoService } from "../../services/SimulacaoProducaoService";
+import PecasCorteDialog, { consumoDasPecas } from "./PecasCorteDialog";
+import PlanoCortePanel from "./PlanoCortePanel";
 
 import {
   ContainerPage,
   Title,
+  PageHeader,
+  HeaderText,
   FormSection,
   FormTitle,
   SubTitle,
@@ -104,6 +108,7 @@ const SimulacaoProducao = () => {
   const [carregandoMateriais, setCarregandoMateriais] = useState(false);
   const [materialPicker, setMaterialPicker] = useState({ materialId: null, consumoPorUnidade: null });
   const [isAddingMaterial, setIsAddingMaterial] = useState(false);
+  const [itemPecas, setItemPecas] = useState(null);
   const materialCacheRef = useRef(new Map());
 
   const [resultado, setResultado] = useState(null);
@@ -207,15 +212,6 @@ const SimulacaoProducao = () => {
       toast.current?.show({ severity: "warn", summary: "Atenção", detail: "Selecione um material.", life: 3000 });
       return;
     }
-    if (!materialPicker.consumoPorUnidade || materialPicker.consumoPorUnidade <= 0) {
-      toast.current?.show({
-        severity: "warn",
-        summary: "Atenção",
-        detail: "Informe o consumo por unidade (maior que zero).",
-        life: 3000,
-      });
-      return;
-    }
     const selected = materialCacheRef.current.get(materialPicker.materialId);
     if (!selected) {
       toast.current?.show({
@@ -236,17 +232,30 @@ const SimulacaoProducao = () => {
       return;
     }
     setIsAddingMaterial(true);
-    setItens((prev) => [
-      ...prev,
-      {
-        uid: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        material: selected,
-        consumoPorUnidade: materialPicker.consumoPorUnidade,
-      },
-    ]);
+    const novoItem = {
+      uid: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      material: selected,
+      consumoPorUnidade: materialPicker.consumoPorUnidade,
+      pecas: [],
+    };
+    setItens((prev) => [...prev, novoItem]);
     setMaterialPicker({ materialId: null, consumoPorUnidade: null });
     setIsAddingMaterial(false);
+    if (!novoItem.consumoPorUnidade) setItemPecas(novoItem);
     if (formErrors.itens) setFormErrors((prev) => ({ ...prev, itens: null }));
+  };
+
+  const aplicarPecas = (pecas) => {
+    const uid = itemPecas.uid;
+    setItens((prev) =>
+      prev.map((item) =>
+        item.uid === uid
+          ? { ...item, pecas, consumoPorUnidade: pecas.length ? consumoDasPecas(pecas) : item.consumoPorUnidade }
+          : item
+      )
+    );
+    setItemPecas(null);
+    setResultado(null);
   };
 
   const atualizarItem = (uid, campo, valor) => {
@@ -307,6 +316,7 @@ const SimulacaoProducao = () => {
       .map((i) => ({
         materialDisponivelId: i.material.id,
         consumoPorUnidade: i.consumoPorUnidade,
+        pecas: i.pecas || [],
       })),
   });
 
@@ -425,6 +435,7 @@ const SimulacaoProducao = () => {
           precoUnitario: m.precoUnitario,
         },
         consumoPorUnidade: Number(m.consumoPorUnidade),
+        pecas: m.pecas || [],
       };
     });
     setItens(itensRestaurados);
@@ -487,6 +498,7 @@ const SimulacaoProducao = () => {
           precoUnitario: m.precoUnitario,
           quantidadeBarras: m.quantidadeBarras,
           distribuidoraNome: m.distribuidoraNome,
+          pecas: (m.pecas || []).map((p) => ({ ...p, quantidade: p.quantidade * sim.quantidade })),
         })),
       },
     });
@@ -529,7 +541,12 @@ const SimulacaoProducao = () => {
         <ConfirmDialog />
         <Toast ref={toast} />
 
-        <Title>Simulação de Produção</Title>
+        <PageHeader>
+          <HeaderText>
+            <h1>Simulação de Produção</h1>
+            <p>Calcule materiais, plano de corte e custo de um trabalho antes de gerar a cotação</p>
+          </HeaderText>
+        </PageHeader>
 
         <FormSection>
           <TabsWrap>
@@ -852,12 +869,9 @@ const SimulacaoProducao = () => {
           <DistribuidoraAddButton
             label="Adicionar"
             icon="pi pi-plus"
-            disabled={
-              !materialPicker.materialId ||
-              !materialPicker.consumoPorUnidade ||
-              materialPicker.consumoPorUnidade <= 0 ||
-              isAddingMaterial
-            }
+            disabled={!materialPicker.materialId || isAddingMaterial}
+            tooltip="Sem consumo informado, abre o cadastro de peças de corte"
+            tooltipOptions={{ position: "top" }}
             loading={isAddingMaterial}
             onClick={adicionarMaterialNaLista}
           />
@@ -886,7 +900,9 @@ const SimulacaoProducao = () => {
           <Column
             header="Consumo / Unidade (m)"
             style={{ width: 220 }}
-            body={(row) => (
+            body={(row) => row.pecas?.length ? (
+              <InfoBadge>{`${formatNumber(row.consumoPorUnidade, 3)} m`}</InfoBadge>
+            ) : (
               <InputNumber
                 value={row.consumoPorUnidade}
                 onValueChange={(e) => atualizarItem(row.uid, "consumoPorUnidade", e.value)}
@@ -901,6 +917,19 @@ const SimulacaoProducao = () => {
                     formErrors.itens &&
                     (!row.consumoPorUnidade || row.consumoPorUnidade <= 0),
                 })}
+              />
+            )}
+          />
+          <Column
+            header="Peças de corte"
+            style={{ width: 170 }}
+            body={(row) => (
+              <ButtonStyled
+                label={row.pecas?.length ? `${row.pecas.length} tipo(s)` : "Definir"}
+                icon="pi pi-sliders-h"
+                className="p-button-text p-button-sm"
+                style={{ margin: 0 }}
+                onClick={() => setItemPecas(row)}
               />
             )}
           />
@@ -923,6 +952,7 @@ const SimulacaoProducao = () => {
         {submitted && formErrors.itens && (
           <ErrorMessage style={{ marginTop: 8 }}>{formErrors.itens}</ErrorMessage>
         )}
+        <PecasCorteDialog item={itemPecas} onClose={() => setItemPecas(null)} onSave={aplicarPecas} />
       </FormSection>
 
       {!formPadronizado && (
@@ -985,6 +1015,13 @@ const SimulacaoProducao = () => {
               <Column header="Sobra (m)" body={(row) => formatNumber(row.sobraEstimada, 2)} />
               <Column header="Custo estimado" body={(row) => formatMoney(row.custoEstimado)} />
             </DataTableStyled>
+
+            {resultado.materiais?.some((m) => m.planoCorte) && (
+              <>
+                <SubTitle style={{ marginTop: 24 }}>Plano de corte e retalhos</SubTitle>
+                <PlanoCortePanel materiais={resultado.materiais} />
+              </>
+            )}
           </FormSection>
         ) : (
           <EmptyState>

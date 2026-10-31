@@ -27,6 +27,7 @@ public class ContaFinanceiraDTO {
     private Date dataPagamento;
     private Long cotacaoId;
     private String cotacaoNome;
+    private Long compraLoteId;
     private Long distribuidoraId;
     private String distribuidoraNome;
     private Date dataCriacao;

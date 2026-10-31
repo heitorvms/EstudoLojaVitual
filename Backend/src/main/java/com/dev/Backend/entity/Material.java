@@ -34,10 +34,6 @@ public class Material {
     @Column(name = "metros", precision = 12, scale = 4)
     private java.math.BigDecimal metros;
 
-    /** Peso estimado em kg. */
-    @Column(name = "peso_kg", precision = 12, scale = 4)
-    private java.math.BigDecimal pesoKg;
-
     @OneToMany(mappedBy = "material", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("comprimentoMm DESC")
     private List<MaterialPeca> pecas = new ArrayList<>();

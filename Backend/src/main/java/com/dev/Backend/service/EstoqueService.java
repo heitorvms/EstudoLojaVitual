@@ -1,25 +1,58 @@
 package com.dev.Backend.service;
 
+import com.dev.Backend.dto.EstoqueHistoricoDTO;
+import com.dev.Backend.dto.EstoqueResumoDTO;
+import com.dev.Backend.dto.RetalhoDTO;
 import com.dev.Backend.entity.*;
+import com.dev.Backend.repository.CompraLoteRepository;
 import com.dev.Backend.repository.EstoqueMaterialRepository;
 import com.dev.Backend.repository.MovimentacaoEstoqueRepository;
+import com.dev.Backend.repository.RetalhoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class EstoqueService {
 
     @Autowired private EstoqueMaterialRepository estoqueMaterialRepository;
     @Autowired private MovimentacaoEstoqueRepository movimentacaoEstoqueRepository;
+    @Autowired private CompraLoteRepository compraLoteRepository;
+    @Autowired private RetalhoRepository retalhoRepository;
 
-    public List<EstoqueMaterial> listar() {
-        return estoqueMaterialRepository.findAll();
+    @Transactional(readOnly = true)
+    public Page<EstoqueResumoDTO> listar(String busca, Pageable pageable) {
+        Map<Long, BigDecimal> custoMedioPorMaterial = custoMedioPorMaterial();
+        Pageable ordenado = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                Sort.by(Sort.Order.asc("materialDisponivel.descricao").ignoreCase()));
+        return estoqueMaterialRepository
+                .findByMaterialDisponivelDescricaoContainingIgnoreCase(busca == null ? "" : busca.trim(), ordenado)
+                .map(e -> resumo(e, custoMedioPorMaterial.get(e.getMaterialDisponivel().getId())));
+    }
+
+    @Transactional(readOnly = true)
+    public EstoqueHistoricoDTO historico(Long materialDisponivelId) {
+        List<EstoqueHistoricoDTO.Compra> compras = compraLoteRepository.findItensAtivosDoMaterial(materialDisponivelId)
+                .stream().map(this::compraDoItem).toList();
+        List<EstoqueHistoricoDTO.Movimentacao> movimentacoes = movimentacaoEstoqueRepository
+                .findByMaterialDisponivelIdOrderByDataMovimentacaoDesc(materialDisponivelId).stream()
+                .filter(m -> m.getTipo() != TipoMovimentacaoEstoque.ENTRADA_COMPRA)
+                .map(this::movimentacao)
+                .toList();
+        List<RetalhoDTO> retalhos = retalhoRepository.findByMaterialDisponivelIdOrderByComprimentoMmDesc(materialDisponivelId)
+                .stream().map(RetalhoDTO::from).toList();
+        return new EstoqueHistoricoDTO(compras, movimentacoes, retalhos);
     }
 
     public EstoqueMaterial obterOuCriar(MaterialDisponivel md) {
@@ -27,7 +60,6 @@ public class EstoqueService {
                 .orElseGet(() -> {
                     EstoqueMaterial e = new EstoqueMaterial();
                     e.setMaterialDisponivel(md);
-                    e.setQuantidadeKg(BigDecimal.ZERO);
                     e.setMetros(BigDecimal.ZERO);
                     e.setBarras(0);
                     e.setDataAtualizacao(new Date());
@@ -36,80 +68,115 @@ public class EstoqueService {
     }
 
     @Transactional
-    public void entrarCompra(MaterialDisponivel md, BigDecimal kg, BigDecimal metros, Integer barras, String ref) {
-        EstoqueMaterial e = obterOuCriar(md);
-        e.setQuantidadeKg(nz(e.getQuantidadeKg()).add(nz(kg)));
-        e.setMetros(nz(e.getMetros()).add(nz(metros)));
-        e.setBarras(nzi(e.getBarras()) + nzi(barras));
-        e.setDataAtualizacao(new Date());
-        estoqueMaterialRepository.save(e);
-        movimentar(md, TipoMovimentacaoEstoque.ENTRADA_COMPRA, kg, metros, barras, ref);
+    public void entrarCompra(CompraLote compra, MaterialDisponivel md, BigDecimal metros, Integer barras) {
+        atualizarSaldo(md, nzi(barras), nz(metros));
+        movimentar(md, TipoMovimentacaoEstoque.ENTRADA_COMPRA, metros, barras, "Compra #" + compra.getId(), compra, null);
     }
 
     @Transactional
-    public void estornarCompra(MaterialDisponivel md, BigDecimal kg, BigDecimal metros, Integer barras, String ref) {
-        EstoqueMaterial e = obterOuCriar(md);
-        e.setQuantidadeKg(nz(e.getQuantidadeKg()).subtract(nz(kg)));
-        e.setMetros(nz(e.getMetros()).subtract(nz(metros)));
-        e.setBarras(nzi(e.getBarras()) - nzi(barras));
-        e.setDataAtualizacao(new Date());
-        estoqueMaterialRepository.save(e);
-        movimentar(md, TipoMovimentacaoEstoque.AJUSTE,
-                nz(kg).negate(), nz(metros).negate(), -nzi(barras), ref);
+    public void estornarCompra(CompraLote compra, MaterialDisponivel md, BigDecimal metros, Integer barras, String ref) {
+        atualizarSaldo(md, -nzi(barras), nz(metros).negate());
+        movimentar(md, TipoMovimentacaoEstoque.AJUSTE, nz(metros).negate(), -nzi(barras), ref, compra, null);
     }
 
+    /** Sem saldo suficiente o saldo fica negativo: indica o que falta comprar e mantém a devolução exata. */
     @Transactional
-    public void baixarBarras(MaterialDisponivel md, int quantidade, String ref) {
+    public void baixarBarras(OrdemServico os, MaterialDisponivel md, int quantidade, String ref) {
         if (quantidade <= 0) return;
-        EstoqueMaterial e = obterOuCriar(md);
         BigDecimal metros = metrosDasBarras(md, quantidade);
-        BigDecimal kg = kgDosMetros(md, metros);
-
-        // Sem saldo suficiente o saldo fica negativo: indica o que falta comprar e mantém a devolução exata
-        e.setBarras(nzi(e.getBarras()) - quantidade);
-        e.setMetros(nz(e.getMetros()).subtract(metros));
-        e.setQuantidadeKg(nz(e.getQuantidadeKg()).subtract(kg));
-        e.setDataAtualizacao(new Date());
-        estoqueMaterialRepository.save(e);
-        movimentar(md, TipoMovimentacaoEstoque.SAIDA_OS, kg, metros, quantidade, ref);
+        atualizarSaldo(md, -quantidade, metros.negate());
+        movimentar(md, TipoMovimentacaoEstoque.SAIDA_OS, metros.negate(), -quantidade, ref, null, os);
     }
 
     @Transactional
-    public void devolverBarras(MaterialDisponivel md, int quantidade, String ref) {
+    public void devolverBarras(OrdemServico os, MaterialDisponivel md, int quantidade, String ref) {
         if (quantidade <= 0) return;
-        EstoqueMaterial e = obterOuCriar(md);
         BigDecimal metros = metrosDasBarras(md, quantidade);
-        BigDecimal kg = kgDosMetros(md, metros);
+        atualizarSaldo(md, quantidade, metros);
+        movimentar(md, TipoMovimentacaoEstoque.AJUSTE, metros, quantidade, ref, null, os);
+    }
 
-        e.setBarras(nzi(e.getBarras()) + quantidade);
+    private void atualizarSaldo(MaterialDisponivel md, int barras, BigDecimal metros) {
+        EstoqueMaterial e = obterOuCriar(md);
+        e.setBarras(nzi(e.getBarras()) + barras);
         e.setMetros(nz(e.getMetros()).add(metros));
-        e.setQuantidadeKg(nz(e.getQuantidadeKg()).add(kg));
         e.setDataAtualizacao(new Date());
         estoqueMaterialRepository.save(e);
-        movimentar(md, TipoMovimentacaoEstoque.AJUSTE, kg, metros, quantidade, ref);
     }
 
     private BigDecimal metrosDasBarras(MaterialDisponivel md, int quantidade) {
-        int barraMm = md.getComprimentoBarraMm() != null ? md.getComprimentoBarraMm() : 6000;
-        return BigDecimal.valueOf(barraMm / 1000.0).multiply(BigDecimal.valueOf(quantidade));
+        return BigDecimal.valueOf(comprimentoBarraMm(md) / 1000.0).multiply(BigDecimal.valueOf(quantidade));
     }
 
-    private BigDecimal kgDosMetros(MaterialDisponivel md, BigDecimal metros) {
-        if (md.getPesoKgPorMetro() == null) return BigDecimal.ZERO;
-        return md.getPesoKgPorMetro().multiply(metros).setScale(4, RoundingMode.HALF_UP);
-    }
-
-    private void movimentar(MaterialDisponivel md, TipoMovimentacaoEstoque tipo,
-                            BigDecimal kg, BigDecimal metros, Integer barras, String ref) {
+    /** Barras e metros com o sinal do efeito no saldo: positivo entra, negativo sai. */
+    private void movimentar(MaterialDisponivel md, TipoMovimentacaoEstoque tipo, BigDecimal metros, Integer barras,
+                            String ref, CompraLote compra, OrdemServico os) {
         MovimentacaoEstoque m = new MovimentacaoEstoque();
         m.setMaterialDisponivel(md);
         m.setTipo(tipo);
-        m.setQuantidadeKg(nz(kg));
         m.setMetros(nz(metros));
         m.setBarras(nzi(barras));
         m.setReferencia(ref);
+        m.setCompraLote(compra);
+        m.setOrdemServico(os);
         m.setDataMovimentacao(new Date());
         movimentacaoEstoqueRepository.save(m);
+    }
+
+    private Map<Long, BigDecimal> custoMedioPorMaterial() {
+        Map<Long, BigDecimal> custos = new HashMap<>();
+        for (Object[] linha : compraLoteRepository.totaisCompradosPorMaterial()) {
+            long barras = linha[1] != null ? ((Number) linha[1]).longValue() : 0;
+            BigDecimal valor = linha[2] != null ? (BigDecimal) linha[2] : BigDecimal.ZERO;
+            if (barras > 0) {
+                custos.put((Long) linha[0], valor.divide(BigDecimal.valueOf(barras), 2, RoundingMode.HALF_UP));
+            }
+        }
+        return custos;
+    }
+
+    private EstoqueResumoDTO resumo(EstoqueMaterial e, BigDecimal custoMedioBarra) {
+        MaterialDisponivel md = e.getMaterialDisponivel();
+        int barras = nzi(e.getBarras());
+        BigDecimal valorEstoque = custoMedioBarra != null && barras > 0
+                ? custoMedioBarra.multiply(BigDecimal.valueOf(barras))
+                : BigDecimal.ZERO;
+        return new EstoqueResumoDTO(md.getId(), md.getDescricao(), barras, nz(e.getMetros()),
+                comprimentoBarraMm(md), custoMedioBarra, valorEstoque);
+    }
+
+    private EstoqueHistoricoDTO.Compra compraDoItem(CompraLoteItem item) {
+        CompraLote compra = item.getCompraLote();
+        return new EstoqueHistoricoDTO.Compra(
+                compra.getId(),
+                compra.getDataCompra(),
+                item.getDistribuidora() != null ? item.getDistribuidora().getNome() : null,
+                compra.getNumeroNota(),
+                item.getBarras(),
+                comprimentoBarraMm(item.getMaterialDisponivel()),
+                item.getValorBarra(),
+                item.getValorTotal());
+    }
+
+    private EstoqueHistoricoDTO.Movimentacao movimentacao(MovimentacaoEstoque m) {
+        OrdemServico os = m.getOrdemServico();
+        CotacaoServico cotacao = os != null ? os.getCotacao() : null;
+        return new EstoqueHistoricoDTO.Movimentacao(
+                m.getId(),
+                m.getDataMovimentacao(),
+                m.getTipo().name(),
+                m.getBarras(),
+                m.getMetros(),
+                m.getReferencia(),
+                m.getCompraLote() != null ? m.getCompraLote().getId() : null,
+                os != null ? os.getId() : null,
+                os != null ? os.getNome() : null,
+                cotacao != null ? cotacao.getId() : null,
+                cotacao != null ? cotacao.getNome() : null);
+    }
+
+    private int comprimentoBarraMm(MaterialDisponivel md) {
+        return md.getComprimentoBarraMm() != null ? md.getComprimentoBarraMm() : 6000;
     }
 
     private BigDecimal nz(BigDecimal v) { return v != null ? v : BigDecimal.ZERO; }

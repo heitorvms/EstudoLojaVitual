@@ -1,16 +1,16 @@
 package com.dev.Backend.controller;
 
+import com.dev.Backend.dto.EstoqueHistoricoDTO;
+import com.dev.Backend.dto.EstoqueResumoDTO;
 import com.dev.Backend.entity.CompraLote;
-import com.dev.Backend.entity.EstoqueMaterial;
 import com.dev.Backend.service.CompraLoteService;
 import com.dev.Backend.service.EstoqueService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -49,7 +49,14 @@ public class CompraEstoqueController {
     }
 
     @GetMapping("/estoque")
-    public List<EstoqueMaterial> listarEstoque() {
-        return estoqueService.listar();
+    public Page<EstoqueResumoDTO> listarEstoque(
+            @RequestParam(required = false) String busca,
+            @PageableDefault(size = 15) Pageable pageable) {
+        return estoqueService.listar(busca, pageable);
+    }
+
+    @GetMapping("/estoque/{materialDisponivelId}/historico")
+    public EstoqueHistoricoDTO historicoEstoque(@PathVariable Long materialDisponivelId) {
+        return estoqueService.historico(materialDisponivelId);
     }
 }

@@ -1,5 +1,6 @@
 package com.dev.Backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -19,7 +20,11 @@ public class CompraLote {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_distribuidora")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Distribuidora distribuidora;
+
+    @Column(name = "id_cotacao")
+    private Long cotacaoId;
 
     @Temporal(TemporalType.DATE)
     @Column(name = "data_compra", nullable = false)
@@ -46,6 +51,7 @@ public class CompraLote {
     private BigDecimal valorTotal = BigDecimal.ZERO;
 
     @OneToMany(mappedBy = "compraLote", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("id ASC")
     private List<CompraLoteItem> itens = new ArrayList<>();
 
     @Temporal(TemporalType.TIMESTAMP)

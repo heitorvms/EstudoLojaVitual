@@ -5,6 +5,7 @@ import com.dev.Backend.dto.OrdemServicoDTO;
 import com.dev.Backend.dto.OrdemServicoInputDTO;
 import com.dev.Backend.dto.PlanoCorteDTO;
 import com.dev.Backend.entity.*;
+import com.dev.Backend.exception.RegraNegocioException;
 import com.dev.Backend.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -27,6 +28,7 @@ public class OrdemServicoService {
     @Autowired private CotacaoFinanceiroService financeiroService;
     @Autowired private PlanoCorteService planoCorteService;
     @Autowired private RetalhoService retalhoService;
+    @Autowired private CompraLoteRepository compraLoteRepository;
 
     @Transactional(readOnly = true)
     public Page<OrdemServicoDTO> listar(String query, Pageable pageable) {
@@ -61,6 +63,10 @@ public class OrdemServicoService {
     public OrdemServicoDTO atualizar(Long id, OrdemServicoInputDTO input) {
         OrdemServico os = buscarEntidade(id);
         StatusOrdemServico statusAnterior = os.getStatus();
+        if (statusAnterior == StatusOrdemServico.CANCELADO
+                && input.getStatus() != null && input.getStatus() != StatusOrdemServico.CANCELADO) {
+            throw new RegraNegocioException("OS cancelada não pode ser reaberta. Gere uma nova cotação.");
+        }
         aplicarDados(os, input);
         if (os.getStatus() == StatusOrdemServico.CANCELADO && statusAnterior != StatusOrdemServico.CANCELADO) {
             cancelar(os, Boolean.TRUE.equals(input.getDevolverEstoque()));
@@ -143,6 +149,7 @@ public class OrdemServicoService {
         }
         CotacaoServico cot = cotacaoServicoRepository.findById(cotacaoId)
                 .orElseThrow(() -> new RuntimeException("Cotação não encontrada"));
+        validarMaterialComprado(cot, "Compre todo o material antes de gerar a OS. Pendente: ");
 
         OrdemServico os = new OrdemServico();
         os.setCotacao(cot);
@@ -153,6 +160,36 @@ public class OrdemServicoService {
         os.setEndereco(cot.getEndereco());
         os.setQuantidadeProduto(extrairQuantidade(cot.getQuantidadeProduto()));
         return os;
+    }
+
+    /** Chamado após alterar uma compra: a OS que já cortou o material precisa continuar coberta por compras ativas. */
+    public void validarCompraDeOsEmProducao(Long cotacaoId) {
+        if (cotacaoId == null) return;
+        ordemServicoRepository.findByCotacaoId(cotacaoId)
+                .filter(os -> os.getStatus() != StatusOrdemServico.CANCELADO
+                        && Boolean.TRUE.equals(os.getEstoqueBaixado()))
+                .ifPresent(os -> validarMaterialComprado(os.getCotacao(), "A OS #" + os.getId()
+                        + " já consumiu este material; cancele a OS com devolução antes. Ficaria faltando: "));
+    }
+
+    private void validarMaterialComprado(CotacaoServico cot, String mensagemPendente) {
+        Map<Long, Long> compradas = new HashMap<>();
+        for (Object[] linha : compraLoteRepository.barrasCompradasDaCotacao(cot.getId())) {
+            compradas.put((Long) linha[0], ((Number) linha[1]).longValue());
+        }
+        List<String> pendentes = new ArrayList<>();
+        for (Material mat : cot.getMateriais()) {
+            MaterialDisponivel md = mat.getMaterialDisponivel();
+            int necessarias = mat.getQuantidade() != null ? mat.getQuantidade() : 0;
+            if (md == null || necessarias <= 0) continue;
+            long compradasMaterial = compradas.getOrDefault(md.getId(), 0L);
+            if (compradasMaterial < necessarias) {
+                pendentes.add(md.getDescricao() + " (" + compradasMaterial + "/" + necessarias + " barras)");
+            }
+        }
+        if (!pendentes.isEmpty()) {
+            throw new RegraNegocioException(mensagemPendente + String.join("; ", pendentes));
+        }
     }
 
     private void aplicarDados(OrdemServico os, OrdemServicoInputDTO input) {
@@ -252,9 +289,9 @@ public class OrdemServicoService {
             if (md == null) continue;
             int barras = barrasNecessarias(mat, md);
             if (devolucao) {
-                estoqueService.devolverBarras(md, barras, ref);
+                estoqueService.devolverBarras(os, md, barras, ref);
             } else {
-                estoqueService.baixarBarras(md, barras, ref);
+                estoqueService.baixarBarras(os, md, barras, ref);
             }
         }
     }

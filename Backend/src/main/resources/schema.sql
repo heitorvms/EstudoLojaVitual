@@ -70,3 +70,20 @@ ALTER TABLE movimentacao_estoque DROP CONSTRAINT IF EXISTS movimentacao_estoque_
 DELETE FROM movimentacao_estoque WHERE tipo NOT IN ('ENTRADA_COMPRA', 'SAIDA_OS', 'AJUSTE');
 ALTER TABLE movimentacao_estoque ADD CONSTRAINT movimentacao_estoque_tipo_check
     CHECK (tipo IN ('ENTRADA_COMPRA', 'SAIDA_OS', 'AJUSTE'));
+
+-- Kg descontinuado: estoque e compras passam a ser controlados por barra.
+ALTER TABLE estoque_material ALTER COLUMN quantidade_kg DROP NOT NULL;
+
+-- Comprimento da barra derivado do tamanho (m) cadastrado.
+UPDATE material_disponivel SET comprimento_barra_mm = ROUND(tamanho * 1000)
+    WHERE tamanho > 0 AND comprimento_barra_mm IS DISTINCT FROM ROUND(tamanho * 1000);
+UPDATE material_disponivel SET unidade = 'BARRA' WHERE unidade IS NULL;
+
+-- Antigo "lucro" da cotação passou a ser a mão de obra (percentual ou valor fixo).
+UPDATE cotacao_servico SET tipo_mao_obra = 'PERCENTUAL' WHERE tipo_mao_obra IS NULL;
+
+-- Compras para estoque geram conta a pagar sem orçamento vinculado.
+ALTER TABLE conta_financeira ALTER COLUMN id_cotacao DROP NOT NULL;
+
+-- Movimentações gravam o sinal do efeito no saldo: saída para OS é negativa.
+UPDATE movimentacao_estoque SET barras = -barras, metros = -metros WHERE tipo = 'SAIDA_OS' AND barras > 0;

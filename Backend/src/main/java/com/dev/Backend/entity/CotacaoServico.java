@@ -64,11 +64,16 @@ public class CotacaoServico {
     @Column(name = "valor_insumos", precision = 14, scale = 2)
     private BigDecimal valorInsumos;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_mao_obra", length = 20)
+    private TipoMaoDeObra tipoMaoDeObra = TipoMaoDeObra.PERCENTUAL;
+
+    /** Percentual sobre materiais + insumos + frete; nulo quando a mão de obra é valor fixo. */
     @Column(name = "percentual_lucro", precision = 6, scale = 2)
-    private BigDecimal percentualLucro;
+    private BigDecimal percentualMaoDeObra;
 
     @Column(name = "valor_lucro", precision = 14, scale = 2)
-    private BigDecimal valorLucro;
+    private BigDecimal valorMaoDeObra;
 
     @Column(name = "valor_total_orcamento", precision = 14, scale = 2)
     private BigDecimal valorTotalOrcamento;

@@ -219,6 +219,34 @@ export const DataTableStyled = styled(DataTable)`
   }
 `;
 
+export const TabsWrap = styled.div`
+  width: 100%;
+
+  .p-tabview .p-tabview-nav {
+    border: none;
+    background: transparent;
+    margin-bottom: 0.5rem;
+  }
+
+  .p-tabview .p-tabview-nav li .p-tabview-nav-link {
+    color: #666;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    font-weight: 600;
+  }
+
+  .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+    color: #1a1a2e;
+    border-bottom-color: #1a1a2e;
+  }
+
+  .p-tabview .p-tabview-panels {
+    background: transparent;
+    padding: 0;
+  }
+`;
+
 export const TagList = styled.div`
   display: flex;
   flex-direction: column;
@@ -308,9 +336,13 @@ export const CostTotal = styled.div`
 export const FooterActions = styled.div`
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 8px;
   margin-top: 8px;
+
+  .p-dialog & {
+    justify-content: flex-end;
+  }
 `;
 
 export const ActionBar = styled.div`

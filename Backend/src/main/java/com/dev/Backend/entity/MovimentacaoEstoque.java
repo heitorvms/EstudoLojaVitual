@@ -23,8 +23,13 @@ public class MovimentacaoEstoque {
     @Column(nullable = false, length = 30)
     private TipoMovimentacaoEstoque tipo;
 
-    @Column(name = "quantidade_kg", precision = 14, scale = 4)
-    private BigDecimal quantidadeKg = BigDecimal.ZERO;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_ordem_servico")
+    private OrdemServico ordemServico;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_compra_lote")
+    private CompraLote compraLote;
 
     @Column(name = "metros", precision = 14, scale = 4)
     private BigDecimal metros = BigDecimal.ZERO;

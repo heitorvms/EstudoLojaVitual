@@ -164,7 +164,7 @@ export default function ComprasLote() {
           >
             <Column field="id" header="Nº" style={{ width: 70 }} />
             <Column field="numeroNota" header="Nota" body={(r) => r.numeroNota || "-"} />
-            <Column header="Distribuidora" body={(r) => r.distribuidora?.nome || "-"} />
+            <Column header="Distribuidora" body={(r) => r.distribuidora?.nome || "Várias"} />
             <Column header="Data" body={(r) => formatDate(r.dataCompra)} />
             <Column header="Itens" body={(r) => r.itens?.length || 0} style={{ width: 80 }} />
             <Column

@@ -22,10 +22,13 @@ public class CompraLoteItem {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_material_disponivel", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private MaterialDisponivel materialDisponivel;
 
-    @Column(name = "quantidade_kg", precision = 14, scale = 4)
-    private BigDecimal quantidadeKg = BigDecimal.ZERO;
+    @ManyToOne
+    @JoinColumn(name = "id_distribuidora")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private Distribuidora distribuidora;
 
     @Column(name = "metros", precision = 14, scale = 4)
     private BigDecimal metros = BigDecimal.ZERO;
@@ -33,8 +36,8 @@ public class CompraLoteItem {
     @Column(name = "barras")
     private Integer barras = 0;
 
-    @Column(name = "valor_kg", precision = 14, scale = 4)
-    private BigDecimal valorKg = BigDecimal.ZERO;
+    @Column(name = "valor_barra", precision = 14, scale = 2)
+    private BigDecimal valorBarra = BigDecimal.ZERO;
 
     @Column(name = "valor_total", precision = 14, scale = 2)
     private BigDecimal valorTotal = BigDecimal.ZERO;

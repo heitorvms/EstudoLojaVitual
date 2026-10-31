@@ -1,13 +1,15 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { InputText } from "primereact/inputtext";
-import { Button } from "primereact/button";
 import { Toast } from "primereact/toast";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import { Dropdown } from "primereact/dropdown";
 import { InputNumber } from "primereact/inputnumber";
+import { RadioButton } from "primereact/radiobutton";
+import { Accordion, AccordionTab } from "primereact/accordion";
+import { Tag } from "primereact/tag";
 import { Tooltip } from "primereact/tooltip";
 import { classNames } from "primereact/utils";
 import debounce from "lodash/debounce";
@@ -15,6 +17,13 @@ import { CotacaoService } from "../../services/CotacaoService";
 import { MaterialDisponivelService } from "../../services/MaterialDisponivelService";
 import { DistribuidoraService } from "../../services/DistribuidoraService";
 import { MaterialPrecoService } from "../../services/MaterialPrecoService";
+import {
+  MAO_DE_OBRA_FIXA,
+  MAO_DE_OBRA_PERCENTUAL,
+  OPCOES_TIPO_MAO_DE_OBRA,
+  percentualDoTotal,
+  rotuloMaoDeObra,
+} from "../../utils/maoDeObra";
 import {
   ContainerPage,
   Title,
@@ -24,29 +33,8 @@ import {
   FormRowSplit,
   FormGroup,
   ButtonContainer,
-  CardStyled,
-  CardTitle,
-  AnaliseSection,
-  AnaliseContainer,
-  AnaliseTitle,
-  AnaliseFlexContainer,
-  AnaliseColumnContainer,
-  AnaliseRadioInput,
-  AnaliseRadioLabel,
-  AnaliseCardMargin,
-  AnaliseDiferencaVerde,
-  AnaliseSelectDistribuidora,
-  AnaliseStatusDescricao,
-  AnaliseDistribuidoraCard,
-  AnaliseValorTotal,
-  AnaliseDistribuidoraStatus,
-  AnaliseDistribuidoraSelecionadaAviso,
-  AnaliseConfirmarButtonContainer,
-  ResumoAnaliseContainer,
-  ResumoAnaliseTitle,
-  ResumoAnaliseSection,
-  ResumoAnaliseList,
-  ResumoAnaliseValorTotal,
+  EscolhaCabecalho,
+  EscolhaCabecalhoValor,
   DataTableStyled,
   RemoveDistribuidorButton,
   RemoveMaterialButton,
@@ -60,12 +48,16 @@ import {
   ListaMateriaisTitle,
   ComposicaoCustosGrid,
   ComposicaoCustosField,
+  ComposicaoCustosCabecalho,
+  ComposicaoCustosDica,
+  TipoMaoDeObraOpcoes,
   ComposicaoResumoCard,
   ComposicaoResumoLinha,
   ComposicaoResumoTotal,
   PrecoStatusLegenda,
   LegendaItem,
   TableInputStyled,
+  TablePrecoInput,
   Label,
   ErrorMessage,
   FormTitle,
@@ -99,6 +91,21 @@ const aplicarSyncMateriais = (materiais, distribuidores) =>
     precos: sincronizarPrecosComDistribuidores(mat.precos, distribuidores),
   }));
 
+const ESCOLHA_POR_MATERIAL = "materiais";
+const ESCOLHA_DISTRIBUIDORA_UNICA = "distribuidoras";
+
+const precoValido = (preco) => {
+  if (preco === "" || preco == null) return null;
+  const n = Number(preco);
+  return !isNaN(n) && n > 0 ? n : null;
+};
+
+/** Meio centavo arredonda para cima, como o BigDecimal HALF_UP do backend (evita 97,175 virar 97,17). */
+const arredondarDinheiro = (valor) => Math.round(Number((valor * 100).toFixed(6))) / 100;
+
+const formatCurrency = (value) =>
+  Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
 const CriarCotacao = () => {
   const [cotacao, setCotacao] = useState(INITIAL_STATE);
   const [submitted, setSubmitted] = useState(false);
@@ -113,18 +120,18 @@ const CriarCotacao = () => {
   const [isAddingDistribuidor, setIsAddingDistribuidor] = useState(false);
   const [distribuidoraDropdown, setDistribuidoraDropdown] = useState(null);
   const [preenchendoPrecos, setPreenchendoPrecos] = useState(false);
-  const [showAnalise, setShowAnalise] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [analiseMateriais, setAnaliseMateriais] = useState([]); 
-  const [analiseDistribuidoras, setAnaliseDistribuidoras] = useState([]);
+  const [escolhasPorMaterial, setEscolhasPorMaterial] = useState({});
   const [distribuidoraTotalSelecionada, setDistribuidoraTotalSelecionada] = useState("");
-  const [tipoAnaliseSelecionada, setTipoAnaliseSelecionada] = useState("");
-  const [resumoAnalise, setResumoAnalise] = useState(null);
+  const [tipoAnaliseSelecionada, setTipoAnaliseSelecionada] = useState(ESCOLHA_POR_MATERIAL);
+  const [abaEscolhaAberta, setAbaEscolhaAberta] = useState(0);
   const [origemSimulacao, setOrigemSimulacao] = useState(null);
   const [composicaoCustos, setComposicaoCustos] = useState({
     percentualInsumos: 15,
     valorFrete: 0,
-    percentualLucro: 10,
+    tipoMaoDeObra: MAO_DE_OBRA_PERCENTUAL,
+    percentualMaoDeObra: 10,
+    valorMaoDeObraFixo: 0,
   });
   const navigate = useNavigate();
   const location = useLocation();
@@ -158,11 +165,11 @@ const CriarCotacao = () => {
         nomeTrabalho: dados.nomeTrabalho,
       });
 
-      setComposicaoCustos({
+      setComposicaoCustos((prev) => ({
+        ...prev,
         percentualInsumos: Number(dados.percentualInsumos ?? 15),
         valorFrete: Number(dados.valorFrete ?? 0),
-        percentualLucro: Number(dados.percentualLucro ?? 10),
-      });
+      }));
 
       const matsInput = dados.materiais || [];
       const vigentesPorId = new Map();
@@ -270,11 +277,6 @@ const CriarCotacao = () => {
     return value.replace(/\D/g, "");
   };
 
-  const formatCurrency = (value) => {
-    if (!value || isNaN(value)) return "R$ 0,00";
-    return `R$ ${Number(value).toFixed(2).replace(".", ",")}`;
-  };
-
   const validateForm = () => {
     const errors = {};
     const cleanedPhone = cotacao.telefone.replace(/\D/g, "");
@@ -293,11 +295,7 @@ const CriarCotacao = () => {
 
   const possuiPrecoPreenchido = () =>
     cotacao.materiais.some((mat) =>
-      mat.precos.some((p) => {
-        if (p.preco === "" || p.preco == null) return false;
-        const n = Number(p.preco);
-        return !isNaN(n) && n > 0;
-      })
+      mat.precos.some((p) => precoValido(p.preco) != null)
     );
 
   const sugerirPrecosParaMaterial = async (materialId, distNomes) => {
@@ -628,7 +626,7 @@ const CriarCotacao = () => {
   };
 
   const atualizarPrecoNaTabela = (rowIndex, distribuidor, valor) => {
-    const preco = valor.replace(",", ".");
+    const preco = valor ?? "";
     setCotacao((prev) => ({
       ...prev,
       materiais: prev.materiais.map((m, i) => {
@@ -656,42 +654,107 @@ const CriarCotacao = () => {
     return { tipo: "alterado", bg: "#fff3e0", label: "Alterado" };
   };
 
-  const calcularSubtotalMaterial = (mat) => {
-    const qtd = Number(mat.quantidade) || 0;
-    const precosValidos = sincronizarPrecosComDistribuidores(mat.precos, distribuidores)
-      .filter((p) => p.preco !== "" && p.preco != null)
-      .map((p) => Number(p.preco))
-      .filter((v) => !isNaN(v) && v > 0);
-    if (!precosValidos.length || qtd <= 0) return null;
-    const menorUnit = Math.min(...precosValidos);
-    return menorUnit * qtd;
-  };
+  const analiseMateriais = useMemo(
+    () =>
+      cotacao.materiais
+        .map((mat) => {
+          const quantidade = Number(mat.quantidade) || 0;
+          const precos = sincronizarPrecosComDistribuidores(mat.precos, distribuidores)
+            .map((p) => ({ distribuidora: p.fornecedor, unitario: precoValido(p.preco) }))
+            .filter((p) => p.unitario != null)
+            .map((p) => ({ distribuidora: p.distribuidora, preco: p.unitario * quantidade }));
+          if (precos.length === 0) return null;
+          const maisBarato = precos.reduce((min, p) => (p.preco < min.preco ? p : min), precos[0]);
+          const escolhida = escolhasPorMaterial[mat.materialDisponivel.id];
+          return {
+            materialId: mat.materialDisponivel.id,
+            nome: mat.materialDisponivel.descricao,
+            quantidade,
+            maisBarato,
+            diferencas: precos.map((p) => ({ ...p, diferenca: p.preco - maisBarato.preco })),
+            distribuidoraSelecionada: precos.some((p) => p.distribuidora === escolhida)
+              ? escolhida
+              : maisBarato.distribuidora,
+          };
+        })
+        .filter(Boolean),
+    [cotacao.materiais, distribuidores, escolhasPorMaterial]
+  );
 
-  const calcularComposicaoCustos = (totalMateriaisOverride) => {
-    const totalMateriais =
-      totalMateriaisOverride ??
-      cotacao.materiais.reduce((acc, m) => acc + (calcularSubtotalMaterial(m) || 0), 0);
+  const analiseDistribuidoras = useMemo(() => {
+    const valores = distribuidores.map((dist) => {
+      let valorTotal = 0;
+      let semPreco = 0;
+      cotacao.materiais.forEach((mat) => {
+        const p = sincronizarPrecosComDistribuidores(mat.precos, distribuidores).find(
+          (x) => x.fornecedor === dist
+        );
+        const unitario = precoValido(p?.preco);
+        if (unitario != null) valorTotal += unitario * (Number(mat.quantidade) || 0);
+        else semPreco += 1;
+      });
+      return { distribuidora: dist, valorTotal, semPreco };
+    });
+    const porValor = (a, b) => a.valorTotal - b.valorTotal;
+    const completas = valores.filter((d) => d.semPreco === 0).sort(porValor);
+    const incompletas = valores.filter((d) => d.semPreco > 0).sort(porValor);
+    return [
+      ...completas.map((d, idx, arr) => {
+        let status = "medio";
+        if (idx === 0) status = "maisBarato";
+        else if (idx === arr.length - 1) status = "maisCaro";
+        return { ...d, status };
+      }),
+      ...incompletas.map((d) => ({ ...d, status: "incompleto" })),
+    ];
+  }, [cotacao.materiais, distribuidores]);
+
+  const distribuidorasCompletas = analiseDistribuidoras.filter((d) => d.status !== "incompleto");
+  const distribuidoraUnica =
+    distribuidorasCompletas.find((d) => d.distribuidora === distribuidoraTotalSelecionada) ||
+    distribuidorasCompletas[0] ||
+    null;
+  const usaDistribuidoraUnica =
+    tipoAnaliseSelecionada === ESCOLHA_DISTRIBUIDORA_UNICA && distribuidoraUnica != null;
+
+  const distribuidoraEscolhidaDoMaterial = (mat) =>
+    usaDistribuidoraUnica ? distribuidoraUnica.distribuidora : mat.distribuidoraSelecionada;
+
+  const valorEscolhidoDoMaterial = (mat) =>
+    mat.diferencas.find((d) => d.distribuidora === distribuidoraEscolhidaDoMaterial(mat))?.preco ??
+    mat.maisBarato.preco;
+
+  const totalPorMaterial = analiseMateriais.reduce(
+    (acc, m) => acc + (m.diferencas.find((d) => d.distribuidora === m.distribuidoraSelecionada)?.preco || 0),
+    0
+  );
+  const totalMateriaisEscolhidos = analiseMateriais.reduce(
+    (acc, m) => acc + valorEscolhidoDoMaterial(m),
+    0
+  );
+
+  const calcularComposicaoCustos = () => {
+    const totalMateriais = arredondarDinheiro(totalMateriaisEscolhidos);
     const pct = Number(composicaoCustos.percentualInsumos) || 0;
     const frete = Number(composicaoCustos.valorFrete) || 0;
-    const pctLucro = Number(composicaoCustos.percentualLucro) || 0;
-    const valorInsumos =
-      totalMateriais > 0 && pct > 0
-        ? Number(((totalMateriais * pct) / 100).toFixed(2))
-        : 0;
-    const totalCusto = Number((totalMateriais + valorInsumos + frete).toFixed(2));
-    const valorLucro =
-      totalCusto > 0 && pctLucro > 0
-        ? Number(((totalCusto * pctLucro) / 100).toFixed(2))
-        : 0;
-    const totalGeral = Number((totalCusto + valorLucro).toFixed(2));
+    const tipoMaoDeObra = composicaoCustos.tipoMaoDeObra;
+    const maoDeObraFixa = tipoMaoDeObra === MAO_DE_OBRA_FIXA;
+    const pctMaoDeObra = maoDeObraFixa ? null : Number(composicaoCustos.percentualMaoDeObra) || 0;
+    const valorInsumos = arredondarDinheiro((totalMateriais * pct) / 100);
+    const totalCusto = arredondarDinheiro(totalMateriais + valorInsumos + frete);
+    const valorMaoDeObra = maoDeObraFixa
+      ? arredondarDinheiro(Number(composicaoCustos.valorMaoDeObraFixo) || 0)
+      : arredondarDinheiro((totalCusto * pctMaoDeObra) / 100);
+    const totalGeral = arredondarDinheiro(totalCusto + valorMaoDeObra);
     return {
-      totalMateriais: Number(totalMateriais.toFixed(2)),
+      totalMateriais,
       percentualInsumos: pct,
       valorInsumos,
       valorFrete: frete,
       totalCusto,
-      percentualLucro: pctLucro,
-      valorLucro,
+      tipoMaoDeObra,
+      percentualMaoDeObra: pctMaoDeObra,
+      valorMaoDeObra,
       totalGeral,
     };
   };
@@ -721,58 +784,48 @@ const CriarCotacao = () => {
     setIsLoading(true);
     try {
       
-      const escolhasMateriais = (analiseMateriais || []).map((m) => ({
+      const escolhasMateriais = analiseMateriais.map((m) => ({
         materialId: m.materialId,
         nome: m.nome,
-        distribuidoraSelecionada: m.distribuidoraSelecionada || m.maisBarato?.distribuidora || null,
-        valorSelecionado: (m.diferencas || []).find((d) => d.distribuidora === (m.distribuidoraSelecionada || m.maisBarato?.distribuidora))?.preco || null,
+        distribuidoraSelecionada: m.distribuidoraSelecionada,
+        valorSelecionado:
+          m.diferencas.find((d) => d.distribuidora === m.distribuidoraSelecionada)?.preco ?? null,
       }));
 
-      const infoTotalSelecionado = (() => {
-        if (!distribuidoraTotalSelecionada) return null;
-        const dist = (analiseDistribuidoras || []).find((d) => d.distribuidora === distribuidoraTotalSelecionada);
-        if (!dist) return { distribuidora: distribuidoraTotalSelecionada };
-        return {
-          distribuidora: dist.distribuidora,
-          valorTotal: dist.valorTotal,
-          status: dist.status,
-        };
-      })();
-
-      
-      const resumoAuto = (() => {
-        if (resumoAnalise) return resumoAnalise;
-        if (tipoAnaliseSelecionada === "materiais" && escolhasMateriais?.length) {
-          const valorTotal = escolhasMateriais.reduce((acc, it) => acc + (Number(it.valorSelecionado) || 0), 0);
-          return {
-            tipo: "materiais",
-            materiais: escolhasMateriais.map((it) => ({ nome: it.nome, distribuidora: it.distribuidoraSelecionada, valor: it.valorSelecionado || 0 })),
-            valorTotal,
-          };
-        }
-        if (tipoAnaliseSelecionada === "distribuidoras" && infoTotalSelecionado) {
-          
-          const materiaisDaDistrib = (analiseMateriais || []).map((m) => ({
-            nome: m.nome,
-            valor: (m.diferencas || []).find((d) => d.distribuidora === infoTotalSelecionado.distribuidora)?.preco || 0,
-          }));
-          return {
-            tipo: "distribuidoras",
-            distribuidora: infoTotalSelecionado.distribuidora,
-            valorTotal: infoTotalSelecionado.valorTotal || materiaisDaDistrib.reduce((acc, it) => acc + (Number(it.valor) || 0), 0),
-            materiais: materiaisDaDistrib,
-          };
-        }
-        return null;
-      })();
+      const infoTotalSelecionado = distribuidoraUnica && {
+        distribuidora: distribuidoraUnica.distribuidora,
+        valorTotal: distribuidoraUnica.valorTotal,
+        status: distribuidoraUnica.status,
+      };
 
       const composicao = calcularComposicaoCustos();
+      const materiaisEscolhidos = analiseMateriais.map((m) => ({
+        nome: m.nome,
+        distribuidora: distribuidoraEscolhidaDoMaterial(m),
+        valor: valorEscolhidoDoMaterial(m),
+      }));
+      const resumoEscolha = usaDistribuidoraUnica
+        ? {
+            tipo: ESCOLHA_DISTRIBUIDORA_UNICA,
+            distribuidora: distribuidoraUnica.distribuidora,
+            materiais: materiaisEscolhidos,
+            valorTotalMateriais: composicao.totalMateriais,
+            composicaoCustos: composicao,
+            valorTotal: composicao.totalGeral,
+          }
+        : {
+            tipo: ESCOLHA_POR_MATERIAL,
+            materiais: materiaisEscolhidos,
+            valorTotalMateriais: composicao.totalMateriais,
+            composicaoCustos: composicao,
+            valorTotal: composicao.totalGeral,
+          };
 
       const analiseCompleta = {
-        tipoEscolhido: tipoAnaliseSelecionada || null,
-        resumoEscolha: resumoAuto || null,
-        analiseMateriais: analiseMateriais || [],
-        analiseDistribuidoras: analiseDistribuidoras || [],
+        tipoEscolhido: usaDistribuidoraUnica ? ESCOLHA_DISTRIBUIDORA_UNICA : ESCOLHA_POR_MATERIAL,
+        resumoEscolha,
+        analiseMateriais,
+        analiseDistribuidoras,
         composicaoCustos: composicao,
         escolhas: {
           materiais: escolhasMateriais,
@@ -790,14 +843,14 @@ const CriarCotacao = () => {
         valorFrete: composicao.valorFrete,
         valorInsumos: composicao.valorInsumos,
         totalCustoMateriais: composicao.totalMateriais,
-        percentualLucro: composicao.percentualLucro,
-        valorLucro: composicao.valorLucro,
+        tipoMaoDeObra: composicao.tipoMaoDeObra,
+        percentualMaoDeObra: composicao.percentualMaoDeObra,
+        valorMaoDeObra: composicao.valorMaoDeObra,
         valorTotalOrcamento: composicao.totalGeral,
         materiais: cotacao.materiais.map((m) => ({
           materialDisponivelId: m.materialDisponivel.id,
           quantidade: Number(m.quantidade),
           metros: m.metros != null ? Number(m.metros) : null,
-          pesoKg: m.pesoKg != null ? Number(m.pesoKg) : null,
           pecas: m.pecas || [],
         })),
         distribuidoras: distribuidores.map((nome) => ({ nome })),
@@ -906,84 +959,6 @@ const CriarCotacao = () => {
       detail: `${ok} atualizado(s)` + (erro ? `, ${erro} falha(s)` : "."),
       life: 4000,
     });
-  };
-
-  const analisarValores = () => {
-    if (!cotacao.materiais.length) {
-      toast.current?.show({
-        severity: "warn",
-        summary: "Atenção",
-        detail: "Adicione materiais antes de analisar.",
-        life: 3000,
-      });
-      return;
-    }
-    if (!possuiPrecoPreenchido()) {
-      toast.current?.show({
-        severity: "warn",
-        summary: "Atenção",
-        detail: "Preencha ao menos um preço antes de analisar.",
-        life: 3000,
-      });
-      return;
-    }
-
-    const analise = cotacao.materiais.map((mat) => {
-      const quantidade = Number(mat.quantidade) || 1;
-      const precosSync = sincronizarPrecosComDistribuidores(mat.precos, distribuidores);
-      const precos = precosSync
-        .filter((p) => {
-          if (!distribuidores.includes(p.fornecedor)) return false;
-          if (p.preco === "" || p.preco == null) return false;
-          const n = Number(p.preco);
-          return !isNaN(n) && n > 0;
-        })
-        .map((p) => ({ distribuidora: p.fornecedor, preco: Number(p.preco) * quantidade }));
-      if (precos.length === 0) return null;
-      const maisBarato = precos.reduce((min, p) => (p.preco < min.preco ? p : min), precos[0]);
-      const diferencas = precos.map((p) => ({
-        distribuidora: p.distribuidora,
-        preco: p.preco,
-        diferenca: p.preco - maisBarato.preco,
-      }));
-      return {
-        materialId: mat.materialDisponivel.id,
-        nome: mat.materialDisponivel.descricao,
-        maisBarato,
-        diferencas,
-        distribuidoraSelecionada: maisBarato.distribuidora,
-        quantidade,
-      };
-    }).filter(Boolean);
-    setAnaliseMateriais(analise);
-
-    
-    const distribuidoraValores = distribuidores.map((dist) => {
-      let valorTotal = 0;
-      cotacao.materiais.forEach((mat) => {
-        const quantidade = Number(mat.quantidade) || 1;
-        const precosSync = sincronizarPrecosComDistribuidores(mat.precos, distribuidores);
-        const preco = precosSync.find((p) => {
-          if (p.fornecedor !== dist) return false;
-          if (p.preco === "" || p.preco == null) return false;
-          const n = Number(p.preco);
-          return !isNaN(n) && n > 0;
-        });
-        valorTotal += preco ? Number(preco.preco) * quantidade : 0;
-      });
-      return { distribuidora: dist, valorTotal };
-    });
-    
-    const sorted = [...distribuidoraValores].sort((a, b) => a.valorTotal - b.valorTotal);
-    const analiseDist = sorted.map((d, idx, arr) => {
-      let status = "medio";
-      if (idx === 0) status = "maisBarato";
-      else if (idx === arr.length - 1) status = "maisCaro";
-      return { ...d, status };
-    });
-    setAnaliseDistribuidoras(analiseDist);
-    setDistribuidoraTotalSelecionada(analiseDist.find(d => d.status === "maisBarato")?.distribuidora || analiseDist[0]?.distribuidora || "");
-    setShowAnalise(true);
   };
 
   const renderFormulario = () => (
@@ -1241,24 +1216,26 @@ const CriarCotacao = () => {
               const p = precosSync.find((x) => x.fornecedor === distribuidor);
               const status = obterStatusPreco(p?.preco, p?.precoVigente);
               return (
-                <TableInputStyled
-                  value={p?.preco ?? ""}
-                  onChange={(e) =>
-                    atualizarPrecoNaTabela(rowIndex, distribuidor, e.target.value)
-                  }
-                  placeholder="0,00"
-                  style={{ backgroundColor: status.bg }}
+                <TablePrecoInput
+                  value={precoValido(p?.preco)}
+                  onValueChange={(e) => atualizarPrecoNaTabela(rowIndex, distribuidor, e.value)}
+                  mode="currency"
+                  currency="BRL"
+                  locale="pt-BR"
+                  min={0}
+                  placeholder="R$ 0,00"
+                  inputStyle={{ backgroundColor: status.bg }}
                 />
               );
             }}
           />
         ))}
         <Column
-          header="Subtotal (menor)"
-          style={{ width: 140 }}
+          header="Subtotal (escolhido)"
+          style={{ width: 150 }}
           body={(row) => {
-            const sub = calcularSubtotalMaterial(row);
-            return sub != null ? formatCurrency(sub) : "-";
+            const mat = analiseMateriais.find((m) => m.materialId === row.materialDisponivel.id);
+            return mat ? formatCurrency(valorEscolhidoDoMaterial(mat)) : "-";
           }}
         />
         <Column
@@ -1283,10 +1260,12 @@ const CriarCotacao = () => {
 
     return (
       <FormSection>
-        <ListaMateriaisTitle>Insumos, Frete e Lucro</ListaMateriaisTitle>
+        <ListaMateriaisTitle>Insumos, Frete e Mão de obra</ListaMateriaisTitle>
         <ComposicaoCustosGrid>
           <ComposicaoCustosField>
-            <Label htmlFor="percentualInsumos">Insumos (% sobre materiais)</Label>
+            <ComposicaoCustosCabecalho>
+              <Label htmlFor="percentualInsumos">Insumos (% sobre materiais)</Label>
+            </ComposicaoCustosCabecalho>
             <InputNumber
               id="percentualInsumos"
               value={composicaoCustos.percentualInsumos}
@@ -1304,7 +1283,9 @@ const CriarCotacao = () => {
             />
           </ComposicaoCustosField>
           <ComposicaoCustosField>
-            <Label htmlFor="valorFrete">Frete (R$)</Label>
+            <ComposicaoCustosCabecalho>
+              <Label htmlFor="valorFrete">Frete (R$)</Label>
+            </ComposicaoCustosCabecalho>
             <InputNumber
               id="valorFrete"
               value={composicaoCustos.valorFrete}
@@ -1321,22 +1302,56 @@ const CriarCotacao = () => {
             />
           </ComposicaoCustosField>
           <ComposicaoCustosField>
-            <Label htmlFor="percentualLucro">Lucro (% sobre total de custos)</Label>
-            <InputNumber
-              id="percentualLucro"
-              value={composicaoCustos.percentualLucro}
-              onValueChange={(e) =>
-                setComposicaoCustos((prev) => ({
-                  ...prev,
-                  percentualLucro: e.value ?? 0,
-                }))
-              }
-              min={0}
-              max={100}
-              suffix="%"
-              minFractionDigits={0}
-              maxFractionDigits={2}
-            />
+            <ComposicaoCustosCabecalho>
+              <Label htmlFor="valorMaoDeObra">Mão de obra</Label>
+              <TipoMaoDeObraOpcoes>
+                {OPCOES_TIPO_MAO_DE_OBRA.map((opcao) => (
+                  <label key={opcao.value}>
+                    <RadioButton
+                      name="tipoMaoDeObra"
+                      value={opcao.value}
+                      checked={composicaoCustos.tipoMaoDeObra === opcao.value}
+                      onChange={(e) =>
+                        setComposicaoCustos((prev) => ({ ...prev, tipoMaoDeObra: e.value }))
+                      }
+                    />
+                    {opcao.label}
+                  </label>
+                ))}
+              </TipoMaoDeObraOpcoes>
+            </ComposicaoCustosCabecalho>
+            {composicaoCustos.tipoMaoDeObra === MAO_DE_OBRA_FIXA ? (
+              <InputNumber
+                key="maoDeObraFixa"
+                inputId="valorMaoDeObra"
+                value={composicaoCustos.valorMaoDeObraFixo}
+                onValueChange={(e) =>
+                  setComposicaoCustos((prev) => ({ ...prev, valorMaoDeObraFixo: e.value ?? 0 }))
+                }
+                min={0}
+                mode="currency"
+                currency="BRL"
+                locale="pt-BR"
+              />
+            ) : (
+              <InputNumber
+                key="maoDeObraPercentual"
+                inputId="valorMaoDeObra"
+                value={composicaoCustos.percentualMaoDeObra}
+                onValueChange={(e) =>
+                  setComposicaoCustos((prev) => ({ ...prev, percentualMaoDeObra: e.value ?? 0 }))
+                }
+                min={0}
+                suffix="%"
+                minFractionDigits={0}
+                maxFractionDigits={2}
+              />
+            )}
+            <ComposicaoCustosDica>
+              {composicaoCustos.tipoMaoDeObra === MAO_DE_OBRA_FIXA
+                ? "Valor somado ao custo do serviço"
+                : "Sobre materiais + insumos + frete"}
+            </ComposicaoCustosDica>
           </ComposicaoCustosField>
         </ComposicaoCustosGrid>
         <ComposicaoResumoCard>
@@ -1357,251 +1372,150 @@ const CriarCotacao = () => {
             <strong>{formatCurrency(c.totalCusto)}</strong>
           </ComposicaoResumoLinha>
           <ComposicaoResumoLinha>
-            <span>Lucro ({c.percentualLucro}%)</span>
-            <strong>{formatCurrency(c.valorLucro)}</strong>
+            <span>{rotuloMaoDeObra(c.tipoMaoDeObra, c.percentualMaoDeObra)}</span>
+            <strong>{formatCurrency(c.valorMaoDeObra)}</strong>
           </ComposicaoResumoLinha>
           <ComposicaoResumoTotal>
             <span>Total do orçamento</span>
             <strong>{formatCurrency(c.totalGeral)}</strong>
           </ComposicaoResumoTotal>
+          <ComposicaoResumoLinha style={{ color: "#2e7d32" }}>
+            <span>Valor ganho no serviço ({percentualDoTotal(c.valorMaoDeObra, c.totalGeral)}% do total)</span>
+            <strong>{formatCurrency(c.valorMaoDeObra)}</strong>
+          </ComposicaoResumoLinha>
         </ComposicaoResumoCard>
       </FormSection>
     );
   };
 
-  const renderAnalise = () => (
-    showAnalise && (
-      <>
-  <AnaliseFlexContainer>
-          <AnaliseColumnContainer>
-            <AnaliseTitle>
-              <AnaliseRadioInput
-                type="radio"
-                id="analiseMateriais"
-                name="tipoAnalise"
-                value="materiais"
-                checked={tipoAnaliseSelecionada === "materiais"}
-                onChange={() => setTipoAnaliseSelecionada("materiais")}
-              />
-              <AnaliseRadioLabel
-                htmlFor="analiseMateriais"
-                selected={tipoAnaliseSelecionada === "materiais"}
-              >
-                Análise de Materiais por Distribuidora
-              </AnaliseRadioLabel>
-            </AnaliseTitle>
-            {analiseMateriais.length === 0 && <div>Nenhum material para analisar.</div>}
-            {analiseMateriais.map((mat) => (
-              <CardStyled key={mat.materialId} className="analise-material">
-                <CardTitle>{mat.nome}</CardTitle>
-                <AnaliseCardMargin>
-                  <strong>Mais barato:</strong> {mat.maisBarato.distribuidora} (R$ {mat.maisBarato.preco.toFixed(2)})
-                </AnaliseCardMargin>
-                <AnaliseCardMargin>
-                  {mat.diferencas.map((dif) => (
-                    dif.diferenca === 0 ? (
-                      <AnaliseDiferencaVerde key={dif.distribuidora}>
-                        {dif.distribuidora}: R$ {dif.preco.toFixed(2)} (Mais barato)
-                      </AnaliseDiferencaVerde>
-                    ) : (
-                      <div key={dif.distribuidora} style={{ color: '#333' }}>
-                        {dif.distribuidora}: R$ {dif.preco.toFixed(2)} (+R$ {dif.diferenca.toFixed(2)})
-                      </div>
-                    )
-                  ))}
-                </AnaliseCardMargin>
-                <div style={{ marginBottom: 8 }}>
-                  <strong>Escolher distribuidora:</strong>
-                  <AnaliseSelectDistribuidora
-                    value={mat.distribuidoraSelecionada}
-                    onChange={e => {
-                      setAnaliseMateriais(prev => prev.map(m => m.materialId === mat.materialId ? { ...m, distribuidoraSelecionada: e.target.value } : m));
-                    }}
-                  >
-                    {mat.diferencas.map((dif) => (
-                      <option key={dif.distribuidora} value={dif.distribuidora}>{dif.distribuidora}</option>
-                    ))}
-                  </AnaliseSelectDistribuidora>
-                </div>
-                <AnaliseStatusDescricao>
-                  {mat.distribuidoraSelecionada === mat.maisBarato.distribuidora
-                    ? 'Você selecionou a distribuidora mais barata.'
-                    : `Você selecionou ${mat.distribuidoraSelecionada}. Diferença para o mais barato: R$ ${(
-                        mat.diferencas.find(d => d.distribuidora === mat.distribuidoraSelecionada)?.diferenca || 0
-                      ).toFixed(2)}`}
-                </AnaliseStatusDescricao>
-              </CardStyled>
-            ))}
-          </AnaliseColumnContainer>
-          <AnaliseColumnContainer>
-            <AnaliseTitle>
-              <AnaliseRadioInput
-                type="radio"
-                id="analiseDistribuidoras"
-                name="tipoAnalise"
-                value="distribuidoras"
-                checked={tipoAnaliseSelecionada === "distribuidoras"}
-                onChange={() => setTipoAnaliseSelecionada("distribuidoras")}
-              />
-              <AnaliseRadioLabel
-                htmlFor="analiseDistribuidoras"
-                selected={tipoAnaliseSelecionada === "distribuidoras"}
-              >
-                Análise de Valor Total por Distribuidora
-              </AnaliseRadioLabel>
-            </AnaliseTitle>
-            {analiseDistribuidoras.length === 0 && <div>Nenhuma distribuidora para analisar.</div>}
-            {analiseDistribuidoras.map((dist) => (
-              <AnaliseDistribuidoraCard
-                key={dist.distribuidora}
-                status={dist.status}
-                selecionada={dist.distribuidora === distribuidoraTotalSelecionada}
-                onClick={() => setDistribuidoraTotalSelecionada(dist.distribuidora)}
-              >
-                <CardTitle>{dist.distribuidora}</CardTitle>
-                <AnaliseValorTotal>
-                  R$ {dist.valorTotal.toFixed(2)}
-                </AnaliseValorTotal>
-                <AnaliseDistribuidoraStatus status={dist.status}>
-                  {dist.status === 'maisBarato' && 'Mais barato'}
-                  {dist.status === 'maisCaro' && 'Mais caro'}
-                  {dist.status === 'medio' && 'Valor médio'}
-                </AnaliseDistribuidoraStatus>
-                {distribuidoraTotalSelecionada === dist.distribuidora && (
-                  <AnaliseDistribuidoraSelecionadaAviso>
-                    Distribuidora selecionada para o valor total
-                  </AnaliseDistribuidoraSelecionadaAviso>
-                )}
-              </AnaliseDistribuidoraCard>
-            ))}
-          </AnaliseColumnContainer>
-  </AnaliseFlexContainer>
-        <AnaliseConfirmarButtonContainer>
-          <ButtonStyled
-            label="Confirmar Escolha"
-            onClick={() => {
-              if (tipoAnaliseSelecionada === "materiais") {
-                
-                const materiaisSelecionados = analiseMateriais.map(mat => ({
-                  nome: mat.nome,
-                  distribuidora: mat.distribuidoraSelecionada,
-                  valor: mat.diferencas.find(d => d.distribuidora === mat.distribuidoraSelecionada)?.preco || 0
-                }));
-                const valorTotalMateriais = materiaisSelecionados.reduce((acc, m) => acc + m.valor, 0);
-                const composicao = calcularComposicaoCustos(valorTotalMateriais);
-                setResumoAnalise({
-                  tipo: "materiais",
-                  materiais: materiaisSelecionados,
-                  valorTotalMateriais,
-                  composicaoCustos: composicao,
-                  valorTotal: composicao.totalGeral,
-                });
-              } else if (tipoAnaliseSelecionada === "distribuidoras") {
-                
-                const dist = analiseDistribuidoras.find(d => d.distribuidora === distribuidoraTotalSelecionada);
-                const materiaisDaDistribuidora = analiseMateriais.map(mat => {
-                  const preco = mat.diferencas.find(d => d.distribuidora === distribuidoraTotalSelecionada)?.preco || 0;
-                  return {
-                    nome: mat.nome,
-                    valor: preco
-                  };
-                });
-                const valorTotalMateriais = dist?.valorTotal || materiaisDaDistribuidora.reduce((acc, m) => acc + m.valor, 0);
-                const composicao = calcularComposicaoCustos(valorTotalMateriais);
-                setResumoAnalise({
-                  tipo: "distribuidoras",
-                  distribuidora: distribuidoraTotalSelecionada,
-                  valorTotalMateriais,
-                  composicaoCustos: composicao,
-                  valorTotal: composicao.totalGeral,
-                  materiais: materiaisDaDistribuidora,
-                });
-              }
-            }}
-            disabled={!tipoAnaliseSelecionada}
-          />
-        </AnaliseConfirmarButtonContainer>
-        {resumoAnalise && (
-          <ResumoAnaliseContainer>
-            {resumoAnalise.tipo === "materiais" ? (
-              <>
-                <ResumoAnaliseTitle>Resumo da Escolha (Materiais por Distribuidora)</ResumoAnaliseTitle>
-                <ResumoAnaliseSection>
-                  <strong>Distribuidoras Selecionadas:</strong> {Array.from(new Set(resumoAnalise.materiais.map(m => m.distribuidora))).join(", ")}
-                </ResumoAnaliseSection>
-                <ResumoAnaliseSection>
-                  <strong>Materiais:</strong>
-                  <ResumoAnaliseList>
-                    {resumoAnalise.materiais.map((m, idx) => (
-                      <li key={idx}>{m.nome} - {m.distribuidora}: R$ {m.valor.toFixed(2)}</li>
-                    ))}
-                  </ResumoAnaliseList>
-                </ResumoAnaliseSection>
-                {resumoAnalise.composicaoCustos && (
-                  <ResumoAnaliseSection>
-                    <strong>Composição de custos:</strong>
-                    <ResumoAnaliseList>
-                      <li>Materiais: R$ {resumoAnalise.composicaoCustos.totalMateriais.toFixed(2)}</li>
-                      <li>Insumos ({resumoAnalise.composicaoCustos.percentualInsumos}%): R$ {resumoAnalise.composicaoCustos.valorInsumos.toFixed(2)}</li>
-                      <li>Frete: R$ {resumoAnalise.composicaoCustos.valorFrete.toFixed(2)}</li>
-                      <li>Subtotal de custos: R$ {resumoAnalise.composicaoCustos.totalCusto.toFixed(2)}</li>
-                      <li>Lucro ({resumoAnalise.composicaoCustos.percentualLucro}%): R$ {resumoAnalise.composicaoCustos.valorLucro.toFixed(2)}</li>
-                    </ResumoAnaliseList>
-                  </ResumoAnaliseSection>
-                )}
-                <ResumoAnaliseValorTotal>
-                  <strong>Valor Total:</strong> R$ {resumoAnalise.valorTotal.toFixed(2)}
-                </ResumoAnaliseValorTotal>
-              </>
-            ) : (
-              <>
-                <ResumoAnaliseTitle>Resumo da Escolha (Valor Total por Distribuidora)</ResumoAnaliseTitle>
-                <ResumoAnaliseSection>
-                  <strong>Distribuidora Selecionada:</strong> {resumoAnalise.distribuidora}
-                  {(() => {
-                    const distStatus = analiseDistribuidoras.find(d => d.distribuidora === resumoAnalise.distribuidora)?.status;
-                    if (distStatus === 'maisBarato') return (
-                      <span style={{ color: '#28a745', fontWeight: 600, marginLeft: 12 }}>(Mais barato)</span>
-                    );
-                    if (distStatus === 'medio') return (
-                      <span style={{ color: '#ff9800', fontWeight: 600, marginLeft: 12 }}>(Valor médio)</span>
-                    );
-                    if (distStatus === 'maisCaro') return (
-                      <span style={{ color: '#dc3545', fontWeight: 600, marginLeft: 12 }}>(Mais caro)</span>
-                    );
-                    return null;
-                  })()}
-                </ResumoAnaliseSection>
-                <ResumoAnaliseSection>
-                  <strong>Materiais:</strong>
-                  <ResumoAnaliseList>
-                    {resumoAnalise.materiais.map((m, idx) => (
-                      <li key={idx}>{m.nome}: R$ {m.valor.toFixed(2)}</li>
-                    ))}
-                  </ResumoAnaliseList>
-                </ResumoAnaliseSection>
-                {resumoAnalise.composicaoCustos && (
-                  <ResumoAnaliseSection>
-                    <strong>Composição de custos:</strong>
-                    <ResumoAnaliseList>
-                      <li>Materiais: R$ {resumoAnalise.composicaoCustos.totalMateriais.toFixed(2)}</li>
-                      <li>Insumos ({resumoAnalise.composicaoCustos.percentualInsumos}%): R$ {resumoAnalise.composicaoCustos.valorInsumos.toFixed(2)}</li>
-                      <li>Frete: R$ {resumoAnalise.composicaoCustos.valorFrete.toFixed(2)}</li>
-                      <li>Subtotal de custos: R$ {resumoAnalise.composicaoCustos.totalCusto.toFixed(2)}</li>
-                      <li>Lucro ({resumoAnalise.composicaoCustos.percentualLucro}%): R$ {resumoAnalise.composicaoCustos.valorLucro.toFixed(2)}</li>
-                    </ResumoAnaliseList>
-                  </ResumoAnaliseSection>
-                )}
-                <ResumoAnaliseValorTotal>
-                  <strong>Valor Total:</strong> R$ {resumoAnalise.valorTotal.toFixed(2)}
-                </ResumoAnaliseValorTotal>
-              </>
-            )}
-          </ResumoAnaliseContainer>
-        )}
-      </>
-    )
+  const STATUS_DISTRIBUIDORA = {
+    maisBarato: { label: "Mais barato", severity: "success" },
+    medio: { label: "Valor médio", severity: "warning" },
+    maisCaro: { label: "Mais caro", severity: "danger" },
+  };
+
+  const opcoesDistribuidoraDoMaterial = (mat) =>
+    mat.diferencas.map((d) => ({
+      value: d.distribuidora,
+      label: `${d.distribuidora} — ${formatCurrency(d.preco)}${
+        d.diferenca === 0 ? " (mais barato)" : ` (+${formatCurrency(d.diferenca)})`
+      }`,
+    }));
+
+  const cabecalhoEscolha = (titulo, descricao, valor, emUso) => (
+    <EscolhaCabecalho>
+      <div>
+        <strong>{titulo}</strong>
+        <small>{descricao}</small>
+      </div>
+      <EscolhaCabecalhoValor>
+        {emUso && <Tag value="Em uso no orçamento" severity="info" />}
+        <span>{valor != null ? formatCurrency(valor) : "-"}</span>
+      </EscolhaCabecalhoValor>
+    </EscolhaCabecalho>
   );
+
+  const alterarAbaEscolha = (e) => {
+    setAbaEscolhaAberta(e.index);
+    if (e.index === 0) setTipoAnaliseSelecionada(ESCOLHA_POR_MATERIAL);
+    if (e.index === 1) setTipoAnaliseSelecionada(ESCOLHA_DISTRIBUIDORA_UNICA);
+  };
+
+  const renderEscolhaDistribuidora = () => {
+    if (analiseMateriais.length === 0) return null;
+    return (
+      <FormSection>
+        <ListaMateriaisTitle>Escolha da distribuidora</ListaMateriaisTitle>
+        <Accordion activeIndex={abaEscolhaAberta} onTabChange={alterarAbaEscolha}>
+          <AccordionTab
+            header={cabecalhoEscolha(
+              "Por material",
+              "Escolha a distribuidora de cada material (padrão: a mais barata)",
+              totalPorMaterial,
+              !usaDistribuidoraUnica
+            )}
+          >
+            <DataTable value={analiseMateriais} size="small" dataKey="materialId">
+              <Column field="nome" header="Material" />
+              <Column field="quantidade" header="Qtd" style={{ width: 70 }} />
+              <Column
+                header="Distribuidora"
+                style={{ minWidth: 280 }}
+                body={(mat) => (
+                  <Dropdown
+                    value={mat.distribuidoraSelecionada}
+                    options={opcoesDistribuidoraDoMaterial(mat)}
+                    onChange={(e) =>
+                      setEscolhasPorMaterial((prev) => ({ ...prev, [mat.materialId]: e.value }))
+                    }
+                    style={{ width: "100%" }}
+                  />
+                )}
+              />
+              <Column
+                header="Valor"
+                style={{ width: 140 }}
+                body={(mat) =>
+                  formatCurrency(
+                    mat.diferencas.find((d) => d.distribuidora === mat.distribuidoraSelecionada)?.preco
+                  )
+                }
+              />
+            </DataTable>
+          </AccordionTab>
+          <AccordionTab
+            disabled={distribuidorasCompletas.length === 0}
+            header={cabecalhoEscolha(
+              "Uma distribuidora para tudo",
+              distribuidorasCompletas.length
+                ? `Compra todos os materiais em ${distribuidoraUnica.distribuidora}`
+                : "Nenhuma distribuidora tem preço para todos os materiais",
+              distribuidoraUnica?.valorTotal,
+              usaDistribuidoraUnica
+            )}
+          >
+            <DataTable
+              value={analiseDistribuidoras}
+              size="small"
+              dataKey="distribuidora"
+              rowClassName={(d) => ({ "linha-desabilitada": d.status === "incompleto" })}
+            >
+              <Column
+                style={{ width: 50 }}
+                body={(d) => (
+                  <RadioButton
+                    inputId={`dist-${d.distribuidora}`}
+                    checked={distribuidoraUnica?.distribuidora === d.distribuidora}
+                    disabled={d.status === "incompleto"}
+                    onChange={() => setDistribuidoraTotalSelecionada(d.distribuidora)}
+                  />
+                )}
+              />
+              <Column
+                header="Distribuidora"
+                body={(d) => <label htmlFor={`dist-${d.distribuidora}`}>{d.distribuidora}</label>}
+              />
+              <Column header="Total dos materiais" style={{ width: 170 }} body={(d) => formatCurrency(d.valorTotal)} />
+              <Column
+                header="Situação"
+                style={{ width: 210 }}
+                body={(d) =>
+                  d.status === "incompleto" ? (
+                    <Tag
+                      value={`Sem preço em ${d.semPreco} material${d.semPreco > 1 ? "is" : ""}`}
+                      severity="secondary"
+                    />
+                  ) : (
+                    <Tag value={STATUS_DISTRIBUIDORA[d.status].label} severity={STATUS_DISTRIBUIDORA[d.status].severity} />
+                  )
+                }
+              />
+            </DataTable>
+          </AccordionTab>
+        </Accordion>
+      </FormSection>
+    );
+  };
 
   return (
     <ContainerPage>
@@ -1636,8 +1550,8 @@ const CriarCotacao = () => {
       {renderFormulario()}
       {renderDistribuidores()}
       {renderMateriais()}
+      {renderEscolhaDistribuidora()}
       {renderComposicaoCustos()}
-      {renderAnalise()}
       <ButtonContainer>
         <ButtonStyled
           label="Cancelar"
@@ -1651,13 +1565,6 @@ const CriarCotacao = () => {
           className="p-button-text"
           onClick={handleSave}
           loading={isLoading}
-        />
-        <ButtonStyled
-          label="Analisar Valores"
-          icon="pi pi-chart-bar"
-          className="p-button-text"
-          onClick={analisarValores}
-          disabled={isLoading}
         />
       </ButtonContainer>
     </ContainerPage>

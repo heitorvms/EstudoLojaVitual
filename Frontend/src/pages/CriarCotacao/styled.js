@@ -1,262 +1,7 @@
 
 
 import styled, { createGlobalStyle } from "styled-components";
-import { Button, InputText, DataTable, Card } from "primereact";
-
-export const CardStyled = styled(Card)`
-  width: 100%;
-  max-width: 450px;
-  min-height: 150px;
-  margin-bottom: 16px;
-  padding: 20px;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-  border: 1px solid #dee2e6;
-  background-color: #ffffff;
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  cursor: pointer;
-
-  &.selected {
-    border-color: #007bff;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
-  }
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
-  }
-
-  .valor {
-    font-size: 1.1rem;
-    color: #333;
-  }
-
-  .economia {
-    color: #28a745;
-    font-weight: bold;
-    margin-top: 0.5rem;
-  }
-
-  @media (max-width: 768px) {
-    max-width: 100%;
-  }
-`;
-
-export const AnaliseConfirmarButtonContainer = styled.div`
-  margin-top: 24px;
-  display: flex;
-  justify-content: center;
-`;
-export const AnaliseDistribuidoraSelecionadaAviso = styled.div`
-  margin-top: 8px;
-  color: #007bff;
-  font-weight: 500;
-`;
-export const AnaliseDistribuidoraStatus = styled.div`
-  margin-top: 8px;
-  font-weight: 500;
-  color: ${({ status }) =>
-    status === 'maisBarato' ? '#28a745' :
-    status === 'maisCaro' ? '#dc3545' :
-    status === 'medio' ? '#ff9800' : '#333'};
-`;
-export const AnaliseValorTotal = styled.div`
-  font-weight: 600;
-  font-size: 18px;
-`;
-export const ResumoAnaliseTitle = styled.h4`
-  margin-bottom: 18px;
-  color: #1A1A2E;
-  font-weight: 700;
-  font-size: 1.6rem;
-  text-align: center;
-  letter-spacing: 1px;
-`;
-export const ResumoAnaliseSection = styled.div`
-  margin-bottom: 12px;
-  font-size: 1.1rem;
-  color: #1A1A2E;
-  width: 100%;
-  text-align: left;
-`;
-export const ResumoAnaliseList = styled.ul`
-  margin: 0;
-  padding-left: 24px;
-  width: 100%;
-  color: #1A1A2E;
-  font-size: 1.05rem;
-`;
-export const ResumoAnaliseValorTotal = styled.div`
-  background: #1A1A2E;
-  border-radius: 10px;
-  padding: 18px 0;
-  margin-top: 18px;
-  width: 100%;
-  max-width: 500px;
-  text-align: center;
-  color: #fff;
-  font-weight: 700;
-  font-size: 1.3rem;
-  letter-spacing: 1px;
-  box-shadow: 0 1.5px 4px rgba(26,26,46,0.10);
-`;
-export const ResumoAnaliseContainer = styled.div`
-  margin-top: 32px;
-  background: #fff;
-  border-radius: 16px;
-  padding: 32px 24px;
-  max-width: 700px;
-  margin-left: auto;
-  margin-right: auto;
-  box-shadow: 0 4px 16px rgba(26,26,46,0.10), 0 1.5px 4px rgba(26,26,46,0.08);
-  border: 2px solid #1A1A2E;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-export const ResumoAnaliseMaterialNome = styled.span`
-  color: #007bff;
-  font-weight: 600;
-`;
-export const ResumoAnaliseMaterialDist = styled.span`
-  margin-left: 8px;
-  color: #ff9800;
-  font-weight: 600;
-`;
-export const ResumoAnaliseMaterialValor = styled.span`
-  margin-left: 8px;
-  color: #28a745;
-  font-weight: 700;
-`;
-export const AnaliseDistribuidoraCard = styled(CardStyled)`
-  margin-bottom: 16px;
-  cursor: pointer;
-  border-color: ${({ status }) =>
-    status === 'maisBarato' ? '#28a745' : 
-    status === 'maisCaro' ? '#dc3545' : 
-    status === 'medio' ? '#ff9800' : '#dee2e6'};
-  background-color: ${({ status }) => 
-    status === 'maisBarato' ? '#eafaf1' : 
-    status === 'maisCaro' ? '#faeaea' : 
-    status === 'medio' ? '#fff7e6' : '#fff'};
-  box-shadow: ${({ selecionada }) => 
-    selecionada ? '0 0 0 3px #007bff33' : undefined};
-`;
-export const AnaliseStatusDescricao = styled.div`
-  color: #888;
-  font-size: 13px;
-`;
-export const AnaliseSelectDistribuidora = styled.select`
-  margin-left: 8px;
-  padding: 4px 8px;
-  border-radius: 6px;
-`;
-export const AnaliseCardMargin = styled.div`
-  margin-bottom: 8px;
-`;
-
-export const AnaliseDiferencaVerde = styled.div`
-  color: #28a745;
-`;
-export const AnaliseRadioInput = styled.input`
-  margin-right: 8px;
-`;
-
-export const AnaliseRadioLabel = styled.label`
-  cursor: pointer;
-  font-weight: ${props => props.selected ? 'bold' : 'normal'};
-`;
-export const AnaliseColumnContainer = styled.div`
-  flex: 1;
-  min-width: 340px;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
-`;
-export const AnaliseFlexContainer = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 32px;
-`;
-export const ResumoEscolhaContainer = styled.div`
-  margin-top: 32px;
-  background: #fff;
-  border-radius: 16px;
-  padding: 32px 24px;
-  max-width: 700px;
-  margin-left: auto;
-  margin-right: auto;
-  box-shadow: 0 4px 16px rgba(26,26,46,0.10), 0 1.5px 4px rgba(26,26,46,0.08);
-  border: 2px solid #1A1A2E;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
-export const ResumoEscolhaTitle = styled.h2`
-  margin-bottom: 18px;
-  color: #1A1A2E;
-  font-weight: 700;
-  font-size: 1.6rem;
-  text-align: center;
-  letter-spacing: 1px;
-`;
-
-export const ResumoEscolhaBox = styled.div`
-  background: #f8f9fa;
-  border-radius: 10px;
-  padding: 16px 24px;
-  margin-bottom: 12px;
-  box-shadow: 0 1.5px 4px rgba(26,26,46,0.07);
-  border: 1.5px solid #1A1A2E;
-  width: 100%;
-  max-width: 500px;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-`;
-
-export const ResumoEscolhaLabel = styled.strong`
-  color: #1A1A2E;
-  margin-right: 8px;
-`;
-
-export const ResumoEscolhaValorTotal = styled.div`
-  background: #1A1A2E;
-  border-radius: 10px;
-  padding: 18px 0;
-  margin-top: 8px;
-  width: 100%;
-  max-width: 500px;
-  text-align: center;
-  color: #fff;
-  font-weight: 700;
-  font-size: 1.3rem;
-  letter-spacing: 1px;
-  box-shadow: 0 1.5px 4px rgba(26,26,46,0.10);
-`;
-
-export const ResumoEscolhaMaterialNome = styled.span`
-  color: #007bff;
-  font-weight: 600;
-`;
-
-export const ResumoEscolhaMaterialDist = styled.span`
-  margin-left: 8px;
-  color: #ff9800;
-  font-weight: 600;
-`;
-
-export const ResumoEscolhaMaterialValor = styled.span`
-  margin-left: 8px;
-  color: #28a745;
-  font-weight: 700;
-`;
+import { Button, InputText, InputNumber, DataTable } from "primereact";
 
 export {
   PageShellCentered as ContainerPage,
@@ -314,38 +59,11 @@ export const FormGroup = styled.div`
 
 export const ButtonContainer = styled.div`
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 1rem;
   margin-top: 2rem;
 `;
 
-
-export const CardTitle = styled.h3`
-  font-size: 1.25rem;
-  margin-bottom: 8px;
-  text-transform: none;
-`;
-
-export const AnaliseSection = styled.div`
-  margin-top: 2rem;
-  padding: 2rem;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-`;
-
-export const AnaliseContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
-`;
-
-export const AnaliseTitle = styled.h4`
-  font-size: 1.25rem;
-  color: #1A1A2E;
-  margin-bottom: 1rem;
-`;
 
 export const DataTableStyled = styled(DataTable)`
   width: 100%;
@@ -404,6 +122,7 @@ export const ListaMateriaisTitle = styled.h3`
 export const ComposicaoCustosGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
   gap: 1.25rem;
   width: 100%;
   margin-top: 1rem;
@@ -421,6 +140,67 @@ export const ComposicaoCustosField = styled.div`
   .p-inputnumber,
   .p-inputnumber-input {
     width: 100%;
+  }
+`;
+
+export const ComposicaoCustosCabecalho = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  min-height: 24px;
+`;
+
+export const TipoMaoDeObraOpcoes = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: #495057;
+
+  label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+  }
+`;
+
+export const ComposicaoCustosDica = styled.small`
+  color: #6c757d;
+  font-size: 0.75rem;
+`;
+
+export const EscolhaCabecalho = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+
+  > div:first-child {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  small {
+    font-weight: 400;
+    color: #6c757d;
+  }
+`;
+
+export const EscolhaCabecalhoValor = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  white-space: nowrap;
+
+  > span {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1a1a2e;
   }
 `;
 
@@ -492,6 +272,30 @@ export const TableInputStyled = styled(InputText)`
   &:focus {
     outline: none;
     border-color: #1A1A2E;
+    box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.1);
+  }
+`;
+
+export const TablePrecoInput = styled(InputNumber)`
+  width: 100%;
+
+  .p-inputnumber-input {
+    width: 100%;
+    margin: 0;
+    padding: 0.55rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    font-size: 0.9rem;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+  }
+
+  .p-inputnumber-input:hover,
+  .p-inputnumber-input:focus {
+    border-color: #1a1a2e;
+  }
+
+  .p-inputnumber-input:focus {
+    outline: none;
     box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.1);
   }
 `;

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Date;
 
 @Entity
@@ -24,17 +25,21 @@ public class MaterialDisponivel {
     @Column(length = 20)
     private UnidadeMaterial unidade = UnidadeMaterial.BARRA;
 
-    /** Comprimento padrão da barra em mm (ex: 6000). */
+    /** Derivado de {@link #tamanho}, que é o valor editado no cadastro. */
     @Column(name = "comprimento_barra_mm")
     private Integer comprimentoBarraMm = 6000;
-
-    /** Peso em kg por metro linear. */
-    @Column(name = "peso_kg_por_metro", precision = 12, scale = 4)
-    private BigDecimal pesoKgPorMetro = BigDecimal.ZERO;
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date dataCriacao;
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date dataAtualizacao;
+
+    @PrePersist
+    @PreUpdate
+    private void sincronizarComprimentoBarra() {
+        if (tamanho != null && tamanho.signum() > 0) {
+            comprimentoBarraMm = tamanho.movePointRight(3).setScale(0, RoundingMode.HALF_UP).intValue();
+        }
+    }
 }

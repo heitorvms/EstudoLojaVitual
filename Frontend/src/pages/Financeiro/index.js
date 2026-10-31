@@ -8,13 +8,14 @@ import { Dialog } from "primereact/dialog";
 import { InputNumber } from "primereact/inputnumber";
 import { Calendar } from "primereact/calendar";
 import { Tooltip } from "primereact/tooltip";
+import { InputText } from "primereact/inputtext";
 import "primereact/resources/themes/lara-light-indigo/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 import { FinanceiroService } from "../../services/FinanceiroService";
 import { LoginService } from "../../services/LoginService";
-import { FORMAS, STATUS_LABEL, statusSeverity } from "./constantes";
-import { formatarDataIso } from "../../utils/datas";
+import { CATEGORIA_LABEL, FORMAS, STATUS_LABEL, statusSeverity } from "./constantes";
+import { formatarDataIso, paraIsoData } from "../../utils/datas";
 import {
   FinanceiroGlobalStyle,
   ContainerPage,
@@ -55,6 +56,31 @@ const STATUS_OPTS = [
   { label: "Cancelada", value: "CANCELADA" },
 ];
 
+const CATEGORIAS = [
+  { label: "Todas as categorias", value: null },
+  ...Object.entries(CATEGORIA_LABEL).map(([value, label]) => ({ label, value })),
+];
+
+const FILTROS_VAZIOS = {
+  busca: "",
+  cotacaoId: null,
+  ordemServicoId: null,
+  compraLoteId: null,
+  tipo: null,
+  status: null,
+  categoria: null,
+  vencimento: null,
+};
+
+const ATRASO_FILTRO_MS = 400;
+
+const paramsDosFiltros = ({ busca, vencimento, ...demais }) => ({
+  ...demais,
+  busca: busca.trim(),
+  vencimentoDe: paraIsoData(vencimento?.[0]),
+  vencimentoAte: paraIsoData(vencimento?.[1] ?? vencimento?.[0]),
+});
+
 const formatMoney = (v) =>
   v == null ? "-" : Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const Financeiro = () => {
@@ -65,8 +91,8 @@ const Financeiro = () => {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [size] = useState(15);
-  const [tipo, setTipo] = useState(null);
-  const [status, setStatus] = useState(null);
+  const [filtros, setFiltros] = useState(FILTROS_VAZIOS);
+  const [filtrosAplicados, setFiltrosAplicados] = useState(FILTROS_VAZIOS);
   const [loading, setLoading] = useState(false);
   const [baixaDialog, setBaixaDialog] = useState(false);
   const [contaSelecionada, setContaSelecionada] = useState(null);
@@ -94,7 +120,7 @@ const Financeiro = () => {
   const carregar = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await service.listar({ tipo, status, page, size });
+      const data = await service.listar({ ...paramsDosFiltros(filtrosAplicados), page, size });
       setContas(data.content || []);
       setTotal(data.totalElements ?? 0);
       await carregarResumo();
@@ -118,11 +144,22 @@ const Financeiro = () => {
     } finally {
       setLoading(false);
     }
-  }, [service, tipo, status, page, size, carregarResumo, loginService]);
+  }, [service, filtrosAplicados, page, size, carregarResumo, loginService]);
 
   useEffect(() => {
     carregar();
   }, [carregar]);
+
+  useEffect(() => {
+    if (filtros === filtrosAplicados) return undefined;
+    const timer = setTimeout(() => {
+      setFiltrosAplicados(filtros);
+      setPage(0);
+    }, ATRASO_FILTRO_MS);
+    return () => clearTimeout(timer);
+  }, [filtros, filtrosAplicados]);
+
+  const alterarFiltro = (campo, valor) => setFiltros((atual) => ({ ...atual, [campo]: valor }));
 
   const abrirBaixa = (row) => {
     setContaSelecionada(row);
@@ -373,30 +410,97 @@ const Financeiro = () => {
           <i className="pi pi-filter" /> Filtros
         </PanelTitle>
         <FilterRow>
+          <FilterField style={{ flex: "2 1 280px" }}>
+            <label htmlFor="filtro-busca">Buscar</label>
+            <InputText
+              id="filtro-busca"
+              value={filtros.busca}
+              onChange={(e) => alterarFiltro("busca", e.target.value)}
+              placeholder="Descrição, cliente, orçamento ou fornecedor"
+            />
+          </FilterField>
+          <FilterField>
+            <label htmlFor="filtro-orcamento">Nº orçamento</label>
+            <InputNumber
+              inputId="filtro-orcamento"
+              value={filtros.cotacaoId}
+              onChange={(e) => alterarFiltro("cotacaoId", e.value)}
+              useGrouping={false}
+              min={1}
+              placeholder="Ex.: 1955"
+            />
+          </FilterField>
+          <FilterField>
+            <label htmlFor="filtro-os">Nº OS</label>
+            <InputNumber
+              inputId="filtro-os"
+              value={filtros.ordemServicoId}
+              onChange={(e) => alterarFiltro("ordemServicoId", e.value)}
+              useGrouping={false}
+              min={1}
+              placeholder="Ex.: 155"
+            />
+          </FilterField>
+          <FilterField>
+            <label htmlFor="filtro-compra">Nº compra</label>
+            <InputNumber
+              inputId="filtro-compra"
+              value={filtros.compraLoteId}
+              onChange={(e) => alterarFiltro("compraLoteId", e.value)}
+              useGrouping={false}
+              min={1}
+              placeholder="Ex.: 354"
+            />
+          </FilterField>
+        </FilterRow>
+        <FilterRow style={{ marginTop: "1rem" }}>
           <FilterField>
             <label>Tipo</label>
             <Dropdown
-              value={tipo}
+              value={filtros.tipo}
               options={TIPOS}
-              onChange={(e) => {
-                setTipo(e.value);
-                setPage(0);
-              }}
+              onChange={(e) => alterarFiltro("tipo", e.value)}
               placeholder="Tipo"
             />
           </FilterField>
           <FilterField>
             <label>Status</label>
             <Dropdown
-              value={status}
+              value={filtros.status}
               options={STATUS_OPTS}
-              onChange={(e) => {
-                setStatus(e.value);
-                setPage(0);
-              }}
+              onChange={(e) => alterarFiltro("status", e.value)}
               placeholder="Status"
             />
           </FilterField>
+          <FilterField>
+            <label>Categoria</label>
+            <Dropdown
+              value={filtros.categoria}
+              options={CATEGORIAS}
+              onChange={(e) => alterarFiltro("categoria", e.value)}
+              placeholder="Categoria"
+            />
+          </FilterField>
+          <FilterField style={{ minWidth: 230 }}>
+            <label htmlFor="filtro-vencimento">Vencimento</label>
+            <Calendar
+              inputId="filtro-vencimento"
+              value={filtros.vencimento}
+              onChange={(e) => alterarFiltro("vencimento", e.value)}
+              selectionMode="range"
+              readOnlyInput
+              dateFormat="dd/mm/yy"
+              placeholder="De — até"
+              showButtonBar
+              showIcon
+            />
+          </FilterField>
+          <ButtonSecondary
+            label="Limpar filtros"
+            icon="pi pi-filter-slash"
+            disabled={filtros === FILTROS_VAZIOS}
+            onClick={() => setFiltros(FILTROS_VAZIOS)}
+          />
         </FilterRow>
       </PanelCard>
 
@@ -428,11 +532,13 @@ const Financeiro = () => {
             <Column field="descricao" header="Descrição" style={{ minWidth: "200px" }} />
             <Column
               field="cotacaoId"
-              header="Orç."
+              header="Origem"
               body={(r) => (
-                <span style={{ fontWeight: 600, color: "#1a1a2e" }}>#{r.cotacaoId}</span>
+                <span style={{ fontWeight: 600, color: "#1a1a2e" }}>
+                  {r.cotacaoId ? `Orç. #${r.cotacaoId}` : r.compraLoteId ? `Compra #${r.compraLoteId}` : "-"}
+                </span>
               )}
-              style={{ width: "72px" }}
+              style={{ width: "110px" }}
             />
             <Column field="clienteNomeSnapshot" header="Cliente" style={{ minWidth: "140px" }} />
             <Column

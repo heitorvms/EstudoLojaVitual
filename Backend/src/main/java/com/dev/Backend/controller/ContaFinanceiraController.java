@@ -12,17 +12,16 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.dev.Backend.dto.BaixaContaFinanceiraDTO;
 import com.dev.Backend.dto.CobrancaHistoricoDTO;
 import com.dev.Backend.dto.ContaFinanceiraDTO;
+import com.dev.Backend.dto.FiltroContaFinanceiraDTO;
 import com.dev.Backend.dto.FinanceiroResumoDTO;
 import com.dev.Backend.dto.RegistrarCobrancaWhatsappDTO;
 import com.dev.Backend.dto.WhatsappCobrancaPreviewDTO;
-import com.dev.Backend.entity.StatusContaFinanceira;
-import com.dev.Backend.entity.TipoContaFinanceira;
 import com.dev.Backend.service.CotacaoFinanceiroService;
 
 @RestController
@@ -37,11 +36,8 @@ public class ContaFinanceiraController {
     }
 
     @GetMapping(value = { "", "/" })
-    public Page<ContaFinanceiraDTO> listar(
-            @RequestParam(required = false) TipoContaFinanceira tipo,
-            @RequestParam(required = false) StatusContaFinanceira status,
-            Pageable pageable) {
-        return cotacaoFinanceiroService.listar(tipo, status, pageable);
+    public Page<ContaFinanceiraDTO> listar(@ModelAttribute FiltroContaFinanceiraDTO filtro, Pageable pageable) {
+        return cotacaoFinanceiroService.listar(filtro, pageable);
     }
 
     @GetMapping("/resumo")

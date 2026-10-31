@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Date;
+import java.util.List;
 
 @Service
 public class CompraLoteService {
@@ -24,6 +25,8 @@ public class CompraLoteService {
     @Autowired private MaterialDisponivelRepository materialDisponivelRepository;
     @Autowired private DistribuidoraRepository distribuidoraRepository;
     @Autowired private EstoqueService estoqueService;
+    @Autowired private OrdemServicoService ordemServicoService;
+    @Autowired private CotacaoFinanceiroService financeiroService;
 
     public Page<CompraLote> listar(String query, Pageable pageable) {
         Pageable sorted = PageRequest.of(
@@ -45,9 +48,10 @@ public class CompraLoteService {
         compra.setStatus(StatusCompraLote.ATIVA);
         compra.setDataCriacao(new Date());
         aplicarCabecalho(compra, input);
-        montarItensEEntrarEstoque(compra, input, "Compra #" );
-        CompraLote salva = compraLoteRepository.save(compra);
-        // atualiza referência das movimentações com id real via save já feito
+        compra = compraLoteRepository.save(compra);
+        montarItensEEntrarEstoque(compra, input);
+        CompraLote salva = compraLoteRepository.saveAndFlush(compra);
+        financeiroService.sincronizarContasPagarDaCompra(salva, null);
         return salva;
     }
 
@@ -60,17 +64,21 @@ public class CompraLoteService {
         // Estorna estoque dos itens atuais
         for (CompraLoteItem item : compra.getItens()) {
             estoqueService.estornarCompra(
+                    compra,
                     item.getMaterialDisponivel(),
-                    item.getQuantidadeKg(),
                     item.getMetros(),
                     item.getBarras(),
                     "Estorno edição compra #" + id
             );
         }
         compra.getItens().clear();
+        Long cotacaoAnterior = compra.getCotacaoId();
         aplicarCabecalho(compra, input);
-        montarItensEEntrarEstoque(compra, input, "Compra #" + id);
-        return compraLoteRepository.save(compra);
+        montarItensEEntrarEstoque(compra, input);
+        CompraLote salva = compraLoteRepository.saveAndFlush(compra);
+        ordemServicoService.validarCompraDeOsEmProducao(cotacaoAnterior);
+        financeiroService.sincronizarContasPagarDaCompra(salva, cotacaoAnterior);
+        return salva;
     }
 
     @Transactional
@@ -84,8 +92,8 @@ public class CompraLoteService {
         }
         for (CompraLoteItem item : compra.getItens()) {
             estoqueService.estornarCompra(
+                    compra,
                     item.getMaterialDisponivel(),
-                    item.getQuantidadeKg(),
                     item.getMetros(),
                     item.getBarras(),
                     "Cancelamento compra #" + id
@@ -94,22 +102,22 @@ public class CompraLoteService {
         compra.setStatus(StatusCompraLote.CANCELADA);
         compra.setMotivoCancelamento(motivo.trim());
         compra.setDataCancelamento(new Date());
-        return compraLoteRepository.save(compra);
+        CompraLote salva = compraLoteRepository.saveAndFlush(compra);
+        ordemServicoService.validarCompraDeOsEmProducao(compra.getCotacaoId());
+        financeiroService.sincronizarContasPagarDaCompra(salva, null);
+        return salva;
     }
 
     private void aplicarCabecalho(CompraLote compra, CompraLote input) {
         compra.setDataCompra(input.getDataCompra() != null ? input.getDataCompra() : new Date());
         compra.setNumeroNota(input.getNumeroNota());
         compra.setObservacao(input.getObservacao());
-        if (input.getDistribuidora() != null && input.getDistribuidora().getId() != null) {
-            compra.setDistribuidora(distribuidoraRepository.findById(input.getDistribuidora().getId())
-                    .orElse(null));
-        } else {
-            compra.setDistribuidora(null);
+        if (input.getCotacaoId() != null) {
+            compra.setCotacaoId(input.getCotacaoId());
         }
     }
 
-    private void montarItensEEntrarEstoque(CompraLote compra, CompraLote input, String refPrefix) {
+    private void montarItensEEntrarEstoque(CompraLote compra, CompraLote input) {
         BigDecimal total = BigDecimal.ZERO;
         if (input.getItens() != null) {
             for (CompraLoteItem itemIn : input.getItens()) {
@@ -122,39 +130,55 @@ public class CompraLoteService {
                         .orElseThrow(() -> new RegraNegocioException("Material não encontrado"));
                 item.setMaterialDisponivel(md);
 
-                BigDecimal kg = nz(itemIn.getQuantidadeKg());
+                if (itemIn.getDistribuidora() == null || itemIn.getDistribuidora().getId() == null) {
+                    throw new RegraNegocioException("Informe a distribuidora de " + md.getDescricao());
+                }
+                item.setDistribuidora(distribuidoraRepository.findById(itemIn.getDistribuidora().getId())
+                        .orElseThrow(() -> new RegraNegocioException("Distribuidora não encontrada")));
+
                 BigDecimal metros = nz(itemIn.getMetros());
                 Integer barras = itemIn.getBarras() != null ? itemIn.getBarras() : 0;
+                if (barras <= 0) {
+                    throw new RegraNegocioException("Informe a quantidade de barras de cada item");
+                }
 
-                if (metros.signum() == 0 && barras > 0 && md.getComprimentoBarraMm() != null) {
+                if (metros.signum() == 0) {
+                    int barraMm = md.getComprimentoBarraMm() != null ? md.getComprimentoBarraMm() : 6000;
                     metros = BigDecimal.valueOf(barras)
-                            .multiply(BigDecimal.valueOf(md.getComprimentoBarraMm() / 1000.0))
+                            .multiply(BigDecimal.valueOf(barraMm / 1000.0))
                             .setScale(4, RoundingMode.HALF_UP);
                 }
-                if (kg.signum() == 0 && md.getPesoKgPorMetro() != null && metros.signum() > 0) {
-                    kg = md.getPesoKgPorMetro().multiply(metros).setScale(4, RoundingMode.HALF_UP);
+
+                if (itemIn.getValorBarra() == null || itemIn.getValorBarra().signum() <= 0) {
+                    throw new RegraNegocioException("Informe o valor da barra de " + md.getDescricao());
                 }
 
-                item.setQuantidadeKg(kg);
                 item.setMetros(metros);
                 item.setBarras(barras);
-                item.setValorKg(nz(itemIn.getValorKg()));
-                BigDecimal valorTotal = nz(itemIn.getValorTotal());
-                if (valorTotal.signum() == 0 && item.getValorKg().signum() > 0 && kg.signum() > 0) {
-                    valorTotal = item.getValorKg().multiply(kg).setScale(2, RoundingMode.HALF_UP);
-                }
+                item.setValorBarra(itemIn.getValorBarra());
+                BigDecimal valorTotal = item.getValorBarra().multiply(BigDecimal.valueOf(barras))
+                        .setScale(2, RoundingMode.HALF_UP);
                 item.setValorTotal(valorTotal);
                 total = total.add(valorTotal);
                 compra.getItens().add(item);
 
-                String ref = compra.getId() != null ? refPrefix + compra.getId() : "Compra nova";
-                estoqueService.entrarCompra(md, kg, metros, barras, ref);
+                estoqueService.entrarCompra(compra, md, metros, barras);
             }
         }
         if (compra.getItens().isEmpty()) {
             throw new RegraNegocioException("Adicione ao menos um item na compra");
         }
         compra.setValorTotal(total);
+        compra.setDistribuidora(distribuidoraUnica(compra));
+    }
+
+    /** Com itens de fornecedores diferentes a compra não tem distribuidora principal. */
+    private Distribuidora distribuidoraUnica(CompraLote compra) {
+        List<Distribuidora> distintas = compra.getItens().stream()
+                .map(CompraLoteItem::getDistribuidora)
+                .distinct()
+                .toList();
+        return distintas.size() == 1 ? distintas.get(0) : null;
     }
 
     private BigDecimal nz(BigDecimal v) { return v != null ? v : BigDecimal.ZERO; }

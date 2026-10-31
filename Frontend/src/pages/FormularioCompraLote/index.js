@@ -10,6 +10,7 @@ import { Tag } from "primereact/tag";
 import { CompraEstoqueService } from "../../services/CompraEstoqueService";
 import { MaterialDisponivelService } from "../../services/MaterialDisponivelService";
 import { DistribuidoraService } from "../../services/DistribuidoraService";
+import { MaterialPrecoService } from "../../services/MaterialPrecoService";
 import { moeda } from "../../utils/moeda";
 import {
   OficinaGlobalStyle,
@@ -28,13 +29,22 @@ import {
   CostTotal,
 } from "../../styles/oficinaLayout";
 
-const emptyItem = () => ({
+const emptyItem = (distribuidoraId = null) => ({
   materialDisponivelId: null,
+  distribuidoraId,
   barras: null,
-  metros: null,
-  quantidadeKg: null,
-  valorKg: null,
+  valorBarra: null,
 });
+
+const totalItem = (i) => Number(i.barras || 0) * Number(i.valorBarra || 0);
+
+const dataLocal = (valor) =>
+  typeof valor === "string" && valor.length === 10 ? new Date(`${valor}T00:00:00`) : new Date(valor);
+
+const distribuidoraEmComum = (itens) => {
+  const ids = [...new Set(itens.map((i) => i.distribuidoraId))];
+  return ids.length === 1 ? ids[0] : null;
+};
 
 export default function FormularioCompraLote() {
   const { id } = useParams();
@@ -45,6 +55,8 @@ export default function FormularioCompraLote() {
   const service = useRef(new CompraEstoqueService()).current;
   const matService = useRef(new MaterialDisponivelService()).current;
   const distService = useRef(new DistribuidoraService()).current;
+  const precoService = useRef(new MaterialPrecoService()).current;
+  const precosVigentesCache = useRef(new Map());
 
   const [materiais, setMateriais] = useState([]);
   const [distribuidoras, setDistribuidoras] = useState([]);
@@ -55,10 +67,31 @@ export default function FormularioCompraLote() {
     dataCompra: new Date(),
     numeroNota: "",
     observacao: "",
-    distribuidoraId: null,
+    cotacaoId: null,
     itens: [],
   });
   const [item, setItem] = useState(emptyItem());
+
+  const precosVigentes = (distribuidoraId) => {
+    const cache = precosVigentesCache.current;
+    if (!cache.has(distribuidoraId)) {
+      cache.set(
+        distribuidoraId,
+        precoService.vigentesPorDistribuidora(distribuidoraId).then((res) =>
+          new Map((res.success ? res.data : []).map((p) => [p.materialDisponivelId, Number(p.precoUnitario)]))
+        )
+      );
+    }
+    return cache.get(distribuidoraId);
+  };
+
+  /** Prioriza o preço orçado na cotação; sem ele, usa o preço vigente da distribuidora. */
+  const precoSugerido = async (materialDisponivelId, distribuidoraId, precosCotacao = []) => {
+    if (!materialDisponivelId || !distribuidoraId) return null;
+    const daCotacao = precosCotacao.find((p) => p.distribuidoraId === distribuidoraId);
+    if (daCotacao) return daCotacao.preco;
+    return (await precosVigentes(distribuidoraId)).get(materialDisponivelId) ?? null;
+  };
 
   useEffect(() => {
     (async () => {
@@ -77,10 +110,21 @@ export default function FormularioCompraLote() {
 
       const st = location.state;
       if (!isEdit && (st?.origem === "simulacao" || st?.origem === "cotacao") && Array.isArray(st.itens) && st.itens.length) {
-        const distNome = st.itens.find((i) => i.distribuidoraNome)?.distribuidoraNome;
-        const distMatch = distNome
-          ? listaDists.find((d) => d.nome?.toLowerCase() === distNome.toLowerCase())
-          : null;
+        const resolverDistribuidoraId = (i) =>
+          i.distribuidoraId ??
+          (i.distribuidoraNome
+            ? listaDists.find((d) => d.nome?.toLowerCase() === i.distribuidoraNome.toLowerCase())?.id
+            : null) ??
+          null;
+        const itensOrigem = st.itens.map((i) => ({
+          materialDisponivelId: i.materialDisponivelId,
+          materialLabel: i.materialLabel,
+          barras: i.barras,
+          valorBarra: i.valorBarra,
+          distribuidoraId: resolverDistribuidoraId(i),
+          precosCotacao: i.precosCotacao || [],
+        }));
+        const semDistribuidora = itensOrigem.filter((i) => !i.distribuidoraId).length;
         const rotuloOrigem = st.origem === "cotacao"
           ? `cotação #${st.cotacaoId}`
           : `simulação #${st.simulacaoId}`;
@@ -94,21 +138,17 @@ export default function FormularioCompraLote() {
           observacao: st.nomeTrabalho
             ? `Compra gerada da ${rotuloOrigem} — ${st.nomeTrabalho}`
             : `Compra gerada da ${rotuloOrigem}`,
-          distribuidoraId: distMatch?.id || null,
-          itens: st.itens.map((i) => ({
-            materialDisponivelId: i.materialDisponivelId,
-            materialLabel: i.materialLabel,
-            barras: i.barras,
-            metros: i.metros,
-            quantidadeKg: i.quantidadeKg,
-            valorKg: i.valorKg,
-          })),
+          cotacaoId: st.origem === "cotacao" ? st.cotacaoId : null,
+          itens: itensOrigem,
         }));
+        setItem(emptyItem(distribuidoraEmComum(itensOrigem)));
         toast.current?.show({
-          severity: "info",
+          severity: semDistribuidora ? "warn" : "info",
           summary: "Itens carregados",
-          detail: `${st.itens.length} material(is) da ${st.origem === "cotacao" ? "cotação" : "simulação"}. Confira e salve.`,
-          life: 3500,
+          detail: semDistribuidora
+            ? `${semDistribuidora} item(ns) sem distribuidora definida. Selecione antes de salvar.`
+            : `${st.itens.length} material(is) da ${st.origem === "cotacao" ? "cotação" : "simulação"} com a distribuidora escolhida. Confira e salve.`,
+          life: 4000,
         });
         window.history.replaceState({}, document.title);
       }
@@ -125,21 +165,21 @@ export default function FormularioCompraLote() {
           navigate("/compras-lote");
           return;
         }
+        const itensCompra = (c.itens || []).map((i) => ({
+          materialDisponivelId: i.materialDisponivel?.id,
+          materialLabel: i.materialDisponivel?.descricao,
+          barras: i.barras,
+          valorBarra: i.valorBarra,
+          distribuidoraId: i.distribuidora?.id ?? c.distribuidora?.id ?? null,
+        }));
         setForm({
-          dataCompra: c.dataCompra ? new Date(c.dataCompra) : new Date(),
+          dataCompra: c.dataCompra ? dataLocal(c.dataCompra) : new Date(),
           numeroNota: c.numeroNota || "",
           observacao: c.observacao || "",
-          distribuidoraId: c.distribuidora?.id || null,
-          itens: (c.itens || []).map((i) => ({
-            materialDisponivelId: i.materialDisponivel?.id,
-            materialLabel: i.materialDisponivel?.descricao,
-            barras: i.barras,
-            metros: i.metros,
-            quantidadeKg: i.quantidadeKg,
-            valorKg: i.valorKg,
-            valorTotal: i.valorTotal,
-          })),
+          cotacaoId: c.cotacaoId ?? null,
+          itens: itensCompra,
         });
+        setItem(emptyItem(distribuidoraEmComum(itensCompra)));
       } catch {
         toast.current?.show({ severity: "error", summary: "Erro", detail: "Compra não encontrada", life: 3000 });
         navigate("/compras-lote");
@@ -149,60 +189,79 @@ export default function FormularioCompraLote() {
     })();
   }, [id, isEdit]);
 
+  const avisar = (detail) =>
+    toast.current?.show({ severity: "warn", summary: "Atenção", detail, life: 3000 });
+
+  const atualizarItemNovo = async (patch) => {
+    const proximo = { ...item, ...patch };
+    setItem(proximo);
+    const valorBarra = await precoSugerido(proximo.materialDisponivelId, proximo.distribuidoraId);
+    if (valorBarra != null) setItem((it) => ({ ...it, valorBarra }));
+  };
+
   const addItem = () => {
-    if (!item.materialDisponivelId) {
-      toast.current?.show({ severity: "warn", summary: "Atenção", detail: "Selecione o material", life: 2500 });
-      return;
-    }
-    if (!item.barras && !item.metros && !item.quantidadeKg) {
-      toast.current?.show({ severity: "warn", summary: "Atenção", detail: "Informe barras, metros ou kg", life: 2500 });
-      return;
-    }
+    if (!item.materialDisponivelId) return avisar("Selecione o material");
+    if (!item.distribuidoraId) return avisar("Selecione a distribuidora");
+    if (!item.barras) return avisar("Informe a quantidade de barras");
+    if (!(Number(item.valorBarra) > 0)) return avisar("Informe o valor por barra");
     const mat = materiais.find((m) => m.id === item.materialDisponivelId);
     setForm((f) => ({
       ...f,
-      itens: [
-        ...f.itens,
-        {
-          ...item,
-          materialLabel: mat?.descricao || `#${item.materialDisponivelId}`,
-          valorTotal:
-            item.valorKg && item.quantidadeKg
-              ? Number(item.valorKg) * Number(item.quantidadeKg)
-              : null,
-        },
-      ],
+      itens: [...f.itens, { ...item, materialLabel: mat?.descricao || `#${item.materialDisponivelId}` }],
     }));
-    setItem(emptyItem());
+    setItem(emptyItem(item.distribuidoraId));
+  };
+
+  const atualizarItem = (idx, patch) => {
+    setForm((f) => ({ ...f, itens: f.itens.map((i, n) => (n === idx ? { ...i, ...patch } : i)) }));
+  };
+
+  const trocarDistribuidoraItem = async (idx, distribuidoraId) => {
+    const alvo = form.itens[idx];
+    const valorBarra = await precoSugerido(alvo.materialDisponivelId, distribuidoraId, alvo.precosCotacao);
+    atualizarItem(idx, { distribuidoraId, valorBarra });
+  };
+
+  const aplicarDistribuidoraEmTodos = async (distribuidoraId) => {
+    const itens = await Promise.all(
+      form.itens.map(async (i) => ({
+        ...i,
+        distribuidoraId,
+        valorBarra: await precoSugerido(i.materialDisponivelId, distribuidoraId, i.precosCotacao),
+      }))
+    );
+    setForm((f) => ({ ...f, itens }));
+    atualizarItemNovo({ distribuidoraId });
   };
 
   const removeItem = (idx) => {
     setForm((f) => ({ ...f, itens: f.itens.filter((_, i) => i !== idx) }));
   };
 
-  const totalGeral = form.itens.reduce((acc, i) => {
-    if (i.valorTotal != null) return acc + Number(i.valorTotal);
-    if (i.valorKg && i.quantidadeKg) return acc + Number(i.valorKg) * Number(i.quantidadeKg);
-    return acc;
-  }, 0);
+  const opcoesDistribuidora = distribuidoras.map((d) => ({ label: d.nome, value: d.id }));
+  const distribuidoraGeral = distribuidoraEmComum(form.itens);
+  const distribuidorasMistas = form.itens.length > 0 && distribuidoraGeral == null
+    && form.itens.some((i) => i.distribuidoraId);
+  const totalGeral = form.itens.reduce((acc, i) => acc + totalItem(i), 0);
 
   const salvar = async () => {
-    if (!form.itens.length) {
-      toast.current?.show({ severity: "warn", summary: "Atenção", detail: "Adicione ao menos um item", life: 2500 });
-      return;
-    }
+    if (!form.itens.length) return avisar("Adicione ao menos um item");
+    const semDistribuidora = form.itens.find((i) => !i.distribuidoraId);
+    if (semDistribuidora) return avisar(`Selecione a distribuidora de ${semDistribuidora.materialLabel}`);
+    const semValor = form.itens.find((i) => !(Number(i.valorBarra) > 0));
+    if (semValor) return avisar(`Informe o valor por barra de ${semValor.materialLabel}`);
+
     setSaving(true);
     const body = {
       dataCompra: form.dataCompra,
       numeroNota: form.numeroNota,
       observacao: form.observacao,
-      distribuidora: form.distribuidoraId ? { id: form.distribuidoraId } : null,
+      cotacaoId: form.cotacaoId,
       itens: form.itens.map((i) => ({
         materialDisponivel: { id: i.materialDisponivelId },
+        distribuidora: { id: i.distribuidoraId },
         barras: i.barras || 0,
-        metros: i.metros || 0,
-        quantidadeKg: i.quantidadeKg || 0,
-        valorKg: i.valorKg || 0,
+        valorBarra: i.valorBarra,
       })),
     };
     try {
@@ -256,7 +315,7 @@ export default function FormularioCompraLote() {
               severity="info"
             />
             <span style={{ marginLeft: 10, color: "#444", fontSize: 14 }}>
-              {origemSimulacao.nomeTrabalho || "Itens pré-preenchidos — confira barras/metros e R$/kg antes de salvar."}
+              {origemSimulacao.nomeTrabalho || "Itens pré-preenchidos — confira barras e R$/barra antes de salvar."}
             </span>
           </PanelCard>
         )}
@@ -282,15 +341,15 @@ export default function FormularioCompraLote() {
               />
             </div>
             <div>
-              <label>Distribuidora</label>
+              <label>Distribuidora *</label>
               <Dropdown
-                placeholder="Selecione (opcional)"
-                options={distribuidoras.map((d) => ({ label: d.nome, value: d.id }))}
-                value={form.distribuidoraId}
-                onChange={(e) => setForm({ ...form, distribuidoraId: e.value })}
-                showClear
+                placeholder={distribuidorasMistas ? "Várias — definida por item" : "Selecione"}
+                options={opcoesDistribuidora}
+                value={distribuidorasMistas ? null : distribuidoraGeral ?? item.distribuidoraId}
+                onChange={(e) => aplicarDistribuidoraEmTodos(e.value)}
                 filter
               />
+              <small style={{ color: "#666" }}>Ao trocar aqui, aplica a todos os itens.</small>
             </div>
             <div>
               <label>Observação</label>
@@ -313,7 +372,17 @@ export default function FormularioCompraLote() {
                 filter
                 options={materiais.map((m) => ({ label: m.descricao, value: m.id }))}
                 value={item.materialDisponivelId}
-                onChange={(e) => setItem({ ...item, materialDisponivelId: e.value })}
+                onChange={(e) => atualizarItemNovo({ materialDisponivelId: e.value })}
+              />
+            </div>
+            <div>
+              <label>Distribuidora</label>
+              <Dropdown
+                placeholder="Selecione"
+                filter
+                options={opcoesDistribuidora}
+                value={item.distribuidoraId}
+                onChange={(e) => atualizarItemNovo({ distribuidoraId: e.value })}
               />
             </div>
             <div>
@@ -321,18 +390,10 @@ export default function FormularioCompraLote() {
               <InputNumber value={item.barras} onValueChange={(e) => setItem({ ...item, barras: e.value })} min={0} />
             </div>
             <div>
-              <label>Metros</label>
-              <InputNumber value={item.metros} onValueChange={(e) => setItem({ ...item, metros: e.value })} min={0} maxFractionDigits={3} />
-            </div>
-            <div>
-              <label>Kg</label>
-              <InputNumber value={item.quantidadeKg} onValueChange={(e) => setItem({ ...item, quantidadeKg: e.value })} min={0} maxFractionDigits={3} />
-            </div>
-            <div>
-              <label>R$ / kg</label>
+              <label>R$ / barra</label>
               <InputNumber
-                value={item.valorKg}
-                onValueChange={(e) => setItem({ ...item, valorKg: e.value })}
+                value={item.valorBarra}
+                onValueChange={(e) => setItem({ ...item, valorBarra: e.value })}
                 mode="currency"
                 currency="BRL"
                 locale="pt-BR"
@@ -346,10 +407,38 @@ export default function FormularioCompraLote() {
 
           <DataTableStyled value={form.itens} emptyMessage="Nenhum item incluído">
             <Column header="Material" body={(r) => r.materialLabel || "-"} />
+            <Column
+              header="Distribuidora"
+              style={{ minWidth: 200 }}
+              body={(r, { rowIndex }) => (
+                <Dropdown
+                  placeholder="Selecione"
+                  options={opcoesDistribuidora}
+                  value={r.distribuidoraId}
+                  onChange={(e) => trocarDistribuidoraItem(rowIndex, e.value)}
+                  className={r.distribuidoraId ? undefined : "p-invalid"}
+                  style={{ width: "100%" }}
+                />
+              )}
+            />
             <Column field="barras" header="Barras" body={(r) => r.barras ?? "-"} />
-            <Column field="metros" header="Metros" body={(r) => (r.metros != null ? Number(r.metros).toFixed(3) : "-")} />
-            <Column field="quantidadeKg" header="Kg" body={(r) => (r.quantidadeKg != null ? Number(r.quantidadeKg).toFixed(3) : "-")} />
-            <Column field="valorKg" header="R$/kg" body={(r) => (r.valorKg != null ? moeda(r.valorKg) : "-")} />
+            <Column
+              header="R$/barra"
+              style={{ minWidth: 150 }}
+              body={(r, { rowIndex }) => (
+                <InputNumber
+                  value={r.valorBarra}
+                  onValueChange={(e) => atualizarItem(rowIndex, { valorBarra: e.value })}
+                  mode="currency"
+                  currency="BRL"
+                  locale="pt-BR"
+                  min={0}
+                  className={Number(r.valorBarra) > 0 ? undefined : "p-invalid"}
+                  inputStyle={{ width: "100%" }}
+                />
+              )}
+            />
+            <Column header="Total" body={(r) => moeda(totalItem(r))} />
             <Column
               header=""
               style={{ width: 70 }}

@@ -15,8 +15,8 @@
 	<parameter name="valor_insumos" class="java.lang.Double"/>
 	<parameter name="valor_frete" class="java.lang.Double"/>
 	<parameter name="subtotal_custo" class="java.lang.Double"/>
-	<parameter name="percentual_lucro" class="java.lang.Double"/>
-	<parameter name="valor_lucro" class="java.lang.Double"/>
+	<parameter name="percentual_mao_obra" class="java.lang.Double"/>
+	<parameter name="valor_mao_obra" class="java.lang.Double"/>
 	<parameter name="valor_total_orcamento" class="java.lang.Double"/>
 	<query language="SQL"><![CDATA[SELECT
   md.descricao AS material_nome,
@@ -215,10 +215,10 @@ ORDER BY md.descricao]]></query>
 			<expression><![CDATA[$P{subtotal_custo}]]></expression>
 		</element>
 		<element kind="textField" uuid="d4a00001-0009-4001-8001-000000000009" x="280" y="76" width="130" height="16" fontSize="9.0" bold="true" hTextAlign="Right" vTextAlign="Middle">
-			<expression><![CDATA["Lucro (" + ($P{percentual_lucro} == null ? "0" : new java.text.DecimalFormat("#,##0.##").format($P{percentual_lucro})) + "%):"]]></expression>
+			<expression><![CDATA[$P{percentual_mao_obra} == null ? "Mão de obra:" : "Mão de obra (" + new java.text.DecimalFormat("#,##0.##").format($P{percentual_mao_obra}) + "%):"]]></expression>
 		</element>
 		<element kind="textField" uuid="d4a00001-0010-4001-8001-000000000010" x="410" y="76" width="105" height="16" pattern="R$ #,##0.00" fontSize="9.0" hTextAlign="Right" vTextAlign="Middle">
-			<expression><![CDATA[$P{valor_lucro}]]></expression>
+			<expression><![CDATA[$P{valor_mao_obra}]]></expression>
 		</element>
 		<element kind="rectangle" uuid="e20a0917-3f06-4803-800d-26f0fae900b5" mode="Opaque" x="280" y="94" width="235" height="18" backcolor="#D1D1D1"/>
 		<element kind="staticText" uuid="a6d1f7a0-41d2-4b73-9f1a-0b62c82bde03" x="280" y="94" width="130" height="18" fontSize="10.0" bold="true" hTextAlign="Right" vTextAlign="Middle">

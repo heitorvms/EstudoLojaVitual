@@ -7,6 +7,7 @@ import { Column } from "primereact/column";
 import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import { ProgressSpinner } from "primereact/progressspinner";
 import { Tag } from "primereact/tag";
+import { Dropdown } from "primereact/dropdown";
 import "primereact/resources/themes/lara-light-indigo/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
@@ -15,8 +16,6 @@ import { RelatorioService } from "../../services/RelatorioService";
 import debounce from "lodash/debounce";
   import {
   ContainerPage,
-  PageHeader,
-  HeaderText,
   CardStyled,
   DataTableStyled,
   ButtonStyled,
@@ -25,7 +24,58 @@ import debounce from "lodash/debounce";
   GlobalStyle,
   ExpandedContainer,
   LoadingContainer,
-} from "./styled";const Cotacoes = ({ setCustomContent }) => {
+  FiltrosBar,
+} from "./styled";
+
+const OPCOES_SITUACAO = [
+  { label: "Em aberto", value: "ABERTAS" },
+  { label: "Viraram OS", value: "COM_OS" },
+  { label: "Todas", value: "TODAS" },
+];
+
+const OPCOES_ORDEM = [
+  { label: "Mais recentes primeiro", value: "recent-desc" },
+  { label: "Mais antigos primeiro", value: "recent-asc" },
+];
+
+const OPCOES_PERIODO = [
+  { label: "Todos", value: "all" },
+  { label: "Hoje", value: "today" },
+  { label: "Últimos 7 dias", value: "7" },
+  { label: "Últimos 30 dias", value: "30" },
+];
+
+const MARGEM_ROLAGEM = 16;
+
+const lerAnaliseEscolha = (cot) => {
+  const bruto = cot?.analiseEscolhaJson;
+  if (!bruto) return null;
+  if (typeof bruto !== "string") return bruto;
+  try {
+    return JSON.parse(bruto);
+  } catch {
+    return null;
+  }
+};
+
+/** Retorna (materialDisponivelId) => nome da distribuidora escolhida na análise da cotação. */
+const distribuidoraEscolhidaPorMaterial = (cot) => {
+  const analise = lerAnaliseEscolha(cot);
+  if (analise?.tipoEscolhido === "distribuidoras") {
+    const nome =
+      analise.resumoEscolha?.distribuidora || analise.escolhas?.valorTotal?.distribuidora || null;
+    return () => nome;
+  }
+  const porMaterial = new Map(
+    (analise?.escolhas?.materiais || []).map((e) => [
+      Number(e.materialId),
+      e.distribuidoraSelecionada,
+    ])
+  );
+  return (materialDisponivelId) => porMaterial.get(Number(materialDisponivelId)) || null;
+};
+
+const Cotacoes = ({ setCustomContent }) => {
   const [listaCotacoes, setListaCotacoes] = useState([]);
   const [sortOrder, setSortOrder] = useState("recent-desc");
   const [periodFilter, setPeriodFilter] = useState("all");
@@ -48,7 +98,7 @@ import debounce from "lodash/debounce";
   const cotacaoService = useRef(new CotacaoService()).current;
   const relatorioService = useRef(new RelatorioService()).current;
   const scrollPositionRef = useRef(null);
-  const cardRefs = useRef({});
+  const expandedRef = useRef(null);
 
   const navigate = useNavigate();
   
@@ -247,23 +297,23 @@ import debounce from "lodash/debounce";
   const toggleExpand = (cot) => {
     if (expandedCotacao && expandedCotacao.id === cot.id) {
       setExpandedCotacao(null);
-      setTimeout(() => {
-        window.scrollTo({
-          top: scrollPositionRef.current,
-          behavior: "smooth",
-        });
-      }, 0);
-    } else {
-      const cardElement = cardRefs.current[cot.id];
-      if (cardElement) {
-        scrollPositionRef.current = cardElement.getBoundingClientRect().top + window.scrollY;
-      } else {
-        scrollPositionRef.current = window.scrollY;
-      }
-      setExpandedCotacao(cot);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
     }
+    if (!expandedCotacao) {
+      scrollPositionRef.current = window.scrollY;
+    }
+    setExpandedCotacao(cot);
   };
+
+  useEffect(() => {
+    if (expandedCotacao) {
+      const topo = expandedRef.current?.getBoundingClientRect().top ?? 0;
+      window.scrollTo({ top: topo + window.scrollY - MARGEM_ROLAGEM, behavior: "smooth" });
+    } else if (scrollPositionRef.current != null) {
+      window.scrollTo({ top: scrollPositionRef.current, behavior: "smooth" });
+      scrollPositionRef.current = null;
+    }
+  }, [expandedCotacao]);
 
   const formatPhoneNumber = (value) => {
     const cleaned = ("" + value).replace(/\D/g, "");
@@ -329,20 +379,32 @@ import debounce from "lodash/debounce";
       return;
     }
 
+    const distribuidoraDoMaterial = distribuidoraEscolhidaPorMaterial(cot);
+
     navigate("/compras-lote/nova", {
       state: {
         origem: "cotacao",
         cotacaoId: cot.id,
         nomeTrabalho: cot.nome || `Cotação #${cot.id}`,
-        itens: materiais.map((m) => ({
-          materialDisponivelId: m.materialDisponivel?.id,
-          materialLabel: m.materialDisponivel?.descricao,
-          barras: m.quantidade != null && m.quantidade !== "" ? Number(m.quantidade) : null,
-          metros: m.metros != null ? Number(m.metros) : null,
-          quantidadeKg: m.pesoKg != null ? Number(m.pesoKg) : null,
-          valorKg: null,
-          distribuidoraNome: null,
-        })).filter((i) => i.materialDisponivelId),
+        itens: materiais.map((m) => {
+          const materialDisponivelId = m.materialDisponivel?.id;
+          const distribuidoraNome = distribuidoraDoMaterial(materialDisponivelId);
+          const precoEscolhido = (m.precos || []).find(
+            (p) => p.distribuidora?.nome === distribuidoraNome
+          );
+          return {
+            materialDisponivelId,
+            materialLabel: m.materialDisponivel?.descricao,
+            barras: m.quantidade != null && m.quantidade !== "" ? Number(m.quantidade) : null,
+            metros: m.metros != null ? Number(m.metros) : null,
+            valorBarra: precoEscolhido?.preco ?? null,
+            distribuidoraId: precoEscolhido?.distribuidora?.id ?? null,
+            distribuidoraNome,
+            precosCotacao: (m.precos || [])
+              .filter((p) => p.distribuidora?.id != null && p.preco != null)
+              .map((p) => ({ distribuidoraId: p.distribuidora.id, preco: Number(p.preco) })),
+          };
+        }).filter((i) => i.materialDisponivelId),
       },
     });
   };
@@ -396,14 +458,33 @@ import debounce from "lodash/debounce";
     <ContainerPage>
       <GlobalStyle />
       <ConfirmDialog />
-      <PageHeader>
-        <HeaderText>
-          <h1>Cotações</h1>
-          <p>Orçamentos enviados aos clientes; as que viraram OS ficam ocultas por padrão</p>
-        </HeaderText>
-      </PageHeader>
+      <FiltrosBar>
+        <h1>Cotações</h1>
+        <div className="filtro">
+          <label htmlFor="filtro-situacao">Situação</label>
+          <Dropdown inputId="filtro-situacao" value={situacao} options={OPCOES_SITUACAO} onChange={(e) => setSituacao(e.value)} />
+        </div>
+        <div className="filtro">
+          <label htmlFor="filtro-ordem">Ordenar</label>
+          <Dropdown inputId="filtro-ordem" value={sortOrder} options={OPCOES_ORDEM} onChange={(e) => setSortOrder(e.value)} />
+        </div>
+        <div className="filtro">
+          <label htmlFor="filtro-periodo">Período</label>
+          <Dropdown
+            inputId="filtro-periodo"
+            value={periodFilter}
+            options={OPCOES_PERIODO}
+            onChange={(e) => setPeriodFilter(e.value)}
+            disabled={!hasDate}
+            tooltip={!hasDate ? "Filtro por data indisponível (servidor não envia dataCriacao)" : undefined}
+          />
+        </div>
+        {!hasDate && (
+          <span className="dica">Ordenando por ID como aproximação de "recentes" (o servidor não retorna data de criação).</span>
+        )}
+      </FiltrosBar>
       {expandedCotacao && (
-        <ExpandedContainer>
+        <ExpandedContainer ref={expandedRef}>
           <CardStyled className="expanded">
             <div style={{ position: "relative" }}>
               <ButtonStyled
@@ -502,64 +583,12 @@ import debounce from "lodash/debounce";
         </LoadingContainer>
       ) : (
         <>
-          <div style={{
-            display: "flex",
-            gap: 12,
-            alignItems: "center",
-            justifyContent: "flex-end",
-            margin: "8px 0 16px 0"
-          }}>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <label style={{ fontSize: 13, color: "#555" }}>Situação:</label>
-              <select
-                value={situacao}
-                onChange={(e) => setSituacao(e.target.value)}
-                style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #ddd" }}
-              >
-                <option value="ABERTAS">Em aberto</option>
-                <option value="COM_OS">Viraram OS</option>
-                <option value="TODAS">Todas</option>
-              </select>
-            </div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <label style={{ fontSize: 13, color: "#555" }}>Ordenar:</label>
-              <select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
-                style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #ddd" }}
-              >
-                <option value="recent-desc">Mais recentes primeiro</option>
-                <option value="recent-asc">Mais antigos primeiro</option>
-              </select>
-            </div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <label style={{ fontSize: 13, color: "#555" }}>Período:</label>
-              <select
-                value={periodFilter}
-                onChange={(e) => setPeriodFilter(e.target.value)}
-                style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #ddd" }}
-                disabled={!hasDate}
-                title={!hasDate ? "Filtro por data indisponível (servidor não envia dataCriacao)" : undefined}
-              >
-                <option value="all">Todos</option>
-                <option value="today">Hoje</option>
-                <option value="7">Últimos 7 dias</option>
-                <option value="30">Últimos 30 dias</option>
-              </select>
-            </div>
-          </div>
-          {!hasDate && (
-            <div style={{ fontSize: 12, color: "#777", textAlign: "right", marginBottom: 8 }}>
-              Dica: ordenando por ID como aproximação de "recentes" (o servidor não retorna data de criação).
-            </div>
-          )}
         <CardsContainer>
           {displayCotacoes.map((cot) => (
             <CardStyled
               key={cot.id}
               className={cot.id === expandedCotacao?.id ? "hidden" : ""}
               onClick={() => toggleExpand(cot)}
-              ref={(el) => (cardRefs.current[cot.id] = el)}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>

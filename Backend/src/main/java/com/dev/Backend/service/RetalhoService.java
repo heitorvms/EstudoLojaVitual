@@ -3,6 +3,10 @@ package com.dev.Backend.service;
 import java.util.Date;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,9 +27,11 @@ public class RetalhoService {
     }
 
     @Transactional(readOnly = true)
-    public List<RetalhoDTO> listar() {
-        return retalhoRepository.findAllByOrderByMaterialDisponivelDescricaoAscComprimentoMmDesc()
-            .stream().map(RetalhoDTO::from).toList();
+    public Page<RetalhoDTO> listar(String busca, Pageable pageable) {
+        Sort ordem = Sort.by(Sort.Order.asc("materialDisponivel.descricao").ignoreCase(), Sort.Order.desc("comprimentoMm"));
+        Pageable ordenado = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), ordem);
+        return retalhoRepository.findByMaterialDisponivelDescricaoContainingIgnoreCase(busca == null ? "" : busca.trim(), ordenado)
+            .map(RetalhoDTO::from);
     }
 
     @Transactional

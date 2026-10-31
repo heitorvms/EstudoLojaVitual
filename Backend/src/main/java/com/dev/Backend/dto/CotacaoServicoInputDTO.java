@@ -1,5 +1,7 @@
 package com.dev.Backend.dto;
 
+import com.dev.Backend.entity.TipoMaoDeObra;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -19,11 +21,10 @@ public class CotacaoServicoInputDTO {
 
     private BigDecimal percentualInsumos;
     private BigDecimal valorFrete;
-    private BigDecimal valorInsumos;
-    private BigDecimal totalCustoMateriais;
-    private BigDecimal percentualLucro;
-    private BigDecimal valorLucro;
-    private BigDecimal valorTotalOrcamento;
+    private TipoMaoDeObra tipoMaoDeObra;
+    private BigDecimal percentualMaoDeObra;
+    /** Usado apenas quando a mão de obra é valor fixo. */
+    private BigDecimal valorMaoDeObra;
 
     public String getAnaliseEscolhaJson() { return analiseEscolhaJson; }
     public void setAnaliseEscolhaJson(String analiseEscolhaJson) { this.analiseEscolhaJson = analiseEscolhaJson; }
@@ -50,14 +51,10 @@ public class CotacaoServicoInputDTO {
     public void setPercentualInsumos(BigDecimal percentualInsumos) { this.percentualInsumos = percentualInsumos; }
     public BigDecimal getValorFrete() { return valorFrete; }
     public void setValorFrete(BigDecimal valorFrete) { this.valorFrete = valorFrete; }
-    public BigDecimal getValorInsumos() { return valorInsumos; }
-    public void setValorInsumos(BigDecimal valorInsumos) { this.valorInsumos = valorInsumos; }
-    public BigDecimal getTotalCustoMateriais() { return totalCustoMateriais; }
-    public void setTotalCustoMateriais(BigDecimal totalCustoMateriais) { this.totalCustoMateriais = totalCustoMateriais; }
-    public BigDecimal getPercentualLucro() { return percentualLucro; }
-    public void setPercentualLucro(BigDecimal percentualLucro) { this.percentualLucro = percentualLucro; }
-    public BigDecimal getValorLucro() { return valorLucro; }
-    public void setValorLucro(BigDecimal valorLucro) { this.valorLucro = valorLucro; }
-    public BigDecimal getValorTotalOrcamento() { return valorTotalOrcamento; }
-    public void setValorTotalOrcamento(BigDecimal valorTotalOrcamento) { this.valorTotalOrcamento = valorTotalOrcamento; }
+    public TipoMaoDeObra getTipoMaoDeObra() { return tipoMaoDeObra; }
+    public void setTipoMaoDeObra(TipoMaoDeObra tipoMaoDeObra) { this.tipoMaoDeObra = tipoMaoDeObra; }
+    public BigDecimal getPercentualMaoDeObra() { return percentualMaoDeObra; }
+    public void setPercentualMaoDeObra(BigDecimal percentualMaoDeObra) { this.percentualMaoDeObra = percentualMaoDeObra; }
+    public BigDecimal getValorMaoDeObra() { return valorMaoDeObra; }
+    public void setValorMaoDeObra(BigDecimal valorMaoDeObra) { this.valorMaoDeObra = valorMaoDeObra; }
 }

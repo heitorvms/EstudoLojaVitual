@@ -1,5 +1,7 @@
 package com.dev.Backend.dto;
 
+import com.dev.Backend.entity.TipoMaoDeObra;
+
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
@@ -22,8 +24,9 @@ public class CotacaoServicoDTO {
     private BigDecimal valorFrete;
     private BigDecimal valorInsumos;
     private BigDecimal totalCustoMateriais;
-    private BigDecimal percentualLucro;
-    private BigDecimal valorLucro;
+    private TipoMaoDeObra tipoMaoDeObra;
+    private BigDecimal percentualMaoDeObra;
+    private BigDecimal valorMaoDeObra;
     private BigDecimal valorTotalOrcamento;
 
     private Date dataCriacao;
@@ -69,10 +72,12 @@ public class CotacaoServicoDTO {
     public void setValorInsumos(BigDecimal valorInsumos) { this.valorInsumos = valorInsumos; }
     public BigDecimal getTotalCustoMateriais() { return totalCustoMateriais; }
     public void setTotalCustoMateriais(BigDecimal totalCustoMateriais) { this.totalCustoMateriais = totalCustoMateriais; }
-    public BigDecimal getPercentualLucro() { return percentualLucro; }
-    public void setPercentualLucro(BigDecimal percentualLucro) { this.percentualLucro = percentualLucro; }
-    public BigDecimal getValorLucro() { return valorLucro; }
-    public void setValorLucro(BigDecimal valorLucro) { this.valorLucro = valorLucro; }
+    public TipoMaoDeObra getTipoMaoDeObra() { return tipoMaoDeObra; }
+    public void setTipoMaoDeObra(TipoMaoDeObra tipoMaoDeObra) { this.tipoMaoDeObra = tipoMaoDeObra; }
+    public BigDecimal getPercentualMaoDeObra() { return percentualMaoDeObra; }
+    public void setPercentualMaoDeObra(BigDecimal percentualMaoDeObra) { this.percentualMaoDeObra = percentualMaoDeObra; }
+    public BigDecimal getValorMaoDeObra() { return valorMaoDeObra; }
+    public void setValorMaoDeObra(BigDecimal valorMaoDeObra) { this.valorMaoDeObra = valorMaoDeObra; }
     public BigDecimal getValorTotalOrcamento() { return valorTotalOrcamento; }
     public void setValorTotalOrcamento(BigDecimal valorTotalOrcamento) { this.valorTotalOrcamento = valorTotalOrcamento; }
     public BigDecimal getValorPendente() { return valorPendente; }

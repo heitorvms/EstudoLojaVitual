@@ -119,8 +119,9 @@ public class RelatorioService {
         params.put("valor_insumos", toDouble(cot.getValorInsumos()));
         params.put("valor_frete", toDouble(cot.getValorFrete()));
         params.put("subtotal_custo", calcularSubtotalCusto(cot));
-        params.put("percentual_lucro", toDouble(cot.getPercentualLucro()));
-        params.put("valor_lucro", toDouble(cot.getValorLucro()));
+        params.put("percentual_mao_obra",
+                cot.getPercentualMaoDeObra() != null ? toDouble(cot.getPercentualMaoDeObra()) : null);
+        params.put("valor_mao_obra", toDouble(cot.getValorMaoDeObra()));
         params.put("valor_total_orcamento", toDouble(cot.getValorTotalOrcamento()));
     }
 

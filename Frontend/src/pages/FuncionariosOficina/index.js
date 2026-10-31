@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Toast } from "primereact/toast";
 import { InputText } from "primereact/inputtext";
+import { InputMask } from "primereact/inputmask";
 import { InputNumber } from "primereact/inputnumber";
 import { Column } from "primereact/column";
 import { Checkbox } from "primereact/checkbox";
@@ -105,7 +106,12 @@ export default function FuncionariosOficina() {
             </div>
             <div>
               <label>Telefone</label>
-              <InputText value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
+              <InputMask
+                value={form.telefone}
+                onChange={(e) => setForm({ ...form, telefone: e.value || "" })}
+                mask="(99) 99999-9999"
+                placeholder="(00) 00000-0000"
+              />
             </div>
             <div>
               <label>Cargo</label>

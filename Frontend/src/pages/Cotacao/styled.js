@@ -1,7 +1,55 @@
 import styled, { createGlobalStyle } from "styled-components";
 import { Button, Card, DataTable, Dialog, InputText } from "primereact";
 
-export { PageShellCentered as ContainerPage, PageHeader, HeaderText } from "../../styles/oficinaLayout";
+export { PageShellCentered as ContainerPage } from "../../styles/oficinaLayout";
+
+export const FiltrosBar = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto 20px;
+  padding: 14px 18px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
+
+  h1 {
+    flex-basis: 100%;
+    margin: 0;
+    font-size: 26px;
+    font-weight: 800;
+    color: #1a1a2e;
+  }
+
+  .filtro {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 180px;
+  }
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .p-dropdown {
+    width: 100%;
+  }
+
+  .dica {
+    flex-basis: 100%;
+    font-size: 12px;
+    color: #777;
+  }
+`;
 
 export const CardsContainer = styled.div`
   display: grid;

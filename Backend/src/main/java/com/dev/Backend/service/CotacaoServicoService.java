@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
@@ -63,6 +64,7 @@ public class CotacaoServicoService {
         return cotacaoServicoRepository.save(cotacaoServico);
     }
 
+    @Transactional
     public CotacaoServico criarCotacao(CotacaoServicoInputDTO inputDTO) {
         CotacaoServico cotacao = new CotacaoServico();
         cotacao.setNome(inputDTO.getNome());
@@ -90,11 +92,9 @@ public class CotacaoServicoService {
     cotacao.setAnaliseEscolhaJson(inputDTO.getAnaliseEscolhaJson());
     cotacao.setPercentualInsumos(inputDTO.getPercentualInsumos());
     cotacao.setValorFrete(inputDTO.getValorFrete());
-    cotacao.setValorInsumos(inputDTO.getValorInsumos());
-    cotacao.setTotalCustoMateriais(inputDTO.getTotalCustoMateriais());
-    cotacao.setPercentualLucro(inputDTO.getPercentualLucro());
-    cotacao.setValorLucro(inputDTO.getValorLucro());
-    cotacao.setValorTotalOrcamento(inputDTO.getValorTotalOrcamento());
+    cotacao.setTipoMaoDeObra(inputDTO.getTipoMaoDeObra() != null ? inputDTO.getTipoMaoDeObra() : TipoMaoDeObra.PERCENTUAL);
+    cotacao.setPercentualMaoDeObra(inputDTO.getPercentualMaoDeObra());
+    cotacao.setValorMaoDeObra(inputDTO.getValorMaoDeObra());
 
         for (MaterialInputDTO matInput : inputDTO.getMateriais()) {
             Material material = new Material();
@@ -103,7 +103,6 @@ public class CotacaoServicoService {
                 material.setMaterialDisponivel(matDispOpt.get());
                 material.setQuantidade(matInput.getQuantidade());
                 material.setMetros(matInput.getMetros());
-                material.setPesoKg(matInput.getPesoKg());
                 adicionarPecas(material, matInput.getPecas());
                 material.setCotacaoServico(cotacao);
                 material.setDataCriacao(new Date());
@@ -154,6 +153,7 @@ public class CotacaoServicoService {
             cotacao.getPrecosMateriais().add(preco);
         }
 
+        calculationService.aplicarComposicaoCustos(cotacao);
         return cotacaoServicoRepository.save(cotacao);
     }
 
@@ -201,8 +201,9 @@ public class CotacaoServicoService {
     dto.setValorFrete(cotacao.getValorFrete());
     dto.setValorInsumos(cotacao.getValorInsumos());
     dto.setTotalCustoMateriais(cotacao.getTotalCustoMateriais());
-    dto.setPercentualLucro(cotacao.getPercentualLucro());
-    dto.setValorLucro(cotacao.getValorLucro());
+    dto.setTipoMaoDeObra(cotacao.getTipoMaoDeObra());
+    dto.setPercentualMaoDeObra(cotacao.getPercentualMaoDeObra());
+    dto.setValorMaoDeObra(cotacao.getValorMaoDeObra());
     dto.setValorTotalOrcamento(cotacao.getValorTotalOrcamento());
     dto.setValorPendente(cotacao.getValorPendente());
     dto.setDataVencimento(cotacao.getDataVencimento());
@@ -218,7 +219,6 @@ public class CotacaoServicoService {
         dto.setId(material.getId());
         dto.setQuantidade(material.getQuantidade() != null ? material.getQuantidade().toString() : "0");
         dto.setMetros(material.getMetros());
-        dto.setPesoKg(material.getPesoKg());
         dto.setMaterialDisponivel(toMaterialDisponivelDTO(material.getMaterialDisponivel()));
 
         List<PrecoMaterialCotacaoDTO> precosDTO = material.getCotacaoServico().getPrecosMateriais().stream()
@@ -259,7 +259,6 @@ public class CotacaoServicoService {
             dto.setUnidade(materialDisponivel.getUnidade().name());
         }
         dto.setComprimentoBarraMm(materialDisponivel.getComprimentoBarraMm());
-        dto.setPesoKgPorMetro(materialDisponivel.getPesoKgPorMetro());
         return dto;
     }
 

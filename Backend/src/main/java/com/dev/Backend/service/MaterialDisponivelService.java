@@ -70,7 +70,6 @@ public class MaterialDisponivelService {
         updated.setTamanho(material.getTamanho());
         if (material.getUnidade() != null) updated.setUnidade(material.getUnidade());
         if (material.getComprimentoBarraMm() != null) updated.setComprimentoBarraMm(material.getComprimentoBarraMm());
-        if (material.getPesoKgPorMetro() != null) updated.setPesoKgPorMetro(material.getPesoKgPorMetro());
         updated.setDataAtualizacao(new Date());
         return repository.save(updated);
     }

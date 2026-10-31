@@ -43,10 +43,14 @@ export const ErrorMessage = styled.small`
 
 export const ButtonContainer = styled.div`
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 1rem;
   margin-top: 1rem;
   flex-wrap: wrap;
+
+  .p-dialog & {
+    justify-content: flex-end;
+  }
 `;
 
 export const InputTextStyled = styled(InputText)`

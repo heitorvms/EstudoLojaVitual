@@ -273,6 +273,29 @@ export const IconMenu = styled.div`
     flex-direction: column;
     min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  @media (max-height: 760px) {
+    padding: 12px 10px;
+
+    .toggle-button {
+      margin-bottom: 8px;
+    }
+
+    li {
+      min-height: 38px;
+      margin-bottom: 4px;
+    }
+
+    .icon-menu-bottom {
+      padding-top: 6px;
+    }
   }
 
   .icon-menu-bottom {

@@ -40,8 +40,15 @@ export class CompraEstoqueService {
     return data;
   }
 
-  async listarEstoque() {
-    const { data } = await client().get("/estoque");
+  async listarEstoque(page = 0, size = 15, busca = "") {
+    const { data } = await client().get("/estoque", {
+      params: { page, size, busca: busca || undefined },
+    });
+    return data;
+  }
+
+  async historicoEstoque(materialDisponivelId) {
+    const { data } = await client().get(`/estoque/${materialDisponivelId}/historico`);
     return data;
   }
 }

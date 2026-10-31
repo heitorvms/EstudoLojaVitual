@@ -59,37 +59,13 @@ export const ButtonContainer = styled.div`
   margin-top: 1.25rem;
   flex-wrap: wrap;
   width: 100%;
-`;
 
-export { ActionBar, IconActionButton } from "../../styles/oficinaLayout";
-
-export const TabsWrap = styled.div`
-  width: 100%;
-
-  .p-tabview .p-tabview-nav {
-    border: none;
-    background: transparent;
-    margin-bottom: 0.5rem;
-  }
-
-  .p-tabview .p-tabview-nav li .p-tabview-nav-link {
-    color: #666;
-    border: none;
-    border-bottom: 2px solid transparent;
-    background: transparent;
-    font-weight: 600;
-  }
-
-  .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
-    color: #1a1a2e;
-    border-bottom-color: #1a1a2e;
-  }
-
-  .p-tabview .p-tabview-panels {
-    background: transparent;
-    padding: 0;
+  .p-dialog & {
+    justify-content: flex-end;
   }
 `;
+
+export { ActionBar, IconActionButton, TabsWrap } from "../../styles/oficinaLayout";
 
 export const ButtonStyled = styled(Button)`
   z-index: 1 !important;

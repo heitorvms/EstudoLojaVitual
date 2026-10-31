@@ -5,10 +5,11 @@ export class FinanceiroService extends BaseService {
     super("financeiro/");
   }
 
-  async listar({ tipo, status, page = 0, size = 20 } = {}) {
+  async listar({ page = 0, size = 20, ...filtros } = {}) {
     const params = { page, size };
-    if (tipo) params.tipo = tipo;
-    if (status) params.status = status;
+    Object.entries(filtros).forEach(([chave, valor]) => {
+      if (valor !== null && valor !== undefined && valor !== "") params[chave] = valor;
+    });
     const response = await this.axiosInstance.get("", { params });
     return response.data;
   }

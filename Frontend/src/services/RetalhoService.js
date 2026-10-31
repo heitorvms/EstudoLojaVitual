@@ -5,8 +5,10 @@ export class RetalhoService extends BaseService {
     super('retalhos');
   }
 
-  async listar() {
-    const response = await this.axiosInstance.get('');
+  async listar(page = 0, size = 15, busca = '') {
+    const response = await this.axiosInstance.get('', {
+      params: { page, size, busca: busca || undefined },
+    });
     return response.data;
   }
 

@@ -19,9 +19,6 @@ public class EstoqueMaterial {
     @JoinColumn(name = "id_material_disponivel", nullable = false, unique = true)
     private MaterialDisponivel materialDisponivel;
 
-    @Column(name = "quantidade_kg", precision = 14, scale = 4, nullable = false)
-    private BigDecimal quantidadeKg = BigDecimal.ZERO;
-
     @Column(name = "metros", precision = 14, scale = 4, nullable = false)
     private BigDecimal metros = BigDecimal.ZERO;
 

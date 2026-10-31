@@ -8,6 +8,7 @@ import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 import { CotacaoService } from "../../services/CotacaoService";
 import { OrdemServicoService } from "../../services/OrdemServicoService";
+import { percentualDoTotal, rotuloMaoDeObra } from "../../utils/maoDeObra";
 import {
   VisualizarGlobalStyle,
   PageShell,
@@ -137,7 +138,7 @@ const VisualizarCotacao = () => {
       ? Number(cotacao.totalCustoMateriais || 0) +
         Number(cotacao.valorInsumos || 0) +
         Number(cotacao.valorFrete || 0) +
-        Number(cotacao.valorLucro || 0)
+        Number(cotacao.valorMaoDeObra || 0)
       : 0);
 
   if (!cotacao) {
@@ -222,7 +223,7 @@ const VisualizarCotacao = () => {
       {(cotacao.totalCustoMateriais != null ||
         cotacao.valorInsumos != null ||
         (cotacao.valorFrete != null && Number(cotacao.valorFrete) > 0) ||
-        cotacao.valorLucro != null) && (
+        cotacao.valorMaoDeObra != null) && (
         <PanelCard>
           <PanelTitle>Composição de custos</PanelTitle>
           <CostGrid>
@@ -249,13 +250,19 @@ const VisualizarCotacao = () => {
               </span>
             </CostItem>
             <CostItem>
-              <strong>Lucro ({Number(cotacao.percentualLucro ?? 10).toFixed(0)}%)</strong>
-              <span>{formatCurrency(cotacao.valorLucro)}</span>
+              <strong>{rotuloMaoDeObra(cotacao.tipoMaoDeObra, cotacao.percentualMaoDeObra)}</strong>
+              <span>{formatCurrency(cotacao.valorMaoDeObra)}</span>
             </CostItem>
           </CostGrid>
           <CostTotal>
             <strong>Total do orçamento</strong>
             <span>{formatCurrency(valorTotalOrcamento)}</span>
+          </CostTotal>
+          <CostTotal style={{ color: "#2e7d32" }}>
+            <strong>
+              Valor ganho no serviço ({percentualDoTotal(cotacao.valorMaoDeObra, valorTotalOrcamento)}% do total)
+            </strong>
+            <span>{formatCurrency(cotacao.valorMaoDeObra)}</span>
           </CostTotal>
         </PanelCard>
       )}
@@ -268,7 +275,7 @@ const VisualizarCotacao = () => {
             const tipo = resumo?.tipo || analise?.tipoEscolhido || null;
             if (tipo === "distribuidoras") {
               const distEscolhida = resumo?.distribuidora || analise?.escolhas?.valorTotal?.distribuidora || null;
-              const valorTotal = (resumo?.valorTotal != null ? resumo.valorTotal : analise?.escolhas?.valorTotal?.valorTotal) || null;
+              const valorTotal = resumo?.valorTotalMateriais ?? analise?.escolhas?.valorTotal?.valorTotal ?? resumo?.valorTotal ?? null;
               const status = analise?.escolhas?.valorTotal?.status || (distEscolhida ? (analise?.analiseDistribuidoras || []).find(d => d.distribuidora === distEscolhida)?.status : null);
               const badgeStatus = status === 'maisBarato' ? 'cheapest' : status === 'maisCaro' ? 'most' : status ? 'medium' : undefined;
               return (
@@ -292,7 +299,7 @@ const VisualizarCotacao = () => {
                       </ChoiceList>
                     </div>
                   )}
-                  <ChoiceText><strong>Valor Total:</strong> {formatCurrency(valorTotal)}</ChoiceText>
+                  <ChoiceText><strong>Total dos materiais:</strong> {formatCurrency(valorTotal)}</ChoiceText>
                 </>
               );
             }
@@ -300,7 +307,7 @@ const VisualizarCotacao = () => {
               const mats = Array.isArray(resumo?.materiais) && resumo.materiais.length > 0
                 ? resumo.materiais
                 : (analise?.escolhas?.materiais || []).map(m => ({ nome: m.nome, distribuidora: m.distribuidoraSelecionada, valor: m.valorSelecionado }));
-              const valorTotal = resumo?.valorTotal != null ? resumo.valorTotal : mats.reduce((acc, m) => acc + (Number(m.valor) || 0), 0);
+              const valorTotal = resumo?.valorTotalMateriais ?? mats.reduce((acc, m) => acc + (Number(m.valor) || 0), 0);
               return (
                 <>
                   <ChoiceText><strong>Tipo:</strong> Análise de Materiais por Distribuidora</ChoiceText>
@@ -328,7 +335,7 @@ const VisualizarCotacao = () => {
                       })}
                     </ChoiceList>
                   </div>
-                  <ChoiceText><strong>Valor Total:</strong> {formatCurrency(valorTotal)}</ChoiceText>
+                  <ChoiceText><strong>Total dos materiais:</strong> {formatCurrency(valorTotal)}</ChoiceText>
                 </>
               );
             }

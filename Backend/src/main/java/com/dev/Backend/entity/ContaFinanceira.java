@@ -67,9 +67,14 @@ public class ContaFinanceira {
     @Column(name = "data_pagamento")
     private Date dataPagamento;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "id_cotacao", nullable = false)
+    /** Nula nas contas a pagar de compras para estoque, que não pertencem a um orçamento. */
+    @ManyToOne
+    @JoinColumn(name = "id_cotacao")
     private CotacaoServico cotacaoServico;
+
+    @ManyToOne
+    @JoinColumn(name = "id_compra_lote")
+    private CompraLote compraLote;
 
     @ManyToOne
     @JoinColumn(name = "id_distribuidora")

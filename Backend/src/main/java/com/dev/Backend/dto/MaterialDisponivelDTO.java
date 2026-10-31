@@ -8,7 +8,6 @@ public class MaterialDisponivelDTO {
     private BigDecimal tamanho;
     private String unidade;
     private Integer comprimentoBarraMm;
-    private BigDecimal pesoKgPorMetro;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -20,6 +19,4 @@ public class MaterialDisponivelDTO {
     public void setUnidade(String unidade) { this.unidade = unidade; }
     public Integer getComprimentoBarraMm() { return comprimentoBarraMm; }
     public void setComprimentoBarraMm(Integer comprimentoBarraMm) { this.comprimentoBarraMm = comprimentoBarraMm; }
-    public BigDecimal getPesoKgPorMetro() { return pesoKgPorMetro; }
-    public void setPesoKgPorMetro(BigDecimal pesoKgPorMetro) { this.pesoKgPorMetro = pesoKgPorMetro; }
 }
